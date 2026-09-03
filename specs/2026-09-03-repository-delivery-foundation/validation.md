@@ -10,12 +10,18 @@ During implementation, record the command, environment category, result, and any
 
 | Check | Evidence | Result |
 | --- | --- | --- |
-| Frontend automated checks | Pending implementation | Pending |
-| Backend automated checks | Pending implementation | Pending |
-| Production builds | Pending implementation | Pending |
-| Full local Atlas path | Pending implementation | Pending |
-| Failure and security review | Pending implementation | Pending |
-| CI run | Pending implementation | Pending |
+| Frontend automated checks | `frontend`: `npm run typecheck`, `npm run lint`, `npm test` (8 tests) | Pass |
+| Backend automated checks | `backend`: `npm run typecheck`, `npm run lint`, `npm test` (19 tests, including isolated MongoDB integration) | Pass |
+| Production builds | `frontend`: `npm run build` with a safe server-only local origin; `backend`: `npm run build` | Pass |
+| Full local Atlas path | No developer Atlas URI was supplied. Per the 2026-09-04 validation direction, the practical substitute used the full Next.js proxy -> Express -> isolated MongoDB path and observed `200`, safe `503` during outage, and recovery to `200` without restarting Express. | Pass with approved practical substitution |
+| Failure and security review | Missing frontend/backend configuration exited non-zero; API boundary tests verified exact safe envelopes; browser HTML/client static output did not expose the configured upstream origin; tracked-file hygiene reviewed. | Pass |
+| CI run | `.github/workflows/ci.yml` reviewed for push/PR triggers, independent deterministic installs, both applications' four gates, pinned Node version, and no provider credentials or deployment steps. A hosted run requires pushing the branch. | Pass by configuration review; hosted run pending |
+
+### Validation environment and justified exceptions
+
+- Practical checks were run in the available development environment, as directed on 2026-09-04. The repository and CI pin Node.js `24.20.0` and npm `11.19.0`; no further portable-runtime or synthetic restricted-filesystem certification was performed.
+- The Atlas-specific manual check was replaced by the same complete local request path using the test-only ephemeral MongoDB because no developer-owned Atlas URI was available. No external database credentials were used or recorded.
+- The GitHub Actions definition was reviewed locally but cannot produce a hosted run until the feature branch is pushed.
 
 ## Automated Validation
 
@@ -171,4 +177,3 @@ Phase 0 is safe to merge only when:
 7. CI passes all required checks and performs no deployment.
 8. README and template documentation are accurate and usable.
 9. The implementation has been reviewed against `mission.md`, `tech-stack.md`, `roadmap.md`, and this approved specification.
-

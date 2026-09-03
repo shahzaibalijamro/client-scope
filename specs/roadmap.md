@@ -53,6 +53,8 @@ All phases below are required for the portfolio-complete release. The order prot
 
 ## Phase 0 — Repository and Delivery Foundation
 
+**Status:** Complete
+
 Establish only the cross-cutting foundation needed to deliver and verify the first vertical slice.
 
 Outcomes:
