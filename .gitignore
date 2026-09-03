@@ -5,6 +5,8 @@ node_modules/
 .env
 .env.*
 !.env.example
+/frontend/.env
+/backend/.env
 
 # Build and test output
 .next/
