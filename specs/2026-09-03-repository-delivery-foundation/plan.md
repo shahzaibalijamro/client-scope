@@ -61,7 +61,7 @@ This plan implements the approved behavior in `requirements.md`. Task groups are
 1. Create GitHub Actions workflows triggered for pushes and pull requests.
 2. Use the same pinned Node.js release and deterministic npm installation for each independent application.
 3. Run frontend and backend type checking, linting, tests, and production builds.
-4. Ensure backend integration tests use ephemeral MongoDB and CI requires no Atlas, Cloudinary, Resend, Gemini, or deployment credentials.
+4. Ensure backend integration tests use ephemeral MongoDB and CI requires no Atlas, Cloudinary, Gmail SMTP, Gemini, or deployment credentials.
 5. Confirm jobs fail visibly when any required check fails and avoid deployment steps.
 6. Keep caching and job structure understandable and proportionate to a two-application repository.
 
@@ -82,4 +82,3 @@ This plan implements the approved behavior in `requirements.md`. Task groups are
 4. Inspect browser-visible output, logs, tracked files, and build artifacts for secret or internal-detail leakage.
 5. Review the implementation against all acceptance criteria and the three constitution files.
 6. Record validation evidence and any justified exceptions in `validation.md` before requesting merge approval.
-

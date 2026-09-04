@@ -4,6 +4,7 @@ import { createApp } from "./app.js";
 import { ConfigurationError, loadConfig } from "./config.js";
 import { databaseConnection } from "./database.js";
 import { logDiagnostic } from "./logger.js";
+import { configuredEmailService } from "./domain/email.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -33,7 +34,7 @@ async function startServer(): Promise<void> {
     return;
   }
 
-  const app = createApp();
+  const app = createApp({ emailService: configuredEmailService() });
   const server = app.listen(config.PORT, () => {
     logDiagnostic("info", "server.started", {
       port: config.PORT,

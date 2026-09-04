@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 import { logDiagnostic } from "./logger.js";
+import { syncDomainIndexes } from "./domain/models.js";
 
 const RETRY_DELAY_MS = 5_000;
 const SERVER_SELECTION_TIMEOUT_MS = 5_000;
@@ -39,6 +40,7 @@ export class DatabaseConnection {
       await mongoose.connect(this.uri, {
         serverSelectionTimeoutMS: SERVER_SELECTION_TIMEOUT_MS,
       });
+      await syncDomainIndexes();
     } catch {
       logDiagnostic("warn", "database.connection_attempt_failed", {
         state: "disconnected",

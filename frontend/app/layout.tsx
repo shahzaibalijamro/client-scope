@@ -5,8 +5,8 @@ import "./globals.css";
 import { QueryProvider } from "./query-provider";
 
 export const metadata: Metadata = {
-  title: "ClientScope system status",
-  description: "Current availability of the ClientScope service.",
+  title: "ClientScope — Clear client agreements",
+  description: "Manage client scope, access, decisions, and delivery history.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

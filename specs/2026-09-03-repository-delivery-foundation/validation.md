@@ -148,7 +148,7 @@ Verify:
 - CI uses the same pinned Node.js release as local development.
 - Dependency installation is deterministic and uses each application's lockfile.
 - Backend integration tests use ephemeral MongoDB and require no Atlas secret.
-- No Cloudinary, Resend, Gemini, Vercel, Koyeb, or other deployment/provider secret is required.
+- No Cloudinary, Gmail SMTP, Gemini, Vercel, Koyeb, or other deployment/provider secret is required.
 - A controlled failing check makes its CI job fail; restoring the check returns CI to green.
 - CI contains no deployment action in Phase 0.
 

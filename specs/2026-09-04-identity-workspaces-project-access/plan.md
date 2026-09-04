@@ -6,8 +6,8 @@ This plan implements the approved behavior in `requirements.md`. Task groups are
 
 1. Work on the dedicated Slice 1.1 feature branch and preserve the independent `frontend/` and `backend/` application boundaries.
 2. Replace the Phase 0 status-only root experience with the minimum authenticated application shell while retaining a suitable public health path.
-3. Add only dependencies needed by this slice, including a modern password hasher, secure random/token support through the platform, a focused cookie/session implementation, Resend behind an application boundary, and Playwright for the deliberately small end-to-end suite.
-4. Extend validated server configuration for session/cookie behavior, frontend origin, token lifetimes, Resend, safe application URLs, and configurable throttling without requiring provider credentials for tests or builds.
+3. Add only dependencies needed by this slice, including a modern password hasher, secure random/token support through the platform, a focused cookie/session implementation, Nodemailer with Gmail SMTP behind an application boundary, and Playwright for the deliberately small end-to-end suite.
+4. Extend validated server configuration for session/cookie behavior, frontend origin, token lifetimes, Gmail address and Google App Password credentials, safe application URLs, and configurable throttling without requiring provider credentials for tests or builds.
 5. Establish domain-oriented backend modules for identity, sessions, workspaces, clients, projects, access, invitations, activity, and email rather than concentrating business logic in route handlers.
 6. Keep REST errors consistent with the existing envelope and add stable Slice 1.1 codes only where callers need distinct recovery behavior.
 
@@ -43,17 +43,17 @@ This plan implements the approved behavior in `requirements.md`. Task groups are
 
 ## 5. Implement verification and password-reset lifecycles
 
-1. Add verification issuance/resend and redemption with 24-hour single-use replacement tokens.
+1. Add verification issuance/replacement and redemption with 24-hour single-use replacement tokens.
 2. Add forgot-password issuance and password-reset redemption with one-hour single-use replacement tokens and neutral request responses.
 3. Ensure verification changes only verification state and never creates a session or accepts an invitation.
 4. Ensure password reset applies the password policy, does not verify the account, atomically changes the password and revokes all sessions, and leaves the reset browser signed out.
 5. Add safe invalid/used/replaced/expired outcomes and recovery actions without account disclosure.
-6. Add provider-stub integration tests for successful delivery, delivery failure, resend/replacement, reset-all-session revocation, and unverified-account reset.
+6. Add provider-stub integration tests for successful delivery, delivery failure, link replacement, reset-all-session revocation, and unverified-account reset.
 
 ## 6. Introduce the transactional email boundary
 
 1. Define provider-neutral email commands and outcomes for verification, reset, duplicate-signup guidance, invitations, project assignment, client-role change, and access removal.
-2. Implement the Resend adapter behind that interface and a deterministic fake adapter for automated tests.
+2. Implement the Nodemailer Gmail SMTP adapter behind that interface and a deterministic fake adapter for automated tests. Authenticate Gmail with a server-only Google App Password rather than the account's normal password.
 3. Build minimal privacy-reviewed templates that include only approved context and return users to the same-origin frontend.
 4. Dispatch domain notifications only after the authoritative transaction commits.
 5. Persist invitation delivery state and surface its failure. For other access notifications, return a safe non-rollback warning to the acting owner.
@@ -106,7 +106,7 @@ This plan implements the approved behavior in `requirements.md`. Task groups are
 ## 11. Build the authenticated frontend shell and account journeys
 
 1. Add a responsive public/authenticated shell using the existing App Router and same-origin API boundary.
-2. Implement signup, sign-in, verification-only, resend, forgot-password, reset-password, logout, and display-name-edit screens with React Hook Form, Zod, and TanStack Query.
+2. Implement signup, sign-in, verification-only, verification-link replacement, forgot-password, reset-password, logout, and display-name-edit screens with React Hook Form, Zod, and TanStack Query.
 3. Bootstrap CSRF safely and send it on unsafe requests without exposing session tokens to JavaScript.
 4. Preserve invitation return context through authentication and verification while relying on the backend for all detail/acceptance decisions.
 5. Render neutral account-discovery responses, safe token-expiry recovery, delivery warnings, validation errors, and throttled states.
@@ -138,11 +138,11 @@ This plan implements the approved behavior in `requirements.md`. Task groups are
 2. Add backend API integration tests using isolated MongoDB for authentication, CSRF, tenant isolation, field projection, access matrices, concurrency, atomic history, and provider-failure behavior.
 3. Add frontend React Testing Library coverage for authentication states, verification gate, `Your work`, privacy-safe invitation states, confirmations, forms, administrative history, and access-denied refresh behavior.
 4. Add the focused Playwright journeys defined by `validation.md`, using controlled test email/token access rather than live mailbox scraping.
-5. Keep tests deterministic and independent of Atlas, live Resend, or external network access in normal CI.
+5. Keep tests deterministic and independent of Atlas, live Gmail SMTP, or external network access in normal CI.
 
 ## 15. Update documentation and execute acceptance validation
 
-1. Update safe environment examples and README setup for session secrets, application origin, Resend configuration, local email testing, and the two independent applications.
+1. Update safe environment examples and README setup for session secrets, application origin, Gmail SMTP and Google App Password configuration, local email testing, and the two independent applications.
 2. Document seeded/local test-account guidance without committing credentials or reusable tokens.
 3. Run frontend and backend type checking, linting, tests, and production builds.
 4. Execute the focused Playwright suite and the manual responsive, accessibility, cookie, privacy, email, and revocation checks in `validation.md`.

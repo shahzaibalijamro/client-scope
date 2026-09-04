@@ -1,5 +1,5 @@
-import { StatusPage } from "./status-page";
+import { ClientScopeApp } from "./client-scope-app";
 
 export default function Home() {
-  return <StatusPage />;
+  return <ClientScopeApp />;
 }

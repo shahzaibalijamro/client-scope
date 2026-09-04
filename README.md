@@ -1,12 +1,12 @@
 # ClientScope
 
-ClientScope is a spec-driven application for keeping client scope, reviews, decisions, and delivery history clear. This repository currently contains the Phase 0 delivery foundation: a minimal Next.js status page, an Express health API, and a MongoDB connectivity check.
+ClientScope is a spec-driven application for keeping client scope, reviews, decisions, and delivery history clear. The current vertical slice implements global accounts, verification and recovery, workspaces, clients, projects, contextual access, invitations, and the unified `Your work` experience.
 
 ## Prerequisites
 
 - Node.js 24.20.0 (the active LTS release pinned in `.nvmrc` and `.node-version`)
 - npm 11.19.0 as bundled with Node.js 24.20.0
-- A developer-owned MongoDB Atlas database for normal local development
+- MongoDB 8-compatible local replica set or a developer-owned MongoDB Atlas database for normal local development
 
 The frontend and backend are independent applications. Run their commands from their own directories and start them in separate terminals. There is intentionally no root workspace or combined launcher.
 
@@ -29,7 +29,7 @@ backend/.env.example  -> backend/.env
 frontend/.env.example -> frontend/.env.local
 ```
 
-Replace the `MONGODB_URI` placeholders in `backend/.env` with a valid Atlas connection string. Keep that URI server-side and never commit it. `BACKEND_API_ORIGIN` is also server-only; it must never use the `NEXT_PUBLIC_` prefix.
+Replace the safe placeholders in `backend/.env`, especially `MONGODB_URI` and `SESSION_SECRET`. Keep them server-side and never commit them. `BACKEND_API_ORIGIN` is also server-only; it must never use the `NEXT_PUBLIC_` prefix. For live email, set `GMAIL_USER` and `GMAIL_APP_PASSWORD` to a Gmail address and its Google App Password; never supply the account's normal password. Automated tests use a fake email provider, so Gmail credentials are not required for tests or builds.
 
 ## Run locally
 
@@ -47,7 +47,7 @@ cd frontend
 npm run dev
 ```
 
-Open `http://localhost:3000`. The page first says it is checking, then reports whether ClientScope is available. The browser requests only the same-origin `/api/v1/health` path; Next.js proxies that request to Express. A healthy API response is:
+Open `http://localhost:3000` to create or sign in to an account. Next.js proxies all browser `/api` traffic to Express, which remains the sole authentication, authorization, and business-logic boundary. The public service status remains available at `http://localhost:3000/health`.
 
 ```json
 {
@@ -56,7 +56,7 @@ Open `http://localhost:3000`. The page first says it is checking, then reports w
 }
 ```
 
-The health check is read-only. It does not create application data.
+The health check is read-only. Account emails are captured by the deterministic local provider unless Gmail SMTP credentials are configured.
 
 ## Verification commands
 
@@ -86,4 +86,4 @@ Feature work follows this lifecycle:
 
 Start future feature documents from the lightweight [`specs/_template/`](specs/_template/) prompts. Product behavior must be approved before implementation, and material ambiguities return to the specification.
 
-Playwright begins with Slice 1.1, when the first meaningful user journey exists. Live Vercel and Koyeb deployment is deferred until Phase 3.
+The focused Playwright journeys and live Gmail SMTP/browser-cookie inspection require the documented isolated acceptance environment. Live Vercel and Koyeb deployment remains deferred until Phase 3.

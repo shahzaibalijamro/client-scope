@@ -145,7 +145,7 @@ Turn the complete product into a reliable, understandable portfolio artifact rat
 
 Required outcomes:
 
-- A publicly accessible deployment using Vercel, Koyeb, MongoDB Atlas, Cloudinary, Resend, and Gemini within free or effectively free demo constraints.
+- A publicly accessible deployment using Vercel, Koyeb, MongoDB Atlas, Cloudinary, Gmail SMTP through Nodemailer, and Gemini within free or effectively free demo constraints.
 - A realistic seeded demo workspace that makes the product's value apparent without requiring a visitor to build a project from scratch.
 - Demo data that exercises agreed requirements, change control, milestones, multiple deliverable versions, feedback, approvals, pending decisions, and activity history.
 - Final verification of critical unit, API integration, UI behavior, and end-to-end tests.

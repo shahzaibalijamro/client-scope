@@ -103,8 +103,9 @@ File types, size limits, access strategy, validation, deletion, and attachment-v
 
 ### Transactional email
 
-- **Resend** is the transactional email provider.
-- Provider calls are isolated behind a small application-level email service boundary so domain logic does not depend on Resend-specific APIs.
+- **Gmail SMTP through Nodemailer** is the transactional email provider.
+- Gmail authentication uses a dedicated Google App Password supplied through server-only environment configuration; the normal Google account password is never used or stored by ClientScope.
+- SMTP calls are isolated behind a small application-level email service boundary so domain logic does not depend on Nodemailer- or Gmail-specific APIs.
 
 Templates, retries, delivery tracking, failures, and event-specific notification rules belong in later feature specifications. In-app project state remains the source of truth; email brings users back to that state.
 
@@ -123,7 +124,7 @@ Model selection, prompts, structured-output contracts, provider limits, error pr
 - **Vercel** hosts the Next.js frontend.
 - **Koyeb** hosts the Express backend.
 - **MongoDB Atlas** hosts MongoDB.
-- **Cloudinary**, **Resend**, and **Google Gemini** provide their respective managed capabilities.
+- **Cloudinary**, **Gmail SMTP**, and **Google Gemini** provide their respective managed capabilities.
 - **GitHub Actions** provides continuous integration.
 
 The deployment must be viable at free or effectively free portfolio/demo scale. Free-tier constraints are acceptable for a demonstration environment and are not represented as production-grade availability. Provider plans should be rechecked when deployment is implemented; changing commercial availability alone may require a constitution amendment if a locked provider is no longer viable.

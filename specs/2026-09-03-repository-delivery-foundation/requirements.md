@@ -52,7 +52,7 @@ When convenience conflicts with these sources, security, data integrity, explici
 - Workspaces, clients, projects, memberships, project access, or any other Phase 1 domain behavior.
 - An application shell, product navigation, dashboard, component library, or placeholder product screens.
 - Forms created only to demonstrate React Hook Form.
-- Cloudinary, Resend, Gemini, or their credentials and service integrations.
+- Cloudinary, Gmail SMTP/Nodemailer, Gemini, or their credentials and service integrations.
 - Playwright installation or end-to-end tests; these begin with the first meaningful user journey in Slice 1.1.
 - Live Vercel, Koyeb, or other environment deployment. Live deployment is deferred until Phase 3.
 - Docker, a local MongoDB installation path, npm workspaces, a shared package, Turborepo, or repository-level application orchestration.
@@ -234,4 +234,3 @@ The template must guide consistent thinking without prescribing unnecessary sect
 15. The README documents independent local startup, environment setup, verification commands, and the concise spec-driven lifecycle, and links to the minimal three-file template.
 16. The repository contains no committed secret, generated build output, test database artifact, or local environment file.
 17. No authentication, domain workflow, product shell, Playwright suite, live deployment configuration, or unrelated infrastructure is introduced.
-

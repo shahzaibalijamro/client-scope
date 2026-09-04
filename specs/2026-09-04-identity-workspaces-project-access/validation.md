@@ -30,7 +30,7 @@ During implementation, replace `Pending` with the actual command, environment ca
 | Production builds | Pending | Pending |
 | Focused Playwright journeys | Pending | Pending |
 | Tenant-isolation and revocation review | Pending | Pending |
-| Resend boundary and failure checks | Pending | Pending |
+| Gmail SMTP/Nodemailer boundary and failure checks | Pending | Pending |
 | Responsive/accessibility review | Pending | Pending |
 | Cookie/CSRF/token/privacy inspection | Pending | Pending |
 | Hosted CI run | Pending | Pending |
@@ -78,7 +78,7 @@ Use Vitest, Supertest, and isolated ephemeral MongoDB with deterministic email a
 - Missing/invalid CSRF, untrusted Origin, and disallowed fallback-origin evidence reject every unsafe route without mutation.
 - Safe reads do not mutate and cannot be used to redeem verification, reset, or invitation actions.
 - Cookie assertions cover HttpOnly, production Secure, approved SameSite, expiry, and limited scope.
-- Configured rate limits throttle repeated sign-in, reset, verification-resend, and invitation-email abuse without locking an account or revealing its existence.
+- Configured rate limits throttle repeated sign-in, reset, verification-link replacement, and invitation-email abuse without locking an account or revealing its existence.
 
 ### Verification and password-reset integration tests
 
@@ -166,7 +166,7 @@ Construct at least two workspaces, multiple projects per workspace, and accounts
 
 Use Vitest, React Testing Library, user-event, controlled time, and mocked same-origin responses.
 
-- Signup, sign-in, verification, resend, forgot/reset password, logout, and display-name forms provide labels, field errors, loading/disabled behavior, neutral responses, and safe failures.
+- Signup, sign-in, verification, verification-link replacement, forgot/reset password, logout, and display-name forms provide labels, field errors, loading/disabled behavior, neutral responses, and safe failures.
 - Password fields preserve spaces and never display server-returned password details.
 - Unverified users see only the verification experience and cannot navigate to protected application content.
 - Invitation return context survives the tested signup/sign-in/verification navigation and never causes automatic acceptance.
@@ -222,7 +222,7 @@ Keep the browser suite small. Prove most authorization permutations and concurre
 2. Inspect signup, verification, sign-in, reset, logout, and expired-link journeys in a current browser.
 3. Confirm verification-link use without a matching session requires sign-in and password reset always leaves the browser signed out.
 4. Confirm neutral duplicate-signup/reset responses do not visibly change based on account existence or provider failure.
-5. In an approved Resend test environment, send each required email category and inspect links, minimum content, sender configuration, expiry behavior, and absence of private fields.
+5. In an approved Gmail SMTP test environment, send each required email category using the configured Google App Password and inspect links, minimum content, sender configuration, expiry behavior, and absence of private fields.
 6. Induce safe provider failures and confirm invitation pending state and non-rollback access-change warnings match requirements.
 
 ### Cookie, CSRF, and browser boundary inspection
@@ -263,7 +263,7 @@ Keep the browser suite small. Prove most authorization permutations and concurre
 - Inspect public errors and server diagnostics during invalid credentials, token failures, provider failure, validation failure, conflict, unauthorized access, and unexpected error.
 - Confirm no password, cookie, CSRF value, raw token, internal note, full request body, provider payload, database error, stack trace in production response, or secret is exposed.
 - Inspect tracked files for local environment files, credentials, reusable test tokens, email-recipient data, build output, Playwright traces/screenshots containing personal data, and database artifacts.
-- Confirm safe example configuration uses placeholders and builds/tests do not require Atlas or live Resend.
+- Confirm safe example configuration uses placeholders and builds/tests do not require Atlas or live Gmail SMTP.
 
 ## Static and Build Checks
 
@@ -296,7 +296,7 @@ Before merge, verify:
 - Every private query and mutation enforces current workspace/project authorization in the backend.
 - The single owner, implicit owner project access, one effective non-owner project role, and preserved-history rules match the mission.
 - The unified home is a minimum accessible-work view, not a general dashboard or project-management system.
-- Resend is isolated and email remains a pointer to authoritative in-app state.
+- Nodemailer/Gmail SMTP is isolated and email remains a pointer to authoritative in-app state; no normal Google account password is present in configuration or application storage.
 - The slice remains fully independent of Cloudinary and Gemini.
 - Excluded account, workspace, project-lifecycle, notification-center, general-history, and later roadmap features were not introduced.
 
@@ -315,3 +315,16 @@ Slice 1.1 is safe to merge only when:
 9. CI passes all required checks without live provider credentials and contains no deployment step for this slice.
 10. Documentation and environment examples are accurate, safe, and sufficient for another developer to run and validate the feature.
 11. The implementation has been reviewed against `mission.md`, `tech-stack.md`, `roadmap.md`, and this approved specification, with no later-slice behavior or excluded infrastructure added.
+
+## Implementation Evidence — 2026-09-04
+
+The Slice 1.1 implementation now includes the account/session boundary, workspace/client/project setup, invitation and access transitions, server-side projections, access activity records, transactional-email abstraction, authenticated frontend shell, `Your work`, owner setup/access surfaces, and focused identity/UI rule tests.
+
+Automated evidence recorded during implementation:
+
+- Backend type check, lint, and production build pass.
+- Frontend type check, lint, component tests, and production build pass.
+- All 27 backend tests pass, including the isolated MongoDB API boundary suite, focused Slice 1.1 identity/security rules, and Gmail SMTP configuration/fail-closed behavior.
+- The MongoDB integration suite keeps its pinned test binary inside a repository-local ignored cache; normal test execution does not use Atlas or live provider credentials.
+
+The merge gate is not represented as complete until the focused Playwright journeys and the manual cookie/CSRF, responsive, accessibility, provider-email, stale-access, and payload/privacy inspections above are executed in the acceptance environment.

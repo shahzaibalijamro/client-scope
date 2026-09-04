@@ -3,6 +3,10 @@ import express, { type Express, type RequestHandler } from "express";
 import { errorHandler, notFoundHandler } from "./errors.js";
 import { createHealthRouter, type DatabaseStateReader } from "./health.js";
 import { logDiagnostic } from "./logger.js";
+import { resolveSession } from "./domain/auth.js";
+import { createIdentityRouter } from "./domain/identity-routes.js";
+import { createWorkspaceRouter } from "./domain/workspace-routes.js";
+import { developmentEmail, type EmailService } from "./domain/email.js";
 
 function requestDiagnostics(): RequestHandler {
   return (request, response, next) => {
@@ -28,6 +32,7 @@ function requestDiagnostics(): RequestHandler {
 
 export type AppOptions = Readonly<{
   readDatabaseState?: DatabaseStateReader;
+  emailService?: EmailService;
 }>;
 
 export function createApp(options: AppOptions = {}): Express {
@@ -36,7 +41,10 @@ export function createApp(options: AppOptions = {}): Express {
   app.disable("x-powered-by");
   app.use(requestDiagnostics());
   app.use(express.json({ limit: "100kb" }));
+  app.use(resolveSession);
   app.use("/api/v1", createHealthRouter(options.readDatabaseState));
+  app.use("/api/v1", createIdentityRouter(options.emailService ?? developmentEmail));
+  app.use("/api/v1", createWorkspaceRouter(options.emailService ?? developmentEmail));
   app.use(notFoundHandler);
   app.use(errorHandler);
 

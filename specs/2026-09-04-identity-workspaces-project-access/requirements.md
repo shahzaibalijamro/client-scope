@@ -17,7 +17,7 @@ A person can create and verify a global ClientScope account, create or join work
 This slice must remain consistent with:
 
 - `specs/mission.md`, especially global identities, contextual authority, private-by-default project data, explicit roles, preserved history, human authority, and correctness over convenience.
-- `specs/tech-stack.md`, including the independent Next.js and Express applications, REST API, MongoDB/Mongoose, Zod validation, secure server-side sessions, same-origin `/api` proxy, Resend boundary, and selected testing tools.
+- `specs/tech-stack.md`, including the independent Next.js and Express applications, REST API, MongoDB/Mongoose, Zod validation, secure server-side sessions, same-origin `/api` proxy, Gmail SMTP/Nodemailer boundary, and selected testing tools.
 - `specs/roadmap.md`, especially the Slice 1.1 outcome, vertical delivery, backend-enforced authorization, minimum in-app view of accessible work, transactional invitations, and risk-based verification.
 
 Frontend visibility is never an authorization boundary. Express must authenticate and authorize every protected operation using current persisted state.
@@ -28,7 +28,7 @@ Frontend visibility is never an authorization boundary. Express must authenticat
 
 - Global email/password accounts with required display names.
 - Signup, sign-in, fixed server-side sessions, current-session logout, and display-name editing.
-- Email verification, verification resend, forgot-password requests, and password reset.
+- Email verification, verification-link replacement, forgot-password requests, and password reset.
 - A verification-only experience for signed-in unverified accounts.
 - Secure cookie, CSRF, origin, token, throttling, and account-discovery protections needed by these browser flows.
 - Workspace creation and the single-owner invariant.
@@ -90,7 +90,7 @@ Frontend visibility is never an authorization boundary. Express must authenticat
 
 ## Email Verification
 
-1. Unverified users may authenticate but can access only the verification experience, verification resend, session status needed for that experience, and logout. They cannot create workspaces, inspect invitations, accept access, view project data, edit their profile, or perform another meaningful application action.
+1. Unverified users may authenticate but can access only the verification experience, verification-link replacement, session status needed for that experience, and logout. They cannot create workspaces, inspect invitations, accept access, view project data, edit their profile, or perform another meaningful application action.
 2. Verification links expire 24 hours after issuance and are single-use.
 3. Requesting a new verification link invalidates and replaces the previous outstanding link.
 4. Verification tokens are unpredictable, stored in non-recoverable form server-side, and never recorded in application logs or history.
@@ -242,7 +242,7 @@ Rules:
 3. After workspace-invitation acceptance, the new Service-Team Member can see the workspace on `Your work` but no project until assigned.
 4. After project-invitation acceptance, the client member can open that project immediately.
 5. Invalid, expired, replaced, revoked, accepted, mismatched, or conflicting invitations fail with a safe result that does not expose private details to an unauthorized caller.
-6. If Resend delivery fails during invitation issuance, the invitation remains pending and visible to the owner with a failed-delivery status. The UI reports that access has not been accepted and offers replacement/reissue as the retry path.
+6. If Gmail SMTP delivery fails during invitation issuance, the invitation remains pending and visible to the owner with a failed-delivery status. The UI reports that access has not been accepted and offers replacement/reissue as the retry path.
 
 ## Access Removal, Restoration, and History
 
@@ -309,7 +309,7 @@ Invitation activity remains owner-only until successful project acceptance creat
 
 ## Transactional Email
 
-1. Resend is accessed only through a small application email boundary. Domain logic does not depend on Resend-specific response shapes.
+1. Gmail SMTP is accessed through Nodemailer only behind a small application email boundary. Domain logic does not depend on Nodemailer- or Gmail-specific response shapes. Authentication uses the configured Gmail address and a server-only Google App Password, never the account's normal password.
 2. This slice sends or attempts transactional email for:
    - Email verification and replacement verification links.
    - Password-reset links.
@@ -385,4 +385,4 @@ Invitation activity remains owner-only until successful project acceptance creat
 32. Assignment, role-change, and removal actions remain committed when notification email fails, and the owner receives a safe warning rather than a false rollback.
 33. Cross-workspace and cross-project API attempts, guessed identifiers, stale cached authority, inactive records, and role escalation attempts are denied by the backend without private-data leakage.
 34. Authentication, invitation acceptance, owner setup, client project access, responsive behavior, and the highest-risk revocation/isolation paths are covered by the approved automated and manual validation plan.
-35. Frontend and backend type checks, linting, automated tests, and production builds pass without requiring live Resend delivery or other out-of-scope provider credentials.
+35. Frontend and backend type checks, linting, automated tests, and production builds pass without requiring live Gmail SMTP delivery or other out-of-scope provider credentials.

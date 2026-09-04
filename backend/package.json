@@ -17,14 +17,17 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "argon2": "0.45.1",
     "express": "^5.2.1",
     "mongoose": "^9.9.4",
+    "nodemailer": "10.0.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",
     "@types/node": "24.13.3",
+    "@types/nodemailer": "8.0.1",
     "@types/supertest": "^7.2.1",
     "eslint": "^10.9.1",
     "mongodb-memory-server": "^11.2.0",
