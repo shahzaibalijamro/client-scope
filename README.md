@@ -29,7 +29,7 @@ backend/.env.example  -> backend/.env
 frontend/.env.example -> frontend/.env.local
 ```
 
-Replace the safe placeholders in `backend/.env`, especially `MONGODB_URI` and `SESSION_SECRET`. Keep them server-side and never commit them. `BACKEND_API_ORIGIN` is also server-only; it must never use the `NEXT_PUBLIC_` prefix. For live email, set `GMAIL_USER` and `GMAIL_APP_PASSWORD` to a Gmail address and its Google App Password; never supply the account's normal password. Automated tests use a fake email provider, so Gmail credentials are not required for tests or builds.
+Replace the safe placeholders in `backend/.env`, especially `MONGODB_URI` and `SESSION_SECRET`. Keep them server-side and never commit them. `BACKEND_API_ORIGIN` is also server-only; it must never use the `NEXT_PUBLIC_` prefix. For live email, set `EMAIL_DELIVERY_MODE=gmail`, `GMAIL_USER`, and `GMAIL_APP_PASSWORD` to a Gmail address and its Google App Password; never supply the account's normal password. Automated tests use a fake email provider, so Gmail credentials are not required for tests or builds.
 
 ## Run locally
 
@@ -56,7 +56,7 @@ Open `http://localhost:3000` to create or sign in to an account. Next.js proxies
 }
 ```
 
-The health check is read-only. Account emails are captured by the deterministic local provider unless Gmail SMTP credentials are configured.
+The health check is read-only. With `EMAIL_DELIVERY_MODE=local`, account emails remain in the in-memory development provider. Use the isolated Playwright environment below to exercise their links deterministically, or configure Gmail for a manual browser run. Never enable the test-email route on a shared or production server.
 
 ## Verification commands
 
@@ -70,6 +70,21 @@ npm run build
 ```
 
 Backend integration tests use an isolated, ephemeral in-memory MongoDB instance. They do not read Atlas credentials or contact an external database. Normal development and future deployed environments use MongoDB Atlas. A production build validates code and configuration shape only; it does not connect to MongoDB or require either service to be running.
+
+Install Chromium once, then run the three isolated Slice 1.1 browser journeys from `frontend/`:
+
+```text
+npx playwright install chromium
+npm run test:e2e
+```
+
+To run one focused journey while developing:
+
+```text
+npm run test:e2e -- --grep "service assignment"
+```
+
+Playwright starts a disposable MongoDB replica set plus local backend and frontend servers on ports 4101 and 4200. It enables a non-production-only email inspection route so verification and invitation links are deterministic; that route is absent unless `NODE_ENV` is non-production and `E2E_TEST_MODE=1`. No Atlas database, Gmail mailbox, committed account credential, or reusable token is used.
 
 ## Safe failure checks
 
@@ -86,4 +101,4 @@ Feature work follows this lifecycle:
 
 Start future feature documents from the lightweight [`specs/_template/`](specs/_template/) prompts. Product behavior must be approved before implementation, and material ambiguities return to the specification.
 
-The focused Playwright journeys and live Gmail SMTP/browser-cookie inspection require the documented isolated acceptance environment. Live Vercel and Koyeb deployment remains deferred until Phase 3.
+The focused Playwright journeys run locally and in CI. Live Gmail SMTP and production-like browser-cookie inspection require an approved acceptance environment. Live Vercel and Koyeb deployment remains deferred until Phase 3.

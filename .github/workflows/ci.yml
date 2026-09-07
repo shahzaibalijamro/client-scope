@@ -73,3 +73,36 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  e2e:
+    name: Critical browser journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 24.20.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.20.0
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Slice 1.1 browser journeys
+        working-directory: frontend
+        run: npm run test:e2e

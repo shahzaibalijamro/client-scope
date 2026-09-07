@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "node:url";
 
-process.env.MONGOMS_DOWNLOAD_DIR = fileURLToPath(new URL("./node_modules/.cache/mongodb-binaries", import.meta.url));
+process.env.MONGOMS_DOWNLOAD_DIR = fileURLToPath(new URL("./node_modules/.cache/mongodb-memory-server", import.meta.url));
 
 export default defineConfig({
   test: {

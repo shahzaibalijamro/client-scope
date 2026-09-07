@@ -5,7 +5,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { createApp } from "../src/app.js";
+import { createApp, safeDiagnosticPath } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { errorHandler } from "../src/errors.js";
 import { validateRequest } from "../src/validation.js";
@@ -21,6 +21,10 @@ beforeAll(async () => {
     NODE_ENV: "test",
     PORT: "4100",
     MONGODB_URI: database.getUri(),
+    FRONTEND_ORIGIN: "http://localhost:3000",
+    SESSION_SECRET: "test-session-secret-with-at-least-32-characters",
+    AUTH_THROTTLE_LIMIT: "12",
+    EMAIL_DELIVERY_MODE: "local",
   });
   await mongoose.connect(config.MONGODB_URI);
 });
@@ -31,6 +35,11 @@ afterAll(async () => {
 });
 
 describe("API boundaries", () => {
+  it("redacts raw invitation tokens from diagnostic paths", () => {
+    expect(safeDiagnosticPath("/api/v1/invitation-links/raw-secret-token/accept"))
+      .toBe("/api/v1/invitation-links/:token/accept");
+  });
+
   it("returns exactly the safe healthy representation while MongoDB is connected", async () => {
     const collectionsBefore = await mongoose.connection.db?.listCollections().toArray();
 

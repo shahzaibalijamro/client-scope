@@ -11,6 +11,17 @@ export interface EmailService {
   send(command: EmailCommand): Promise<{ delivered: boolean }>;
 }
 
+export async function sendEmailSafely(
+  service: EmailService,
+  command: EmailCommand,
+): Promise<{ delivered: boolean }> {
+  try {
+    return await service.send(command);
+  } catch {
+    return { delivered: false };
+  }
+}
+
 export class SafeDevelopmentEmailService implements EmailService {
   readonly sent: EmailCommand[] = [];
 
@@ -52,10 +63,11 @@ export class GmailSmtpEmailService implements EmailService {
 export function configuredEmailService(): EmailService {
   const user = process.env.GMAIL_USER;
   const appPassword = process.env.GMAIL_APP_PASSWORD;
-  if (user && appPassword) {
+  const mode = process.env.EMAIL_DELIVERY_MODE ?? "local";
+  if (mode === "gmail" && user && appPassword) {
     return new GmailSmtpEmailService(user, appPassword, process.env.EMAIL_FROM_NAME);
   }
-  if (process.env.NODE_ENV === "production") {
+  if (mode === "gmail" || process.env.NODE_ENV === "production") {
     throw new Error("Gmail SMTP configuration is required in production.");
   }
   return developmentEmail;

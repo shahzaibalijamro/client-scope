@@ -316,15 +316,26 @@ Slice 1.1 is safe to merge only when:
 10. Documentation and environment examples are accurate, safe, and sufficient for another developer to run and validate the feature.
 11. The implementation has been reviewed against `mission.md`, `tech-stack.md`, `roadmap.md`, and this approved specification, with no later-slice behavior or excluded infrastructure added.
 
-## Implementation Evidence — 2026-09-04
+## Implementation and Local Acceptance Evidence — 2026-09-07
 
-The Slice 1.1 implementation now includes the account/session boundary, workspace/client/project setup, invitation and access transitions, server-side projections, access activity records, transactional-email abstraction, authenticated frontend shell, `Your work`, owner setup/access surfaces, and focused identity/UI rule tests.
+The Slice 1.1 implementation includes the account/session boundary, verification and recovery lifecycles, workspace/client/project setup, invitation and access transitions, role-specific server projections, immutable access activity, transactional-email abstraction, authenticated frontend shell, `Your work`, owner setup/access surfaces, confirmation behavior, and the focused browser journeys.
 
-Automated evidence recorded during implementation:
+Evidence recorded from the current working tree:
 
 - Backend type check, lint, and production build pass.
-- Frontend type check, lint, component tests, and production build pass.
-- All 27 backend tests pass, including the isolated MongoDB API boundary suite, focused Slice 1.1 identity/security rules, and Gmail SMTP configuration/fail-closed behavior.
-- The MongoDB integration suite keeps its pinned test binary inside a repository-local ignored cache; normal test execution does not use Atlas or live provider credentials.
+- Frontend type check, lint, and production build pass.
+- All 50 backend tests pass across five files. The isolated replica-set API suite covers fixed sessions/cookies, CSRF/origin rejection, neutral and concurrent signup, email/network throttling, verification/reset replacement and expiry, logout and reset revocation, tenant isolation, role-specific field projection, invitation privacy/lifecycle, immediate revocation, one-effective-role races, client deletion/project creation races, retained access periods, required-history rollback, automatic expiry, and provider-failure non-rollback behavior.
+- All 17 frontend tests pass across three files. The focused Slice 1.1 behavior tests cover the verification-only gate, neutral signup guidance, client work projection, owner active/inactive administration, guarded leave behavior, and dialog focus entry/return, focus trapping, and Escape cancellation.
+- All three Playwright journeys pass using an isolated MongoDB replica set and the non-production-only deterministic email-link mechanism. They cover provider setup, a mobile Client Approver signup/verification/acceptance flow, two-project isolation, service assignment/unassignment/removal in the same browser sessions, invitation privacy for signed-out and mismatched accounts, retained role/access history, role-authority change, and voluntary leave.
+- Production-like cookie assertions verify `HttpOnly`, host-only, `SameSite=Lax`, `/api` scope, fixed seven-day server alignment, opaque/non-returned session tokens, and `Secure` outside local HTTP modes.
+- Role-specific payload assertions verify that client users receive only the associated client name, assigned service members receive only the approved client name/company/contact fields, non-owners receive no member emails or inactive/delivery history, and internal notes do not enter project/activity payloads.
+- Raw invitation tokens are redacted from application request diagnostics. Tracked-file and ignored-artifact inspection found no committed environment file, Playwright trace/report, database artifact, or reusable token. Tests and builds use neither Atlas nor live Gmail.
+- GitHub Actions now runs independent frontend/backend typecheck, lint, test, and build jobs plus the three isolated Playwright journeys; it contains no deployment step.
+- `README.md` and the environment examples document the two independent applications, validated origins/session configuration, Gmail App Password mode, isolated email-link mechanism, and exact Playwright commands.
 
-The merge gate is not represented as complete until the focused Playwright journeys and the manual cookie/CSRF, responsive, accessibility, provider-email, stale-access, and payload/privacy inspections above are executed in the acceptance environment.
+### Environment-only acceptance still requiring authorization
+
+- Live Gmail SMTP delivery was not attempted. The local backend environment is intentionally configured with `EMAIL_DELIVERY_MODE=local`; changing it and sending external messages requires explicit approval for the Gmail test environment and recipients. The adapter construction, fail-closed production configuration, deterministic provider behavior, provider exception handling, delivery-state persistence, and non-rollback warnings all pass locally.
+- Hosted GitHub Actions cannot validate uncommitted local changes. The complete equivalent command set passes locally and the workflow is configured; the hosted result must be confirmed after the changes are committed and pushed through the normal repository workflow.
+
+Accordingly, the implementation and locally available acceptance checks are complete, but the merge gate and authorization to begin Slice 1.2 remain open until the approved live-email check and hosted CI result are recorded or the specification owner approves those environment-specific substitutions.

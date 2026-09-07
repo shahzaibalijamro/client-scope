@@ -7,6 +7,9 @@ const serverEnvironmentSchema = z.object({
     .url("BACKEND_API_ORIGIN must be an absolute URL.")
     .refine((value) => value.startsWith("http://") || value.startsWith("https://"), {
       message: "BACKEND_API_ORIGIN must use http or https.",
+    })
+    .refine((value) => new URL(value).origin === value, {
+      message: "BACKEND_API_ORIGIN must be an origin without a path, query, or trailing slash.",
     }),
 });
 
@@ -20,7 +23,7 @@ function readBackendOrigin(): string {
     throw new Error(`Invalid frontend configuration: ${problems}`);
   }
 
-  return result.data.BACKEND_API_ORIGIN.replace(/\/$/, "");
+  return result.data.BACKEND_API_ORIGIN;
 }
 
 const nextConfig: NextConfig = {

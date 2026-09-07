@@ -29,6 +29,7 @@ const accountTokenSchema = new Schema(
     type: { type: String, enum: ["verification", "password-reset"], required: true },
     tokenHash: { type: String, required: true, unique: true, index: true },
     expiresAt: { type: Date, required: true },
+    active: { type: Boolean, required: true, default: true },
     consumedAt: { type: Date },
     replacedAt: { type: Date },
   },
@@ -36,7 +37,7 @@ const accountTokenSchema = new Schema(
 );
 accountTokenSchema.index(
   { userId: 1, type: 1 },
-  { unique: true, partialFilterExpression: { consumedAt: { $exists: false }, replacedAt: { $exists: false } } },
+  { unique: true, partialFilterExpression: { active: true } },
 );
 
 const workspaceSchema = new Schema(
@@ -72,6 +73,7 @@ const clientSchema = new Schema(
     companyName: { type: String },
     primaryContactEmail: { type: String },
     internalNotes: { type: String },
+    projectCount: { type: Number, required: true, default: 0, min: 0 },
   },
   timestamps,
 );
@@ -105,6 +107,22 @@ projectAssignmentSchema.index(
   { unique: true, partialFilterExpression: { status: "active" } },
 );
 
+const effectiveProjectAccessSchema = new Schema(
+  {
+    workspaceId: { type: Schema.Types.ObjectId, required: true, index: true },
+    projectId: { type: Schema.Types.ObjectId, required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, required: true, index: true },
+    role: {
+      type: String,
+      enum: ["service-team-member", "client-participant", "client-approver"],
+      required: true,
+    },
+    sourceId: { type: Schema.Types.ObjectId, required: true },
+  },
+  timestamps,
+);
+effectiveProjectAccessSchema.index({ projectId: 1, userId: 1 }, { unique: true });
+
 const clientMembershipSchema = new Schema(
   {
     workspaceId: { type: Schema.Types.ObjectId, required: true, index: true },
@@ -115,7 +133,7 @@ const clientMembershipSchema = new Schema(
     startedAt: { type: Date, required: true },
     endedAt: { type: Date },
     endedBy: { type: Schema.Types.ObjectId },
-    endReason: { type: String, enum: ["removed", "left"] },
+    endReason: { type: String, enum: ["removed", "left", "role-changed"] },
   },
   timestamps,
 );
@@ -146,7 +164,7 @@ const invitationSchema = new Schema(
     revokedAt: { type: Date },
     revokedBy: { type: Schema.Types.ObjectId },
     replacedBy: { type: Schema.Types.ObjectId },
-    deliveryStatus: { type: String, enum: ["sent", "failed"], required: true },
+    deliveryStatus: { type: String, enum: ["pending", "sent", "failed"], required: true },
   },
   timestamps,
 );
@@ -192,6 +210,7 @@ export const WorkspaceMembership = domainModel<InferSchemaType<typeof workspaceM
 export const Client = domainModel<InferSchemaType<typeof clientSchema>>("Client", clientSchema);
 export const Project = domainModel<InferSchemaType<typeof projectSchema>>("Project", projectSchema);
 export const ProjectAssignment = domainModel<InferSchemaType<typeof projectAssignmentSchema>>("ProjectAssignment", projectAssignmentSchema);
+export const EffectiveProjectAccess = domainModel<InferSchemaType<typeof effectiveProjectAccessSchema>>("EffectiveProjectAccess", effectiveProjectAccessSchema);
 export const ClientMembership = domainModel<InferSchemaType<typeof clientMembershipSchema>>("ClientMembership", clientMembershipSchema);
 export const Invitation = domainModel<InferSchemaType<typeof invitationSchema>>("Invitation", invitationSchema);
 export const Activity = domainModel<InferSchemaType<typeof activitySchema>>("Activity", activitySchema);
@@ -201,7 +220,7 @@ export async function syncDomainIndexes(): Promise<void> {
   await Promise.all([
     User.syncIndexes(), Session.syncIndexes(), AccountToken.syncIndexes(), Workspace.syncIndexes(),
     WorkspaceMembership.syncIndexes(), Client.syncIndexes(), Project.syncIndexes(),
-    ProjectAssignment.syncIndexes(), ClientMembership.syncIndexes(), Invitation.syncIndexes(),
+    ProjectAssignment.syncIndexes(), EffectiveProjectAccess.syncIndexes(), ClientMembership.syncIndexes(), Invitation.syncIndexes(),
     Activity.syncIndexes(), Throttle.syncIndexes(),
   ]);
 }
