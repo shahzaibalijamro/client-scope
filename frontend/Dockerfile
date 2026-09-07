@@ -11,6 +11,7 @@ ARG BACKEND_API_ORIGIN=http://backend:4000
 ENV BACKEND_API_ORIGIN=${BACKEND_API_ORIGIN}
 
 COPY app ./app
+COPY test ./test
 COPY next.config.ts next-env.d.ts postcss.config.mjs tsconfig.json ./
 RUN npm run build
 
