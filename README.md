@@ -8,7 +8,9 @@ ClientScope is a spec-driven application for keeping client scope, reviews, deci
 - npm 11.19.0 as bundled with Node.js 24.20.0
 - MongoDB 8-compatible local replica set or a developer-owned MongoDB Atlas database for normal local development
 
-The frontend and backend are independent applications. Run their commands from their own directories and start them in separate terminals. There is intentionally no root workspace or combined launcher.
+The frontend and backend are independent applications. Their package commands run from their own directories, normally in separate terminals. There is intentionally no root npm workspace or combined package script; the pending Compose path is infrastructure orchestration and does not replace those application boundaries.
+
+Phase 0 has been reopened by an approved delivery amendment. Its pending implementation adds production-oriented Dockerfiles, app-only Compose orchestration, container verification in CI, and CI-gated Vercel and Northflank production delivery without changing the applications' independent package boundaries.
 
 ## First-time setup
 
@@ -93,6 +95,16 @@ Playwright starts a disposable MongoDB replica set plus local backend and fronte
 - If the frontend cannot reach Express, receives another HTTP failure, or receives malformed success data, it shows the same non-technical unavailable state. There is no automatic or manual retry; refresh the page to check again.
 - Builds do not contact Atlas. The frontend build still needs a syntactically valid `BACKEND_API_ORIGIN`; the local environment example or the safe CI placeholder supplies it.
 
+## Container and production delivery contract
+
+The approved Phase 0 amendment defines the following implementation target; these capabilities remain pending until its validation evidence is recorded:
+
+- A root Compose configuration runs the frontend and backend images together. It receives an external `MONGODB_URI` and does not create a MongoDB container.
+- Pull requests and pushes to `main` run the complete GitHub `CI gate`: both applications' lint, typecheck, tests, and production builds; the critical Playwright journeys; both Docker builds; and a backend-image smoke test.
+- Pull requests do not publish or deploy images. A successful `main` run publishes only the private backend image at `ghcr.io/<owner>/clientscope-backend:<full-github.sha>`; no moving tag or frontend production image is published.
+- Northflank deploys that exact GHCR artifact and does not rebuild from the repository. Deployment automation verifies the image tag, readiness, and public health endpoint while preserving the current healthy release if the candidate fails.
+- Vercel continues to build `frontend/` natively. Its production candidate is promoted only after the complete GitHub `CI gate` passes, and it never uses the frontend Dockerfile.
+
 ## Specification workflow
 
 Feature work follows this lifecycle:
@@ -101,4 +113,4 @@ Feature work follows this lifecycle:
 
 Start future feature documents from the lightweight [`specs/_template/`](specs/_template/) prompts. Product behavior must be approved before implementation, and material ambiguities return to the specification.
 
-The focused Playwright journeys run locally and in CI. Live Gmail SMTP and production-like browser-cookie inspection require an approved acceptance environment. Live Vercel and Koyeb deployment remains deferred until Phase 3.
+The focused Playwright journeys run locally and in CI. Live Gmail SMTP and production-like browser-cookie inspection require an approved acceptance environment. Initial live Vercel and Northflank delivery now belongs to the reopened Phase 0 amendment; Phase 3 retains final deployment hardening, demo readiness, and portfolio presentation.

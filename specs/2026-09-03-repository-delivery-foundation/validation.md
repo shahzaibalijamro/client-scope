@@ -177,3 +177,76 @@ Phase 0 is safe to merge only when:
 7. CI passes all required checks and performs no deployment.
 8. README and template documentation are accurate and usable.
 9. The implementation has been reviewed against `mission.md`, `tech-stack.md`, `roadmap.md`, and this approved specification.
+
+## 2026-09-08 Amendment Validation — Pending
+
+### Status and relationship to prior evidence
+
+The evidence above remains the truthful record of the original Phase 0 implementation. The approved containerized CI/CD amendment supersedes its no-Docker and no-deployment constraints for future work; it does not retroactively change what was tested in 2026-09-04.
+
+Phase 0 is reopened and remains In Progress until the checks below have recorded evidence. Historical statements that CI had no deployment step or required no provider credential describe the earlier implementation only and are not current acceptance requirements.
+
+| Amendment check | Required evidence | Result |
+| --- | --- | --- |
+| Container builds | Clean backend and frontend image builds from their application contexts | Pending |
+| Backend image smoke test | Production image starts with safe ephemeral configuration and `GET /api/v1/health` returns the approved healthy response | Pending |
+| App-only Compose | Frontend and backend run together against an externally supplied MongoDB; no database service is defined | Pending |
+| Pull-request gate | All application, browser, and container checks run; no package publication or provider deployment occurs | Pending |
+| Protected `main` | Branch rules require the stable `CI gate` and a controlled failing check blocks merging and delivery | Pending |
+| GHCR publication | One private backend package tag exactly matches the full successful `github.sha`; no moving or frontend tag exists | Pending |
+| Northflank deployment | The service selects the matching GHCR image without a source build, becomes ready, and passes the public health check | Pending |
+| Failed rollout | An unhealthy candidate fails visibly while the prior healthy SHA remains serving | Pending |
+| Deployment concurrency | A newer eligible run prevents an older superseded SHA from becoming final production | Pending |
+| Vercel promotion | Native Next.js build waits on the complete GitHub gate before production-domain promotion | Pending |
+| Secret and bypass review | No secret leakage or independent Northflank repository deployment path is present | Pending |
+
+### Container and Compose checks
+
+- Build both images from a clean checkout with no local environment file inside either build context.
+- Inspect runtime users, contents, configuration, layers, history, and metadata for development-only dependencies, secrets, and unnecessary artifacts.
+- Start the backend production image with safe runtime values and an ephemeral MongoDB; require a bounded readiness wait followed by an exact healthy response.
+- Confirm backend shutdown completes through the application's normal signal handling.
+- Run the root Compose configuration with an external test MongoDB URI and confirm the frontend reaches Express through internal service networking and the browser uses the same-origin `/api` boundary.
+- Confirm Compose defines no MongoDB service, commits no credentials, and does not alter the independent application install/start workflow.
+
+### GitHub Actions checks
+
+- A pull request runs frontend and backend lint, typecheck, tests, and production builds; the critical Playwright journeys; both Docker builds; and the backend-container smoke test.
+- The stable `CI gate` is reported for every required run and fails when any dependency fails, is cancelled, or does not run.
+- Pull-request jobs have no effective package-write permission and do not read Northflank or production credentials.
+- Pushes to branches other than `main` are not required to run the workflow; pushes to `main` run the same verification before publication or deployment.
+- A controlled failure in each job category blocks GHCR publication, the Northflank update, and Vercel promotion.
+- The `main` ruleset requires a pull request and the stable `CI gate` before merge.
+
+### GHCR and Northflank checks
+
+- Confirm the backend image pushed after a successful `main` run is the same image that passed the container smoke test.
+- Confirm the private GHCR package has only the full commit-SHA tag for the release under test and that no frontend package was pushed.
+- Confirm Northflank pulls the image using saved registry credentials and that its deployment source has no linked build service or repository-triggered automatic path.
+- Confirm the deployed service configuration names `ghcr.io/<owner>/clientscope-backend:<full-github.sha>` exactly.
+- Wait for Northflank readiness and then require the public `GET /api/v1/health` endpoint to return `200` with the approved safe body.
+- Deploy a controlled unhealthy candidate and confirm it fails without replacing the last healthy release.
+- Start overlapping controlled releases and confirm the newest eligible commit is the final deployed SHA.
+- Inspect GitHub and Northflank logs to ensure API tokens, registry credentials, runtime secrets, and sensitive environment values are redacted.
+
+### Vercel checks
+
+- Confirm the Git-connected Vercel project uses `frontend/` as its root and `main` as its production branch.
+- Confirm its selected GitHub Deployment Check is the stable complete `CI gate`, not a frontend-only subset.
+- Observe a production candidate build while CI is pending and confirm it is not assigned to the production domain.
+- Confirm a failed gate leaves the prior deployment current and a successful gate promotes the matching commit automatically.
+- Confirm Vercel builds Next.js natively and no frontend container registry or Docker deployment path is configured.
+
+### Amendment completion gate
+
+Phase 0 returns to Complete only when:
+
+1. Every amendment acceptance criterion in `requirements.md` has passing evidence in this section.
+2. The original application checks and current critical browser journeys still pass.
+3. Both Dockerfiles and the app-only Compose path are reproducible from a clean checkout.
+4. Pull requests cannot publish or deploy, and the protected `main` gate blocks both production paths on any required failure.
+5. The backend image tested by CI, published under the full commit SHA, and deployed by Northflank is demonstrably the same artifact.
+6. Failed backend candidates preserve the current healthy release, and newest-wins concurrency is demonstrated.
+7. Vercel promotion is demonstrably held by the complete GitHub gate.
+8. Provider configuration, tracked files, image metadata, and logs contain no exposed secret or bypass deployment path.
+9. The README, technology stack, roadmap, and this specification accurately describe the implemented delivery system.

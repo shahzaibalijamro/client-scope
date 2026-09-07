@@ -1,7 +1,11 @@
 # Phase 0: Repository and Delivery Foundation Requirements
 
-**Status:** Approved  
+**Status:** Approved; implementation reopened by the approved delivery amendment
+
 **Approved:** 2026-09-03  
+
+**Amended:** 2026-09-08
+
 **Roadmap scope:** Phase 0 — Repository and Delivery Foundation
 
 ## Purpose
@@ -234,3 +238,93 @@ The template must guide consistent thinking without prescribing unnecessary sect
 15. The README documents independent local startup, environment setup, verification commands, and the concise spec-driven lifecycle, and links to the minimal three-file template.
 16. The repository contains no committed secret, generated build output, test database artifact, or local environment file.
 17. No authentication, domain workflow, product shell, Playwright suite, live deployment configuration, or unrelated infrastructure is introduced.
+
+## Approved 2026-09-08 Amendment — Containerized CI/CD
+
+### Amendment authority and status
+
+This amendment reopens Phase 0 until the container and production-delivery outcomes below are implemented and validated. The original Phase 0 requirements and evidence remain the historical record of the repository foundation completed before Slice 1.1.
+
+Where the original specification conflicts with this amendment, this amendment takes precedence. In particular, it supersedes:
+
+- The exclusions of Docker, repository-level application orchestration, Playwright in CI, and live Vercel/backend deployment.
+- The statement that deployment is deferred entirely until Phase 3.
+- The requirement that CI contain no deployment action or provider credentials.
+- The final acceptance criterion prohibiting live deployment configuration.
+
+No other original product behavior or boundary is changed.
+
+### Amended desired outcome
+
+A developer can continue to run and verify the applications independently, and can also build and run both production-oriented images together through an app-only Compose configuration using an externally supplied MongoDB connection. Pull requests and `main` are protected by one complete GitHub Actions gate. A successful `main` gate deploys the exact backend image it validated to Northflank and allows Vercel's native frontend build to promote, without either provider bypassing the gate.
+
+### Container and local orchestration requirements
+
+1. `frontend/Dockerfile` and `backend/Dockerfile` are production-oriented, deterministic, multi-stage builds using the repository-pinned Node.js release and each application's lockfile.
+2. Runtime images contain only the files and dependencies required to run the built application, run as a non-root user, expose the documented application port, and handle normal termination through the existing application lifecycle.
+3. Build contexts exclude dependencies, build outputs, local environments, logs, test artifacts, and other unnecessary or sensitive files.
+4. The backend image runs the compiled Express application. CI starts it with safe test configuration and a reachable ephemeral MongoDB, then requires `GET /api/v1/health` to return the approved healthy response.
+5. The frontend image is continuously build-verified for portability and local infrastructure. It is not pushed to a production registry and is not used by Vercel.
+6. A root Compose configuration builds and runs only the `frontend` and `backend` services. It uses internal service networking for the frontend's server-side API proxy and exposes the frontend for host-browser access.
+7. Compose receives backend secrets and `MONGODB_URI` from ignored external environment configuration. It does not contain credentials, create a MongoDB service, introduce a root npm workspace, or replace the independent application commands.
+
+### GitHub Actions gate
+
+1. The workflow runs for pull requests and pushes to `main`; other branch pushes are not a required trigger.
+2. A stable check named `CI gate` is required by the `main` branch ruleset. Merging requires the pull request and this check to pass.
+3. The gate fails unless all of the following succeed for the same commit:
+   - Frontend lint, typecheck, automated tests, and production build.
+   - Backend lint, typecheck, automated tests, and production build.
+   - The committed critical Playwright browser journeys.
+   - Docker builds for both applications.
+   - A runtime smoke test of the backend image against an ephemeral MongoDB.
+4. Pull-request runs never authenticate to GHCR, publish an image, use deployment-provider credentials, or invoke Northflank or Vercel production actions.
+5. Application tests and builds continue to require no Atlas, Cloudinary, Gmail SMTP, Gemini, Vercel, Northflank, or private-registry credentials.
+
+### Backend artifact publication and Northflank delivery
+
+1. After all required verification succeeds on `main`, GitHub Actions publishes the already validated backend image to the private package `ghcr.io/<owner>/clientscope-backend:<full-github.sha>`.
+2. The full commit SHA is the only published tag. `latest`, `main`, or another moving production tag is not published or used.
+3. The frontend image is never published as part of this production flow.
+4. GitHub Actions directs the existing Northflank deployment service to the exact GHCR SHA tag. Northflank uses saved private-registry credentials to pull it.
+5. The Northflank service has no linked build service or repository-triggered automatic build/deployment path. Northflank must not rebuild the source for this release.
+6. Deployment automation verifies that Northflank selected the expected image tag, waits for the candidate to become ready, and then verifies the public health endpoint.
+7. An unhealthy candidate must not displace the last healthy backend release. A failed deployment makes the deployment job fail visibly while the prior healthy SHA continues serving traffic.
+8. Production delivery uses newest-wins concurrency. When a newer eligible `main` commit supersedes an older in-progress release, the older run is cancelled or otherwise prevented from becoming the final production version.
+
+### Vercel delivery
+
+1. Vercel remains connected to the repository with `frontend/` as the project root and `main` as the production branch.
+2. Vercel builds Next.js natively. It does not consume a Docker image or depend on the frontend Dockerfile.
+3. Vercel may build the `main` production candidate in parallel with GitHub Actions, but automatic assignment to the production domain is blocked by the complete GitHub `CI gate`.
+4. A failed or incomplete gate leaves the current production deployment assigned. A successful gate allows Vercel to promote the corresponding commit automatically.
+
+### Credentials and configuration
+
+1. The workflow grants `packages: write` only where the successful `main` publication needs it; other jobs retain read-only repository access.
+2. GitHub's workflow token authenticates the GHCR push. Northflank API credentials are stored as GitHub Actions secrets and limited to the deployment update permissions required by the integration.
+3. Non-secret Northflank project, service, and registry-credential identifiers may be GitHub Actions variables. Northflank stores the credential needed to pull the private GHCR package.
+4. Vercel, Northflank, GHCR, Atlas, email, session, and application secrets never enter tracked files, Docker build layers, image metadata, build output, or public logs.
+
+### Amendment exclusions
+
+- A MongoDB container or other bundled database.
+- Required frontend or backend preview environments for pull requests.
+- Publishing the frontend image or deploying it to Vercel.
+- Northflank source builds, buildpacks, or repository-triggered deployments.
+- Moving backend image tags or a second production registry.
+- Kubernetes manifests, a self-hosted runner, a root npm workspace, shared packages, or additional monorepo tooling.
+- Enterprise-scale observability, multi-region delivery, canary infrastructure, or a broader release platform.
+
+### Amendment acceptance criteria
+
+18. A clean checkout can build both production-oriented images and use the documented Compose command to run the frontend and backend against an externally supplied MongoDB without a bundled database.
+19. The backend image smoke test proves the compiled production server reaches the approved healthy response with safe ephemeral configuration; the frontend image builds successfully without being published.
+20. Pull requests run the complete required suite and cannot publish an image or contact either production deployment provider.
+21. `main` is protected by the stable `CI gate`, and a controlled failure in any required application, browser, container-build, or backend-smoke check blocks both production paths.
+22. A successful `main` gate publishes exactly one private backend image tag containing the full commit SHA and publishes no moving tag or frontend image.
+23. Northflank deploys that exact GHCR image without a source rebuild, and validation confirms both the selected SHA tag and a healthy public endpoint.
+24. A failed backend candidate leaves the previous healthy SHA serving, and overlapping runs cannot leave an older superseded SHA as the final production version.
+25. Vercel builds the frontend natively and promotes the matching `main` candidate only after the complete GitHub gate succeeds; failure leaves the prior production deployment current.
+26. Repository and provider inspection finds no committed credential, secret-bearing image layer or metadata, unsafe log output, or deployment path that bypasses GitHub Actions.
+27. Phase 0 validation records successful hosted GitHub, GHCR, Northflank, Vercel, and local Compose evidence before the roadmap status returns to Complete.
