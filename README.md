@@ -7,10 +7,9 @@ ClientScope is a spec-driven application for keeping client scope, reviews, deci
 - Node.js 24.20.0 (the active LTS release pinned in `.nvmrc` and `.node-version`)
 - npm 11.19.0 as bundled with Node.js 24.20.0
 - MongoDB 8-compatible local replica set or a developer-owned MongoDB Atlas database for normal local development
+- Docker Engine and Docker Compose v2 for the container and local-infrastructure path
 
-The frontend and backend are independent applications. Their package commands run from their own directories, normally in separate terminals. There is intentionally no root npm workspace or combined package script; the pending Compose path is infrastructure orchestration and does not replace those application boundaries.
-
-Phase 0 has been reopened by an approved delivery amendment. Its pending implementation adds production-oriented Dockerfiles, app-only Compose orchestration, container verification in CI, and CI-gated Vercel and Northflank production delivery without changing the applications' independent package boundaries.
+The frontend and backend are independent applications. Their package commands run from their own directories, normally in separate terminals. There is intentionally no root npm workspace or combined package script. Compose is infrastructure orchestration and does not replace those application boundaries.
 
 ## First-time setup
 
@@ -95,15 +94,48 @@ Playwright starts a disposable MongoDB replica set plus local backend and fronte
 - If the frontend cannot reach Express, receives another HTTP failure, or receives malformed success data, it shows the same non-technical unavailable state. There is no automatic or manual retry; refresh the page to check again.
 - Builds do not contact Atlas. The frontend build still needs a syntactically valid `BACKEND_API_ORIGIN`; the local environment example or the safe CI placeholder supplies it.
 
-## Container and production delivery contract
+## Run the production images locally
 
-The approved Phase 0 amendment defines the following implementation target; these capabilities remain pending until its validation evidence is recorded:
+Copy `compose.env.example` to the ignored `compose.env` file and replace its placeholders. `MONGODB_URI` must reach an external MongoDB instance from Docker; Compose intentionally does not create a database container.
 
-- A root Compose configuration runs the frontend and backend images together. It receives an external `MONGODB_URI` and does not create a MongoDB container.
-- Pull requests and pushes to `main` run the complete GitHub `CI gate`: both applications' lint, typecheck, tests, and production builds; the critical Playwright journeys; both Docker builds; and a backend-image smoke test.
-- Pull requests do not publish or deploy images. A successful `main` run publishes only the private backend image at `ghcr.io/<owner>/clientscope-backend:<full-github.sha>`; no moving tag or frontend production image is published.
-- Northflank deploys that exact GHCR artifact and does not rebuild from the repository. Deployment automation verifies the image tag, readiness, and public health endpoint while preserving the current healthy release if the candidate fails.
-- Vercel continues to build `frontend/` natively. Its production candidate is promoted only after the complete GitHub `CI gate` passes, and it never uses the frontend Dockerfile.
+Build either image independently from the repository root:
+
+```text
+docker build --tag clientscope-backend:local ./backend
+docker build --build-arg BACKEND_API_ORIGIN=http://backend:4000 --tag clientscope-frontend:local ./frontend
+```
+
+Or build and run both applications together:
+
+```text
+docker compose --env-file compose.env up --build --wait
+docker compose --env-file compose.env logs --follow
+docker compose --env-file compose.env down
+```
+
+Open `http://localhost:3000`. The browser continues to use same-origin `/api` paths, while the containerized Next.js server routes them to `http://backend:4000` on the internal Compose network. Only the frontend port is published to the host. To inspect a failed startup, omit `--wait`, run the logs command, and correct the external configuration without putting credentials in tracked files or image build arguments.
+
+The application-local Dockerfiles are deterministic multi-stage builds based on Node.js 24.20.0. Both runtime images run without root privileges. The frontend image is a portability/local-infrastructure artifact; Vercel does not use it.
+
+## Production delivery configuration
+
+The GitHub workflow reports a stable `CI gate` for pull requests and pushes to `main`. Protect `main` with a repository ruleset that requires a pull request and that exact check. Pull requests have read-only repository permissions and cannot publish or deploy.
+
+After a successful `main` gate, the workflow publishes only `ghcr.io/<owner>/clientscope-backend:<full-commit-sha>` to GHCR, then deploys that exact artifact. Keep the package private and grant Northflank's saved registry credential read access. Configure these GitHub values:
+
+| Kind | Name | Purpose |
+| --- | --- | --- |
+| Secret | `NORTHFLANK_API_KEY` | Least-privilege Northflank service deployment/read token |
+| Variable | `NORTHFLANK_PROJECT_ID` | Existing Northflank project ID |
+| Variable | `NORTHFLANK_SERVICE_ID` | Existing deployment-service ID |
+| Variable | `NORTHFLANK_REGISTRY_CREDENTIALS_ID` | Saved private-GHCR credential ID |
+| Variable | `BACKEND_PUBLIC_URL` | Public backend origin, without the health path |
+
+The Northflank target must be a deployment service, not a combined/build service. For the initial bootstrap, select Northflank as the deployment source and leave the linked build service blank; the GitHub Action changes the service to the exact external GHCR image after `CI gate` succeeds. Do not link a repository or build service and leave provider CI/CD disabled. Configure an HTTP readiness probe for port `4000` and `/api/v1/health`; Northflank then keeps the old container serving until the candidate is ready. Before deployment the workflow requires the blank service and readiness control, and after deployment it requires the expected registry credential, exact image, completed rollout, and public health body. It also cancels an older in-progress deployment job when a newer eligible commit arrives.
+
+Connect Vercel directly to this repository with `frontend/` as the project root and `main` as the production branch. Configure the stable GitHub `CI gate` as the project's required deployment check so Vercel can build a candidate natively but cannot assign it to the production domain until the full gate succeeds. Do not configure a frontend container registry or Docker deployment.
+
+Provider credentials, GHCR privacy and pull access, the GitHub ruleset, Northflank rollout behavior, and the Vercel deployment check are external settings. Phase 0 remains In Progress until the live checks in the amendment validation record are completed.
 
 ## Specification workflow
 

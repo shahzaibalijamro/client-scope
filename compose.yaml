@@ -1,0 +1,39 @@
+name: clientscope
+
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      NODE_ENV: ${NODE_ENV:?Set NODE_ENV in compose.env}
+      PORT: "4000"
+      MONGODB_URI: ${MONGODB_URI:?Set MONGODB_URI in compose.env}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?Set FRONTEND_ORIGIN in compose.env}
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in compose.env}
+      AUTH_THROTTLE_LIMIT: ${AUTH_THROTTLE_LIMIT:?Set AUTH_THROTTLE_LIMIT in compose.env}
+      EMAIL_DELIVERY_MODE: ${EMAIL_DELIVERY_MODE:?Set EMAIL_DELIVERY_MODE in compose.env}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-ClientScope}
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:4000/api/v1/health').then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1));"
+      interval: 10s
+      timeout: 3s
+      start_period: 15s
+      retries: 6
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_API_ORIGIN: http://backend:4000
+    environment:
+      BACKEND_API_ORIGIN: http://backend:4000
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "3000:3000"

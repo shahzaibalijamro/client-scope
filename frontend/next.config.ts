@@ -28,6 +28,7 @@ function readBackendOrigin(): string {
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  output: "standalone",
   async rewrites() {
     const backendOrigin = readBackendOrigin();
 
