@@ -74,6 +74,8 @@ Phase 1 proves that ClientScope is valuable without AI. AI integration must not 
 
 ### Slice 1.1 — Identity, workspaces, and project access
 
+**Status:** Complete
+
 Outcome: a provider can enter the product, establish a workspace, create a client and project, grant appropriate access, and see that backend-enforced membership boundaries work.
 
 The slice establishes the global-user and multi-workspace membership model, the initial service-side and client-side authority levels, and the project context needed by all later workflows. It also introduces the transactional invitation capability and the minimum in-app view of accessible work.

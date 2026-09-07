@@ -25,15 +25,15 @@ During implementation, replace `Pending` with the actual command, environment ca
 
 | Check | Evidence | Result |
 | --- | --- | --- |
-| Backend typecheck/lint/unit/integration | Pending | Pending |
-| Frontend typecheck/lint/component tests | Pending | Pending |
-| Production builds | Pending | Pending |
-| Focused Playwright journeys | Pending | Pending |
-| Tenant-isolation and revocation review | Pending | Pending |
-| Gmail SMTP/Nodemailer boundary and failure checks | Pending | Pending |
-| Responsive/accessibility review | Pending | Pending |
-| Cookie/CSRF/token/privacy inspection | Pending | Pending |
-| Hosted CI run | Pending | Pending |
+| Backend typecheck/lint/unit/integration | Typecheck, lint, build, and 50 tests across five files passed locally. | Pass |
+| Frontend typecheck/lint/component tests | Typecheck, lint, build, and 17 tests across three files passed locally. | Pass |
+| Production builds | Independent backend and frontend production builds passed locally. | Pass |
+| Focused Playwright journeys | All three isolated Chromium journeys passed locally. | Pass |
+| Tenant-isolation and revocation review | API and browser coverage exercised two-workspace/two-project isolation, stale-session revocation, role conflicts, and retained history. | Pass |
+| Gmail SMTP/Nodemailer boundary and failure checks | Approved disposable live run on 2026-09-08: Gmail accepted 12 messages across all seven categories; deterministic failure coverage also passed. | Pass |
+| Responsive/accessibility review | Mobile client flow and confirmation-dialog focus entry, trap, Escape, and return behavior passed automated review. | Pass |
+| Cookie/CSRF/token/privacy inspection | Production-like cookie assertions, CSRF/origin rejection, token redaction, payload filtering, and tracked-file inspection passed. | Pass |
+| Hosted CI run | Repository owner confirmed the pushed GitHub Actions workflow completed successfully on 2026-09-08. | Pass |
 
 ## Automated Validation
 
@@ -316,11 +316,11 @@ Slice 1.1 is safe to merge only when:
 10. Documentation and environment examples are accurate, safe, and sufficient for another developer to run and validate the feature.
 11. The implementation has been reviewed against `mission.md`, `tech-stack.md`, `roadmap.md`, and this approved specification, with no later-slice behavior or excluded infrastructure added.
 
-## Implementation and Local Acceptance Evidence — 2026-09-07
+## Implementation and Acceptance Evidence — 2026-09-08
 
 The Slice 1.1 implementation includes the account/session boundary, verification and recovery lifecycles, workspace/client/project setup, invitation and access transitions, role-specific server projections, immutable access activity, transactional-email abstraction, authenticated frontend shell, `Your work`, owner setup/access surfaces, confirmation behavior, and the focused browser journeys.
 
-Evidence recorded from the current working tree:
+Evidence recorded from the implemented tree:
 
 - Backend type check, lint, and production build pass.
 - Frontend type check, lint, and production build pass.
@@ -333,9 +333,11 @@ Evidence recorded from the current working tree:
 - GitHub Actions now runs independent frontend/backend typecheck, lint, test, and build jobs plus the three isolated Playwright journeys; it contains no deployment step.
 - `README.md` and the environment examples document the two independent applications, validated origins/session configuration, Gmail App Password mode, isolated email-link mechanism, and exact Playwright commands.
 
-### Environment-only acceptance still requiring authorization
+### External acceptance completed — 2026-09-08
 
-- Live Gmail SMTP delivery was not attempted. The local backend environment is intentionally configured with `EMAIL_DELIVERY_MODE=local`; changing it and sending external messages requires explicit approval for the Gmail test environment and recipients. The adapter construction, fail-closed production configuration, deterministic provider behavior, provider exception handling, delivery-state persistence, and non-rollback warnings all pass locally.
-- Hosted GitHub Actions cannot validate uncommitted local changes. The complete equivalent command set passes locally and the workflow is configured; the hosted result must be confirmed after the changes are committed and pushed through the normal repository workflow.
+- With explicit approval, a disposable acceptance harness used the configured Gmail address and Google App Password through the production Nodemailer adapter. It restricted delivery to generated plus-address aliases of that same mailbox, disabled the test-email inspection route, used an ephemeral MongoDB replica set, and removed all test state afterward.
+- Gmail accepted 12 real messages: four verification messages (including replacement), one password-reset message, one duplicate-signup message, two invitations (workspace and project), one assignment notification, one role-change notification, and two access-removal notifications. Both invitation responses recorded `sent` delivery state with no warning.
+- The live flow also verified 24-hour verification, one-hour reset, and three-day invitation lifetimes; replacement invalidation; reset single use; minimum link origins/content; and exclusion of the test password, Gmail App Password, and a private client-note marker from every message command. Credentials, recipient addresses, raw tokens, and provider payloads were not logged or recorded.
+- The repository owner confirmed that the pushed GitHub Actions workflow completed successfully. Hosted CI therefore covers the independent frontend/backend checks and the focused Playwright job.
 
-Accordingly, the implementation and locally available acceptance checks are complete, but the merge gate and authorization to begin Slice 1.2 remain open until the approved live-email check and hosted CI result are recorded or the specification owner approves those environment-specific substitutions.
+Accordingly, every Slice 1.1 implementation and acceptance gate is complete. The repository may proceed to the approved Slice 1.2 feature-specification phase.
