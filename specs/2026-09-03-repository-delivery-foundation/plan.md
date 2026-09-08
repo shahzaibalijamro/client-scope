@@ -111,7 +111,7 @@ The task groups below implement the approved amendment in `requirements.md`. The
 
 ## 13. Publish and deploy the backend artifact
 
-1. On a successful `main` gate, tag the already validated backend image only as `ghcr.io/<owner>/clientscope-backend:<full-github.sha>` and push it to a private GHCR package using narrowly scoped workflow permission.
+1. On a successful `main` gate, tag the already validated backend image only as `ghcr.io/<owner>/clientscope-backend:<full-github.sha>` and push it to a private GHCR package using the dedicated, narrowly scoped `GHCR_PUBLISH_TOKEN` secret.
 2. Configure the Northflank deployment service to pull from GHCR using stored registry credentials, with no linked build service or repository-triggered build/deployment rule.
 3. Use a least-privilege Northflank API token from GitHub Actions to update the existing service to the exact SHA image.
 4. After the update, verify the configured image tag, wait for rollout readiness, and call the public health endpoint; surface failures in the workflow.
@@ -129,7 +129,8 @@ The task groups below implement the approved amendment in `requirements.md`. The
 
 1. Exercise pull-request and `main` behavior, including controlled failures at every gate category and proof that pull requests cannot publish or deploy.
 2. Record the immutable GHCR tag, matching Northflank service image, rollout result, public health result, and Vercel promotion result without recording credentials.
-3. Exercise an unhealthy backend candidate and overlapping `main` runs to prove previous-release preservation and newest-wins behavior.
-4. Run the documented Compose path against an external MongoDB and confirm same-origin browser-to-API behavior.
-5. Review tracked files, image history/metadata, workflow logs, and provider configuration for secrets and bypass paths.
-6. Update `validation.md` with evidence and return the roadmap status to Complete only after every amendment acceptance criterion passes.
+3. Inspect the Compose definition and documentation to confirm that it contains only the two application services and requires externally supplied MongoDB configuration.
+4. Review tracked files, image history/metadata, workflow logs, and provider configuration for secrets and bypass paths.
+5. Update `validation.md` with evidence and return the roadmap status to Complete only after every amendment acceptance criterion passes.
+
+The approved 2026-09-08 completion amendment removes the runtime Compose exercise, deliberate unhealthy-production-candidate exercise, and overlapping-production-run exercise from this completion plan. It does not remove the implemented Compose artifact, rollout-readiness controls, or newest-wins workflow concurrency.

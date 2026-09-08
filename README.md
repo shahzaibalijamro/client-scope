@@ -138,7 +138,7 @@ The Northflank target must be a deployment service, not a combined/build service
 
 Connect Vercel directly to this repository with `frontend/` as the project root and `main` as the production branch. Configure the stable GitHub `CI gate` as the project's required deployment check so Vercel can build a candidate natively but cannot assign it to the production domain until the full gate succeeds. Do not configure a frontend container registry or Docker deployment.
 
-Provider credentials, GHCR privacy and pull access, the GitHub ruleset, Northflank rollout behavior, and the Vercel deployment check are external settings. Phase 0 remains In Progress until the live checks in the amendment validation record are completed.
+Provider credentials, GHCR privacy and pull access, the GitHub ruleset, Northflank rollout behavior, and the Vercel deployment check are external settings. Phase 0 was completed on 2026-09-08 after the hosted gate, private immutable backend publication, exact-image Northflank deployment, public health check, and CI-gated Vercel promotion were validated. The approved completion amendment does not require a live Compose startup, an intentionally unhealthy production deployment, or overlapping production deployments.
 
 ## Specification workflow
 

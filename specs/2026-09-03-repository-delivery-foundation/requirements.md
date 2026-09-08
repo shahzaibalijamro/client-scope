@@ -1,10 +1,12 @@
 # Phase 0: Repository and Delivery Foundation Requirements
 
-**Status:** Approved; implementation reopened by the approved delivery amendment
+**Status:** Approved and Complete
 
 **Approved:** 2026-09-03  
 
 **Amended:** 2026-09-08
+
+**Completed:** 2026-09-08
 
 **Roadmap scope:** Phase 0 — Repository and Delivery Foundation
 
@@ -243,7 +245,7 @@ The template must guide consistent thinking without prescribing unnecessary sect
 
 ### Amendment authority and status
 
-This amendment reopens Phase 0 until the container and production-delivery outcomes below are implemented and validated. The original Phase 0 requirements and evidence remain the historical record of the repository foundation completed before Slice 1.1.
+This amendment reopened Phase 0 until the container and production-delivery outcomes below were implemented and validated. The original Phase 0 requirements and evidence remain the historical record of the repository foundation completed before Slice 1.1.
 
 Where the original specification conflicts with this amendment, this amendment takes precedence. In particular, it supersedes:
 
@@ -301,8 +303,8 @@ A developer can continue to run and verify the applications independently, and c
 
 ### Credentials and configuration
 
-1. The workflow grants `packages: write` only where the successful `main` publication needs it; other jobs retain read-only repository access.
-2. GitHub's workflow token authenticates the GHCR push. Northflank API credentials are stored as GitHub Actions secrets and limited to the deployment update permissions required by the integration.
+1. The workflow keeps `GITHUB_TOKEN` read-only. A dedicated classic PAT stored as `GHCR_PUBLISH_TOKEN`, limited to `write:packages` and `read:packages`, authenticates the successful `main` publication and privacy verification.
+2. Northflank API credentials are stored as GitHub Actions secrets and limited to the deployment update permissions required by the integration.
 3. Non-secret Northflank project, service, and registry-credential identifiers may be GitHub Actions variables. Northflank stores the credential needed to pull the private GHCR package.
 4. Vercel, Northflank, GHCR, Atlas, email, session, and application secrets never enter tracked files, Docker build layers, image metadata, build output, or public logs.
 
@@ -318,13 +320,14 @@ A developer can continue to run and verify the applications independently, and c
 
 ### Amendment acceptance criteria
 
-18. A clean checkout can build both production-oriented images and use the documented Compose command to run the frontend and backend against an externally supplied MongoDB without a bundled database.
+The approved 2026-09-08 completion amendment removes three live exercises from the Phase 0 completion gate: starting Compose against an external MongoDB, deliberately deploying an unhealthy production candidate, and creating overlapping eligible production deployments. The implemented Compose artifact, Northflank readiness controls, and newest-wins concurrency remain part of the delivery design; they do not require those live exercises for Phase 0 completion.
+
+18. A clean checkout can build both production-oriented images, and repository inspection confirms that Compose defines only the frontend and backend while requiring an externally supplied MongoDB URI.
 19. The backend image smoke test proves the compiled production server reaches the approved healthy response with safe ephemeral configuration; the frontend image builds successfully without being published.
 20. Pull requests run the complete required suite and cannot publish an image or contact either production deployment provider.
 21. `main` is protected by the stable `CI gate`, and a controlled failure in any required application, browser, container-build, or backend-smoke check blocks both production paths.
 22. A successful `main` gate publishes exactly one private backend image tag containing the full commit SHA and publishes no moving tag or frontend image.
 23. Northflank deploys that exact GHCR image without a source rebuild, and validation confirms both the selected SHA tag and a healthy public endpoint.
-24. A failed backend candidate leaves the previous healthy SHA serving, and overlapping runs cannot leave an older superseded SHA as the final production version.
-25. Vercel builds the frontend natively and promotes the matching `main` candidate only after the complete GitHub gate succeeds; failure leaves the prior production deployment current.
-26. Repository and provider inspection finds no committed credential, secret-bearing image layer or metadata, unsafe log output, or deployment path that bypasses GitHub Actions.
-27. Phase 0 validation records successful hosted GitHub, GHCR, Northflank, Vercel, and local Compose evidence before the roadmap status returns to Complete.
+24. Vercel builds the frontend natively and promotes the matching `main` candidate only after the complete GitHub gate succeeds; failure leaves the prior production deployment current.
+25. Repository and provider inspection finds no committed credential, secret-bearing image layer or metadata, unsafe log output, or deployment path that bypasses GitHub Actions.
+26. Phase 0 validation records successful hosted GitHub, GHCR, Northflank, and Vercel evidence plus inspection of the app-only Compose definition before the roadmap status returns to Complete.
