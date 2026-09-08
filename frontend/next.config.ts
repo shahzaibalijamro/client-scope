@@ -28,7 +28,7 @@ function readBackendOrigin(): string {
 
 const nextConfig: NextConfig = {
   agentRules: false,
-  output: "standalone",
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   async rewrites() {
     const backendOrigin = readBackendOrigin();
 

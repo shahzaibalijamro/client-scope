@@ -125,11 +125,14 @@ After a successful `main` gate, the workflow publishes only `ghcr.io/<owner>/cli
 
 | Kind | Name | Purpose |
 | --- | --- | --- |
+| Secret | `GHCR_PUBLISH_TOKEN` | Classic GitHub PAT owned by the package owner, limited to `write:packages` and `read:packages` |
 | Secret | `NORTHFLANK_API_KEY` | Least-privilege Northflank service deployment/read token |
 | Variable | `NORTHFLANK_PROJECT_ID` | Existing Northflank project ID |
 | Variable | `NORTHFLANK_SERVICE_ID` | Existing deployment-service ID |
 | Variable | `NORTHFLANK_REGISTRY_CREDENTIALS_ID` | Saved private-GHCR credential ID |
 | Variable | `BACKEND_PUBLIC_URL` | Public backend origin, without the health path |
+
+The dedicated GHCR publishing token prevents the package from inheriting the visibility of a public source repository. Do not grant it `repo` or `delete:packages`; store it only as an Actions secret and rotate it before expiration. The workflow verifies that GitHub reports the package as private before allowing deployment.
 
 The Northflank target must be a deployment service, not a combined/build service. Northflank requires an initial image when a deployment service is created in its current UI. For this one-time bootstrap, select **External image** and use `docker.io/library/node:24.20.0-bookworm-slim` without a registry integration. The placeholder is only used to create the service and is not a production release; it may remain unready because it does not serve the backend health endpoint. The first eligible GitHub deployment replaces it with the exact private GHCR image. Do not link a repository or build service, and leave provider CI/CD disabled. Configure an HTTP readiness probe for port `4000` and `/api/v1/health`; after the first healthy backend release, Northflank keeps that version serving until each subsequent candidate is ready. Before deployment the workflow requires a deployment service with no linked internal build and the readiness control, and after deployment it requires the expected registry credential, exact image, completed rollout, and public health body. It also cancels an older in-progress deployment job when a newer eligible commit arrives.
 
