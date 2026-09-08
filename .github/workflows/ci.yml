@@ -1,7 +1,9 @@
-name: Continuous integration
+name: Continuous integration and delivery
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 permissions:
@@ -106,3 +108,294 @@ jobs:
       - name: Run Slice 1.1 browser journeys
         working-directory: frontend
         run: npm run test:e2e
+
+  containers:
+    name: Container checks
+    needs:
+      - frontend
+      - backend
+      - e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build --tag "clientscope-backend:ci-${GITHUB_SHA}" ./backend
+
+      - name: Build frontend image
+        run: >-
+          docker build
+          --build-arg BACKEND_API_ORIGIN=http://backend:4000
+          --tag "clientscope-frontend:ci-${GITHUB_SHA}"
+          ./frontend
+
+      - name: Smoke test backend image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker network create clientscope-ci
+          docker run --detach \
+            --name clientscope-mongodb \
+            --network clientscope-ci \
+            mongo:8.0
+
+          for attempt in {1..30}; do
+            if docker exec clientscope-mongodb mongosh --quiet --eval \
+              "quit(db.adminCommand({ ping: 1 }).ok === 1 ? 0 : 1)"; then
+              break
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              echo "Ephemeral MongoDB did not become ready." >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+          docker run --detach \
+            --name clientscope-backend \
+            --network clientscope-ci \
+            --publish 127.0.0.1:4000:4000 \
+            --env NODE_ENV=test \
+            --env PORT=4000 \
+            --env MONGODB_URI=mongodb://clientscope-mongodb:27017/clientscope-ci \
+            --env FRONTEND_ORIGIN=http://localhost:3000 \
+            --env SESSION_SECRET=ci-only-session-secret-at-least-32-characters \
+            --env AUTH_THROTTLE_LIMIT=12 \
+            --env EMAIL_DELIVERY_MODE=local \
+            "clientscope-backend:ci-${GITHUB_SHA}"
+
+          for attempt in {1..30}; do
+            response="$(curl --silent --show-error --max-time 3 http://127.0.0.1:4000/api/v1/health || true)"
+            if jq --exit-status \
+              '. == {"status":"ok","database":"connected"}' \
+              <<<"$response" >/dev/null; then
+              exit 0
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              echo "Backend image did not return the approved health response." >&2
+              docker logs clientscope-backend
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Clean up smoke-test containers
+        if: ${{ always() }}
+        run: |
+          docker rm --force clientscope-backend clientscope-mongodb 2>/dev/null || true
+          docker network rm clientscope-ci 2>/dev/null || true
+
+      - name: Export validated backend image
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: docker save "clientscope-backend:ci-${GITHUB_SHA}" | gzip > "${RUNNER_TEMP}/clientscope-backend.tar.gz"
+
+      - name: Preserve validated backend image for publication
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: validated-backend-${{ github.sha }}
+          path: ${{ runner.temp }}/clientscope-backend.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  ci_gate:
+    name: CI gate
+    if: ${{ always() }}
+    needs:
+      - frontend
+      - backend
+      - e2e
+      - containers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every verification job
+        env:
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          CONTAINERS_RESULT: ${{ needs.containers.result }}
+        run: |
+          test "$FRONTEND_RESULT" = success
+          test "$BACKEND_RESULT" = success
+          test "$E2E_RESULT" = success
+          test "$CONTAINERS_RESULT" = success
+
+  publish_backend:
+    name: Publish immutable backend image
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci_gate.result == 'success' }}
+    needs:
+      - containers
+      - ci_gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Download validated backend image
+        uses: actions/download-artifact@v4
+        with:
+          name: validated-backend-${{ github.sha }}
+          path: ${{ runner.temp }}
+
+      - name: Load validated backend image
+        run: docker load --input "${RUNNER_TEMP}/clientscope-backend.tar.gz"
+
+      - name: Define immutable GHCR image
+        id: image
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          image="ghcr.io/${owner}/clientscope-backend:${GITHUB_SHA}"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish exact validated image
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          docker tag "clientscope-backend:ci-${GITHUB_SHA}" "$IMAGE"
+          docker push "$IMAGE"
+
+      - name: Require a private GHCR package
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          owner_type="$(gh api "/repos/${GITHUB_REPOSITORY}" --jq '.owner.type')"
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          if [[ "$owner_type" == "Organization" ]]; then
+            package_scope="orgs"
+          else
+            package_scope="users"
+          fi
+
+          visibility="$(gh api "/${package_scope}/${owner}/packages/container/clientscope-backend" --jq '.visibility')"
+          test "$visibility" = private
+
+  deploy_backend:
+    name: Deploy backend to Northflank
+    if: ${{ needs.publish_backend.result == 'success' }}
+    needs:
+      - publish_backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: production-backend
+      cancel-in-progress: true
+    env:
+      NORTHFLANK_API_URL: https://api.northflank.com/v1
+      NORTHFLANK_PROJECT_ID: ${{ vars.NORTHFLANK_PROJECT_ID }}
+      NORTHFLANK_SERVICE_ID: ${{ vars.NORTHFLANK_SERVICE_ID }}
+      NORTHFLANK_REGISTRY_CREDENTIALS_ID: ${{ vars.NORTHFLANK_REGISTRY_CREDENTIALS_ID }}
+      BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+      EXPECTED_IMAGE: ${{ needs.publish_backend.outputs.image }}
+    steps:
+      - name: Verify deployment service safety controls
+        shell: bash
+        env:
+          NORTHFLANK_API_KEY: ${{ secrets.NORTHFLANK_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          required_values=(
+            NORTHFLANK_API_KEY
+            NORTHFLANK_PROJECT_ID
+            NORTHFLANK_SERVICE_ID
+            NORTHFLANK_REGISTRY_CREDENTIALS_ID
+            BACKEND_PUBLIC_URL
+            EXPECTED_IMAGE
+          )
+          for name in "${required_values[@]}"; do
+            if [[ -z "${!name}" ]]; then
+              echo "Required deployment setting ${name} is missing." >&2
+              exit 1
+            fi
+          done
+
+          response="$(curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
+            --header "Authorization: Bearer ${NORTHFLANK_API_KEY}" \
+            "${NORTHFLANK_API_URL}/projects/${NORTHFLANK_PROJECT_ID}/services/${NORTHFLANK_SERVICE_ID}")"
+
+          jq --exit-status \
+            '.data.serviceType == "deployment" and
+             .data.deployment.internal == null and
+             any(.data.healthChecks[]?;
+               .type == "readinessProbe" and
+               .protocol == "HTTP" and
+               .path == "/api/v1/health" and
+               .port == 4000)' \
+            <<<"$response" >/dev/null
+
+      - name: Deploy exact GHCR image to Northflank
+        uses: northflank/deploy-to-northflank@v1
+        with:
+          northflank-api-key: ${{ secrets.NORTHFLANK_API_KEY }}
+          project-id: ${{ env.NORTHFLANK_PROJECT_ID }}
+          service-id: ${{ env.NORTHFLANK_SERVICE_ID }}
+          image-path: ${{ env.EXPECTED_IMAGE }}
+          credentials-id: ${{ env.NORTHFLANK_REGISTRY_CREDENTIALS_ID }}
+
+      - name: Verify selected image and rollout readiness
+        shell: bash
+        env:
+          NORTHFLANK_API_KEY: ${{ secrets.NORTHFLANK_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          for attempt in {1..90}; do
+            response="$(curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
+              --header "Authorization: Bearer ${NORTHFLANK_API_KEY}" \
+              "${NORTHFLANK_API_URL}/projects/${NORTHFLANK_PROJECT_ID}/services/${NORTHFLANK_SERVICE_ID}")"
+            image="$(jq --raw-output '.data.deployment.external.imagePath // empty' <<<"$response")"
+            credentials="$(jq --raw-output '.data.deployment.external.credentials // empty' <<<"$response")"
+            status="$(jq --raw-output '.data.status.deployment.status // empty' <<<"$response")"
+
+            if [[ "$image" == "$EXPECTED_IMAGE" &&
+                  "$credentials" == "$NORTHFLANK_REGISTRY_CREDENTIALS_ID" &&
+                  "$status" == "COMPLETED" ]]; then
+              break
+            fi
+            if [[ "$image" == "$EXPECTED_IMAGE" &&
+                  "$status" == "COMPLETED" &&
+                  "$credentials" != "$NORTHFLANK_REGISTRY_CREDENTIALS_ID" ]]; then
+              echo "Northflank selected the expected image with an unexpected registry credential." >&2
+              exit 1
+            fi
+            if [[ "$image" == "$EXPECTED_IMAGE" && "$status" == "FAILED" ]]; then
+              echo "Northflank reported a failed rollout for the expected image." >&2
+              exit 1
+            fi
+            if [[ "$attempt" == 90 ]]; then
+              echo "Northflank did not complete the expected image rollout in time." >&2
+              exit 1
+            fi
+            sleep 10
+          done
+
+          health_url="${BACKEND_PUBLIC_URL%/}/api/v1/health"
+          for attempt in {1..30}; do
+            response="$(curl --silent --show-error --connect-timeout 5 --max-time 10 "$health_url" || true)"
+            if jq --exit-status \
+              '. == {"status":"ok","database":"connected"}' \
+              <<<"$response" >/dev/null; then
+              exit 0
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              echo "The deployed backend did not return the approved health response." >&2
+              exit 1
+            fi
+            sleep 5
+          done

@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+.mongodb-memory-server
+.cache
+.env
+.env.*
+*.log
+*.pid
+*.pid.lock
+npm-debug.log*
+test-results
+playwright-report
+test
+eslint.config.mjs
+vitest.config.ts
+Dockerfile*

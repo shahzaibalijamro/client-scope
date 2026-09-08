@@ -122,12 +122,15 @@ Model selection, prompts, structured-output contracts, provider limits, error pr
 ### Hosting and delivery
 
 - **Vercel** hosts the Next.js frontend.
-- **Koyeb** hosts the Express backend.
+- **Northflank** hosts the Express backend from a private GitHub Container Registry image.
+- **GitHub Container Registry (GHCR)** stores backend production images tagged only with the full source commit SHA.
 - **MongoDB Atlas** hosts MongoDB.
 - **Cloudinary**, **Gmail SMTP**, and **Google Gemini** provide their respective managed capabilities.
-- **GitHub Actions** provides continuous integration.
+- **GitHub Actions** provides continuous integration and authorizes production delivery after the required gate succeeds.
 
-The deployment must be viable at free or effectively free portfolio/demo scale. Free-tier constraints are acceptable for a demonstration environment and are not represented as production-grade availability. Provider plans should be rechecked when deployment is implemented; changing commercial availability alone may require a constitution amendment if a locked provider is no longer viable.
+Both applications have production-oriented Dockerfiles. GitHub Actions builds both images, but only the backend image is published. Northflank deploys the exact backend image validated by CI and must not independently rebuild or deploy the repository. Vercel builds Next.js natively and never consumes the frontend image. A root Compose configuration may orchestrate the two applications for local infrastructure, but MongoDB remains external and the applications retain independent dependency and build boundaries.
+
+The deployment must be viable at free or effectively free portfolio/demo scale. Free-tier constraints are acceptable for a demonstration environment and are not represented as production-grade availability. Provider plans should be rechecked while the Phase 0 delivery amendment is implemented and during final release hardening; changing commercial availability alone may require a constitution amendment if a locked provider is no longer viable.
 
 ## Testing and Verification
 
@@ -150,16 +153,20 @@ Testing prioritizes risk and business correctness rather than an arbitrary cover
 
 Tests should be written at the lowest layer that proves the behavior reliably, with integration and end-to-end coverage reserved for boundaries and complete critical journeys.
 
-## Continuous Integration
+## Continuous Integration and Delivery
 
-GitHub Actions must run the repository's required checks on pushes and pull requests. The baseline CI gate includes:
+GitHub Actions must run the repository's required checks on pull requests and pushes to `main`. A stable `CI gate` is required for `main` and includes:
 
 - Type checking.
 - Linting.
 - Automated tests.
 - Production build verification for the frontend and backend applications.
+- Critical Playwright browser journeys.
+- Docker builds for both applications and a runtime smoke test of the backend image.
 
-Specific workflow files, caching, branch rules, and deployment automation are implementation decisions for the repository-foundation and delivery specifications.
+Pull requests never publish an image or invoke a deployment provider. After a successful `main` gate, GitHub Actions publishes the private backend image under its full commit SHA, directs Northflank to that exact tag, and verifies the rollout and public health endpoint. Failed candidates leave the previous healthy backend serving, and newest-wins concurrency prevents an older run from becoming the final production release.
+
+Vercel may build the production candidate in parallel through its native Git integration, but production-domain promotion waits for the complete GitHub `CI gate`. Specific workflow files, caching, credentials, branch rules, and rollout mechanics are implementation decisions governed by the repository-foundation delivery specification.
 
 ## Quality Principles
 

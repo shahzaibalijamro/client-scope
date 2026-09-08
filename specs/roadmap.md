@@ -53,9 +53,9 @@ All phases below are required for the portfolio-complete release. The order prot
 
 ## Phase 0 — Repository and Delivery Foundation
 
-**Status:** Complete
+**Status:** In Progress — reopened by the approved 2026-09-08 delivery amendment
 
-Establish only the cross-cutting foundation needed to deliver and verify the first vertical slice.
+Establish the cross-cutting foundation needed to deliver, verify, containerize, and safely deploy each vertical slice. The original repository foundation was completed before Slice 1.1; Phase 0 is reopened until the amended container and production-delivery outcomes are implemented and validated.
 
 Outcomes:
 
@@ -64,6 +64,13 @@ Outcomes:
 - The selected application, validation, database, and test tooling is operational.
 - Environment and configuration boundaries support local development and the selected hosted services.
 - Baseline error handling, validation, test commands, and GitHub Actions checks exist.
+- Production-oriented `frontend/Dockerfile` and `backend/Dockerfile` artifacts are maintained and built by CI. The backend image is smoke-tested; the frontend image is a portability and local-infrastructure artifact rather than part of the Vercel deployment path.
+- A root Compose configuration can run the frontend and backend together while MongoDB remains externally configured; Compose does not introduce a repository workspace, shared package, or bundled database.
+- Pull requests and pushes to `main` run a stable required `CI gate` covering frontend and backend linting, type checking, tests, production builds, critical browser journeys, both Docker builds, and the backend-container smoke test.
+- A successful `main` gate publishes only the private backend image `ghcr.io/<owner>/clientscope-backend:<full-github.sha>` and directs Northflank to deploy that exact immutable artifact without rebuilding it from the repository.
+- Northflank keeps the last healthy backend release serving until the candidate is ready, and production automation verifies the selected image tag, rollout readiness, and public health endpoint. Newer eligible commits supersede older in-progress releases.
+- Vercel builds the Next.js frontend natively and withholds production-domain promotion until the complete GitHub `CI gate` passes; no frontend image is published or used by Vercel.
+- The live Vercel and Northflank production paths are configured and exercised without committing provider or registry credentials.
 - A repeatable feature-specification and acceptance-validation workflow is documented.
 
 This phase is not permission to build every technical layer in advance. Foundations should remain minimal and expand through later slices.
@@ -147,11 +154,11 @@ Turn the complete product into a reliable, understandable portfolio artifact rat
 
 Required outcomes:
 
-- A publicly accessible deployment using Vercel, Koyeb, MongoDB Atlas, Cloudinary, Gmail SMTP through Nodemailer, and Gemini within free or effectively free demo constraints.
+- Continued reliability and final hardening of the Phase 0 production path using Vercel, Northflank, private GHCR images, MongoDB Atlas, Cloudinary, Gmail SMTP through Nodemailer, and Gemini within free or effectively free demo constraints.
 - A realistic seeded demo workspace that makes the product's value apparent without requiring a visitor to build a project from scratch.
 - Demo data that exercises agreed requirements, change control, milestones, multiple deliverable versions, feedback, approvals, pending decisions, and activity history.
 - Final verification of critical unit, API integration, UI behavior, and end-to-end tests.
-- Passing GitHub Actions checks for types, lint, tests, and builds.
+- Passing GitHub Actions checks for types, lint, tests, application builds, container verification, and critical browser journeys, with the deployed backend traceable to its immutable commit image.
 - Clear repository documentation covering the product, users, capabilities, local setup, environment variables, tests, architecture, and deployment.
 - Retention of the constitution and approved feature specifications in the repository to demonstrate the development method.
 - A concise architecture overview of frontend, API, database, authentication, file storage, email, and AI boundaries.
