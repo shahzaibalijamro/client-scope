@@ -53,9 +53,9 @@ All phases below are required for the portfolio-complete release. The order prot
 
 ## Phase 0 — Repository and Delivery Foundation
 
-**Status:** In Progress — reopened by the approved 2026-09-08 delivery amendment
+**Status:** Complete — delivery amendment validated 2026-09-08
 
-Establish the cross-cutting foundation needed to deliver, verify, containerize, and safely deploy each vertical slice. The original repository foundation was completed before Slice 1.1; Phase 0 is reopened until the amended container and production-delivery outcomes are implemented and validated.
+Establish the cross-cutting foundation needed to deliver, verify, containerize, and safely deploy each vertical slice. The original repository foundation was completed before Slice 1.1; the approved 2026-09-08 amendment added and validated the container and production-delivery outcomes.
 
 Outcomes:
 
