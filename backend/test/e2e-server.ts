@@ -21,7 +21,9 @@ const server = createApp().listen(4101, "127.0.0.1", () => {
 });
 
 async function close() {
-  await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  const closing = new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  server.closeAllConnections();
+  await closing;
   await mongoose.disconnect();
   await database.stop();
 }
