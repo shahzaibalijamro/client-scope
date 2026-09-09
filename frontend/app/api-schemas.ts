@@ -22,6 +22,11 @@ export const projectSchema = z.object({
   description: z.string().optional(),
   targetDeadline: z.string().optional(),
   role: z.enum(["workspace-owner", "service-team-member", "client-participant", "client-approver"]),
+  scope: z.object({
+    state: z.enum(["not-started", "draft", "in-review", "changes-requested", "withdrawn", "approved"]),
+    pendingAction: z.enum(["decision-required", "scope-submission", "scope-editing"]).optional(),
+    currentVersionId: z.string().optional(),
+  }).strict().optional(),
 }).strict();
 
 export const invitationSchema = z.object({
@@ -115,3 +120,45 @@ export type Project = z.infer<typeof projectSchema>;
 export type WorkspaceGroup = z.infer<typeof workspaceGroupSchema>;
 export type ClientRecord = z.infer<typeof clientSchema>;
 export type AccessData = z.infer<typeof accessResponseSchema>;
+
+export const scopeRoleSchema = z.enum(["workspace-owner", "service-team-member", "client-participant", "client-approver"]);
+export const scopeGroupSchema = z.object({ id: z.string(), name: z.string(), order: z.number().int() }).strict();
+export const scopeRequirementSchema = z.object({
+  snapshotId: z.string().optional(), logicalId: z.string(), groupId: z.string().optional(),
+  title: z.string(), description: z.string(), acceptanceCriteria: z.array(z.string()), order: z.number().int(),
+}).strict();
+export const scopeDraftSchema = z.object({
+  revisionToken: z.string(), copiedFromVersionId: z.string().optional(),
+  groups: z.array(scopeGroupSchema), requirements: z.array(scopeRequirementSchema),
+}).strict();
+const actorSchema = z.object({ id: z.string(), displayName: z.string(), role: scopeRoleSchema }).strict();
+const commentSchema = z.object({
+  id: z.string(), body: z.string(), requirementSnapshotId: z.string().optional(), author: actorSchema, postedAt: z.string(),
+}).strict();
+const comparisonSchema = z.object({
+  added: z.array(scopeRequirementSchema), removed: z.array(scopeRequirementSchema), contentChanged: z.array(scopeRequirementSchema),
+}).strict();
+export const scopeVersionSchema = z.object({
+  id: z.string(), number: z.number().int(), status: z.enum(["in-review", "approved", "changes-requested", "withdrawn"]),
+  groups: z.array(scopeGroupSchema), requirements: z.array(scopeRequirementSchema), revisionSummary: z.string().optional(),
+  submitter: actorSchema, submittedAt: z.string(),
+  terminal: z.object({ actor: actorSchema, at: z.string(), note: z.string().optional() }).strict().optional(),
+  comments: z.array(commentSchema), comparison: comparisonSchema.optional(),
+}).strict();
+export const scopeSchema = z.object({
+  state: z.enum(["not-started", "draft", "in-review", "changes-requested", "withdrawn", "approved"]),
+  role: scopeRoleSchema,
+  permissions: z.object({
+    canStartDraft: z.boolean(), canEditDraft: z.boolean(), canSubmit: z.boolean(), canWithdraw: z.boolean(),
+    canComment: z.boolean(), canDecide: z.boolean(),
+  }).strict(),
+  pendingAction: z.enum(["decision-required", "scope-submission", "scope-editing"]).optional(),
+  draft: scopeDraftSchema.optional(), currentVersionId: z.string().optional(), versions: z.array(scopeVersionSchema),
+}).strict();
+export const scopeResponseSchema = z.object({ scope: scopeSchema }).strict();
+export const draftResponseSchema = z.object({ draft: scopeDraftSchema }).strict();
+export const scopeVersionResponseSchema = z.object({ version: scopeVersionSchema, warning: z.string().optional() }).strict();
+export const commentResponseSchema = z.object({ comment: commentSchema }).strict();
+export type ScopeData = z.infer<typeof scopeSchema>;
+export type ScopeDraft = z.infer<typeof scopeDraftSchema>;
+export type ScopeVersion = z.infer<typeof scopeVersionSchema>;

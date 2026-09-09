@@ -1,4 +1,5 @@
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
+import { syncScopeIndexes } from "./scope-models.js";
 
 const timestamps = { timestamps: true, autoCreate: false, autoIndex: false } as const;
 
@@ -118,6 +119,7 @@ const effectiveProjectAccessSchema = new Schema(
       required: true,
     },
     sourceId: { type: Schema.Types.ObjectId, required: true },
+    authoritySequence: { type: Number, required: true, default: 0 },
   },
   timestamps,
 );
@@ -222,5 +224,6 @@ export async function syncDomainIndexes(): Promise<void> {
     WorkspaceMembership.syncIndexes(), Client.syncIndexes(), Project.syncIndexes(),
     ProjectAssignment.syncIndexes(), EffectiveProjectAccess.syncIndexes(), ClientMembership.syncIndexes(), Invitation.syncIndexes(),
     Activity.syncIndexes(), Throttle.syncIndexes(),
+    syncScopeIndexes(),
   ]);
 }

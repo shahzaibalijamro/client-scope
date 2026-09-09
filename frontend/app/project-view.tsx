@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api, json } from "./api-client";
 import { messageResponseSchema, projectMembersResponseSchema, projectResponseSchema } from "./api-schemas";
 import { ConfirmDialog } from "./confirm-dialog";
+import { ScopePanel } from "./scope-panel";
 
 function ErrorNote({ error }: { error: unknown }) {
   if (!error) return null;
@@ -60,6 +61,7 @@ export function ProjectView({ projectId, onBack }: Readonly<{ projectId: string;
           <span>Target deadline</span><strong>{item.targetDeadline || "Not set"}</strong>
         </div>
       </div>
+      <ScopePanel projectId={projectId} />
       <section className="panel">
         <div className="panel-heading"><div><p className="eyebrow">Shared access</p><h2>Project members</h2></div></div>
         {members.isPending && <p role="status">Loading members…</p>}

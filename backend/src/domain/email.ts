@@ -1,7 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 
 export type EmailCommand = Readonly<{
-  category: "verification" | "password-reset" | "duplicate-signup" | "invitation" | "assignment" | "role-change" | "access-removal";
+  category: "verification" | "password-reset" | "duplicate-signup" | "invitation" | "assignment" | "role-change" | "access-removal" | "scope-review" | "scope-result";
   to: string;
   subject: string;
   text: string;

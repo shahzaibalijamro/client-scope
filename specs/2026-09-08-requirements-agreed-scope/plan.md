@@ -1,6 +1,6 @@
 # Slice 1.2: Requirements and Agreed Scope Implementation Plan
 
-**Status:** Approved for implementation — 2026-09-09
+**Status:** Implemented; final CI acceptance pending — 2026-09-09
 
 This plan breaks the approved Slice 1.2 behavior into vertical task groups. Each group must leave the repository coherent and keep tests near the rules they prove. Any newly discovered product ambiguity returns to `requirements.md` for review instead of becoming an undocumented implementation decision.
 

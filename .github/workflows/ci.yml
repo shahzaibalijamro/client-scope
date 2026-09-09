@@ -105,7 +105,7 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps chromium
 
-      - name: Run Slice 1.1 browser journeys
+      - name: Run critical browser journeys
         working-directory: frontend
         run: npm run test:e2e
 
