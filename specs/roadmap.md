@@ -89,7 +89,7 @@ The slice establishes the global-user and multi-workspace membership model, the 
 
 ### Slice 1.2 — Requirements and agreed scope
 
-**Status:** Implemented — final CI acceptance pending
+**Status:** Complete — validated 2026-09-09
 
 Outcome: a provider can structure project requirements, an authorized client can review them, and the resulting agreement is clear and historically preserved.
 
