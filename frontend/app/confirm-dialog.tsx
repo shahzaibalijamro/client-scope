@@ -7,6 +7,7 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   busy = false,
+  confirmDisabled = false,
   danger = true,
   onCancel,
   onConfirm,
@@ -16,6 +17,7 @@ export function ConfirmDialog({
   description: string;
   confirmLabel: string;
   busy?: boolean;
+  confirmDisabled?: boolean;
   danger?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -72,7 +74,7 @@ export function ConfirmDialog({
         {children}
         <div className="dialog-actions">
           <button ref={cancelRef} className="secondary" onClick={onCancel} disabled={busy}>Cancel</button>
-          <button className={danger ? "danger solid" : "primary"} onClick={onConfirm} disabled={busy}>
+          <button className={danger ? "danger solid" : "primary"} onClick={onConfirm} disabled={busy || confirmDisabled}>
             {busy ? "Working…" : confirmLabel}
           </button>
         </div>

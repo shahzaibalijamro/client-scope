@@ -11,8 +11,8 @@ import { draftContentInput } from "./scope-contracts.js";
 import { ScopeComment, ScopeDecision, ScopeDraft, ScopeVersion } from "./scope-models.js";
 
 export type ProjectRole = "workspace-owner" | "service-team-member" | "client-participant" | "client-approver";
-type Actor = { _id: mongoose.Types.ObjectId; displayName: string };
-type ProjectRecord = { _id: mongoose.Types.ObjectId; workspaceId: mongoose.Types.ObjectId; name: string };
+export type Actor = { _id: mongoose.Types.ObjectId; displayName: string };
+export type ProjectRecord = { _id: mongoose.Types.ObjectId; workspaceId: mongoose.Types.ObjectId; name: string };
 
 const notFound = () => new ApiError(404, "NOT_FOUND", "The requested resource was not found.");
 const stale = () => new ApiError(409, "STALE_STATE", "The scope changed. Refresh and try again.");
@@ -47,7 +47,7 @@ async function roleFor(project: ProjectRecord, userId: mongoose.Types.ObjectId, 
   return access ? access.role as ProjectRole : null;
 }
 
-async function context(projectId: string, userId: mongoose.Types.ObjectId, session?: ClientSession, lockAccess = false) {
+export async function projectContext(projectId: string, userId: mongoose.Types.ObjectId, session?: ClientSession, lockAccess = false) {
   const query = Project.findById(projectId).lean<ProjectRecord>();
   if (session) query.session(session);
   const project = await query;
@@ -57,15 +57,15 @@ async function context(projectId: string, userId: mongoose.Types.ObjectId, sessi
   return { project, role };
 }
 
-function assertProvider(role: ProjectRole): void {
+export function assertProvider(role: ProjectRole): void {
   if (role !== "workspace-owner" && role !== "service-team-member") throw notFound();
 }
 
-function assertOwner(role: ProjectRole): void {
+export function assertOwner(role: ProjectRole): void {
   if (role !== "workspace-owner") throw notFound();
 }
 
-function event(input: {
+export function projectEvent(input: {
   project: ProjectRecord; actor: Actor; action: string; context: Record<string, unknown>;
 }, session: ClientSession) {
   return new Activity({
@@ -113,6 +113,16 @@ function versionView(version: Record<string, any>, comments: Record<string, any>
       actor: { id: String(version.terminalActorId), displayName: version.terminalActorName, role: version.terminalRole },
       at: version.terminalAt.toISOString(), note: version.terminalNote,
     } : undefined,
+    supersession: version.supersededAt ? {
+      at: version.supersededAt.toISOString(), changeRequestId: String(version.supersededByChangeRequestId),
+      proposalId: String(version.supersededByProposalId), successorScopeVersionId: String(version.successorScopeVersionId),
+    } : undefined,
+    provenance: version.approvedFromChangeRequestId ? {
+      baseScopeVersionId: String(version.basedOnScopeVersionId), changeRequestId: String(version.approvedFromChangeRequestId),
+      proposalId: String(version.approvedFromProposalId),
+      proposalSubmitter: { id: String(version.proposalSubmitterId), displayName: version.proposalSubmitterName },
+      approvingClient: { id: String(version.approvingClientId), displayName: version.approvingClientName },
+    } : undefined,
     comments: comments.map((comment) => ({
       id: String(comment._id), body: comment.body,
       requirementSnapshotId: comment.requirementSnapshotId ? String(comment.requirementSnapshotId) : undefined,
@@ -154,7 +164,7 @@ export function compareVersions(previous: ComparableVersion | undefined, current
 }
 
 export async function readScope(projectId: string, userId: mongoose.Types.ObjectId) {
-  const { role } = await context(projectId, userId);
+  const { role } = await projectContext(projectId, userId);
   const [draft, versions, comments] = await Promise.all([
     role === "workspace-owner" || role === "service-team-member" ? ScopeDraft.findOne({ projectId }).lean() : null,
     ScopeVersion.find({ projectId }).sort({ number: -1 }).lean(),
@@ -213,7 +223,7 @@ export async function projectScopeSummary(projectId: string | mongoose.Types.Obj
 export async function startDraft(projectId: string, actor: Actor) {
   try {
     return await transact(async (session) => {
-      const { project, role } = await context(projectId, actor._id, session, true); assertProvider(role);
+      const { project, role } = await projectContext(projectId, actor._id, session, true); assertProvider(role);
       const [draft, review, approved] = await Promise.all([
         ScopeDraft.exists({ projectId }).session(session), ScopeVersion.exists({ projectId, status: "in-review" }).session(session),
         ScopeVersion.exists({ projectId, status: "approved" }).session(session),
@@ -231,7 +241,7 @@ export async function startDraft(projectId: string, actor: Actor) {
 
 export async function updateDraft(projectId: string, actor: Actor, input: DraftContentInput) {
   return transact(async (session) => {
-    const { role } = await context(projectId, actor._id, session, true); assertProvider(role);
+    const { role } = await projectContext(projectId, actor._id, session, true); assertProvider(role);
     const current = await ScopeDraft.findOne({ projectId, revisionToken: input.revisionToken }).session(session);
     if (!current) throw stale();
     const existingGroups = new Set(current.groups.map((group) => String(group.id)));
@@ -270,7 +280,7 @@ function validatePersistedDraft(draft: InstanceType<typeof ScopeDraft>): void {
   }
 }
 
-async function notificationRecipients(project: ProjectRecord, kind: "approvers" | "providers") {
+export async function notificationRecipients(project: ProjectRecord, kind: "approvers" | "providers") {
   if (kind === "approvers") {
     const access = await EffectiveProjectAccess.find({ projectId: project._id, role: "client-approver" }).lean();
     const users = await User.find({ _id: { $in: access.map((item) => item.userId) } }).select("email").lean();
@@ -283,7 +293,7 @@ async function notificationRecipients(project: ProjectRecord, kind: "approvers" 
   return [...new Set(users.map((user) => user.email))];
 }
 
-async function notify(emailService: EmailService, recipients: string[], category: "scope-review" | "scope-result", subject: string, text: string) {
+export async function notify(emailService: EmailService, recipients: string[], category: "scope-review" | "scope-result", subject: string, text: string) {
   const results = await Promise.all(recipients.map(async (to) => {
     try { return await emailService.send({ category, to, subject, text }); } catch { return { delivered: false }; }
   }));
@@ -292,7 +302,7 @@ async function notify(emailService: EmailService, recipients: string[], category
 
 export async function submitDraft(projectId: string, actor: Actor, input: { revisionToken: string; revisionSummary?: string }, emailService: EmailService) {
   const result = await transact(async (session) => {
-    const { project, role } = await context(projectId, actor._id, session, true); assertOwner(role);
+    const { project, role } = await projectContext(projectId, actor._id, session, true); assertOwner(role);
     const draft = await ScopeDraft.findOne({ projectId, revisionToken: input.revisionToken }).session(session);
     if (!draft) throw stale();
     validatePersistedDraft(draft);
@@ -317,7 +327,7 @@ export async function submitDraft(projectId: string, actor: Actor, input: { revi
     await version.save({ session });
     const removed = await ScopeDraft.deleteOne({ _id: draft._id, revisionToken: input.revisionToken }, { session });
     if (removed.deletedCount !== 1) throw stale();
-    await event({ project, actor, action: "scope.version-submitted", context: { versionId: String(version._id), versionNumber: version.number } }, session);
+    await projectEvent({ project, actor, action: "scope.version-submitted", context: { versionId: String(version._id), versionNumber: version.number } }, session);
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "approvers");
@@ -327,7 +337,7 @@ export async function submitDraft(projectId: string, actor: Actor, input: { revi
 
 export async function postComment(projectId: string, versionId: string, actor: Actor, input: { body: string; requirementSnapshotId?: string }) {
   return transact(async (session) => {
-    const { project, role } = await context(projectId, actor._id, session, true);
+    const { project, role } = await projectContext(projectId, actor._id, session, true);
     const version = await ScopeVersion.findOne({ _id: versionId, projectId, status: "in-review" }).session(session);
     if (!version) throw stale();
     if (input.requirementSnapshotId && !version.requirements.some((item) => String(item.snapshotId) === input.requirementSnapshotId)) {
@@ -342,7 +352,7 @@ export async function postComment(projectId: string, versionId: string, actor: A
       authorName: actor.displayName, authorRole: role, postedAt,
     });
     await comment.save({ session });
-    await event({ project, actor, action: "scope.comment-posted", context: {
+    await projectEvent({ project, actor, action: "scope.comment-posted", context: {
       versionId, versionNumber: version.number, target: input.requirementSnapshotId ? "requirement" : "scope",
     } }, session);
     return { comment: versionView(version, [comment]).comments[0] };
@@ -361,7 +371,7 @@ function copiedDraft(project: ProjectRecord, version: InstanceType<typeof ScopeV
 
 export async function decideScope(projectId: string, versionId: string, actor: Actor, input: DecisionInput, emailService: EmailService) {
   const result = await transact(async (session) => {
-    const { project, role } = await context(projectId, actor._id, session, true);
+    const { project, role } = await projectContext(projectId, actor._id, session, true);
     if (role !== "client-approver") throw notFound();
     const now = new Date();
     const version = await ScopeVersion.findOneAndUpdate(
@@ -376,7 +386,7 @@ export async function decideScope(projectId: string, versionId: string, actor: A
     });
     await decision.save({ session });
     if (input.outcome === "changes-requested") await copiedDraft(project, version).save({ session });
-    await event({ project, actor, action: input.outcome === "approved" ? "scope.version-approved" : "scope.changes-requested", context: { versionId, versionNumber: version.number, outcome: input.outcome } }, session);
+    await projectEvent({ project, actor, action: input.outcome === "approved" ? "scope.version-approved" : "scope.changes-requested", context: { versionId, versionNumber: version.number, outcome: input.outcome } }, session);
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "providers");
@@ -386,7 +396,7 @@ export async function decideScope(projectId: string, versionId: string, actor: A
 
 export async function withdrawScope(projectId: string, versionId: string, actor: Actor, reason: string, emailService: EmailService) {
   const result = await transact(async (session) => {
-    const { project, role } = await context(projectId, actor._id, session, true); assertOwner(role);
+    const { project, role } = await projectContext(projectId, actor._id, session, true); assertOwner(role);
     const now = new Date();
     const version = await ScopeVersion.findOneAndUpdate(
       { _id: versionId, projectId, status: "in-review" },
@@ -395,7 +405,7 @@ export async function withdrawScope(projectId: string, versionId: string, actor:
     );
     if (!version) throw stale();
     await copiedDraft(project, version).save({ session });
-    await event({ project, actor, action: "scope.review-withdrawn", context: { versionId, versionNumber: version.number, outcome: "withdrawn" } }, session);
+    await projectEvent({ project, actor, action: "scope.review-withdrawn", context: { versionId, versionNumber: version.number, outcome: "withdrawn" } }, session);
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "approvers");

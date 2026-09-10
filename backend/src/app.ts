@@ -7,6 +7,7 @@ import { resolveSession } from "./domain/auth.js";
 import { createIdentityRouter } from "./domain/identity-routes.js";
 import { createWorkspaceRouter } from "./domain/workspace-routes.js";
 import { createScopeRouter } from "./domain/scope-routes.js";
+import { createChangeControlRouter } from "./domain/change-control-routes.js";
 import { developmentEmail, SafeDevelopmentEmailService, type EmailService } from "./domain/email.js";
 
 export function safeDiagnosticPath(path: string): string {
@@ -52,6 +53,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use("/api/v1", createIdentityRouter(emailService));
   app.use("/api/v1", createWorkspaceRouter(emailService));
   app.use("/api/v1", createScopeRouter(emailService));
+  app.use("/api/v1", createChangeControlRouter(emailService));
   if (process.env.NODE_ENV !== "production" && process.env.E2E_TEST_MODE === "1" && emailService instanceof SafeDevelopmentEmailService) {
     app.get("/api/v1/test/emails", (request, response) => {
       const to = String(request.query.to ?? "");

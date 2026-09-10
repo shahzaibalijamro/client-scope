@@ -97,6 +97,8 @@ This slice establishes explicit review authority, client participation without i
 
 ### Slice 1.3 — Formal change control
 
+**Status:** Complete — validated 2026-09-10
+
 Outcome: proposed additions or material changes to agreed scope can be represented and discussed as change requests, with authorized decisions incorporated into the project record without erasing the original agreement.
 
 ### Slice 1.4 — Client-facing milestones

@@ -13,6 +13,7 @@ import {
 } from "./models.js";
 import { assertBrowserMutation, hashToken, normalizeEmail, randomToken } from "./security.js";
 import { projectScopeSummary } from "./scope-service.js";
+import { changeControlSummary } from "./change-control-service.js";
 import {
   dateOnly, email, name, objectId, optionalEmail, optionalName, optionalText,
 } from "./validation.js";
@@ -104,7 +105,7 @@ function event(input: {
   return session ? record.save({ session }) : record.save();
 }
 
-function projectView(project: any, client: any, role: Role, scope?: Awaited<ReturnType<typeof projectScopeSummary>>) {
+function projectView(project: any, client: any, role: Role, scope?: Awaited<ReturnType<typeof projectScopeSummary>>, changeControl?: Awaited<ReturnType<typeof changeControlSummary>>) {
   return {
     id: String(project._id), workspaceId: String(project.workspaceId), name: project.name,
     client: {
@@ -115,7 +116,7 @@ function projectView(project: any, client: any, role: Role, scope?: Awaited<Retu
       } : {}),
     },
     description: project.description,
-    targetDeadline: project.targetDeadline, role, ...(scope ? { scope } : {}),
+    targetDeadline: project.targetDeadline, role, ...(scope ? { scope } : {}), ...(changeControl ? { changeControl } : {}),
   };
 }
 
@@ -157,7 +158,8 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         const assignment = assignments.find((item) => String(item.projectId) === String(project._id));
         const membership = clientMemberships.find((item) => String(item.projectId) === String(project._id));
         const role: Role = String(workspace.ownerId) === String(user._id) ? "workspace-owner" : assignment ? "service-team-member" : membership!.role as Role;
-        return projectView(project, clientById.get(String(project.clientId)), role, await projectScopeSummary(project._id, role));
+        const [scope, changeControl] = await Promise.all([projectScopeSummary(project._id, role), changeControlSummary(project._id, role)]);
+        return projectView(project, clientById.get(String(project.clientId)), role, scope, changeControl);
       })),
     })));
     const invitationViews = await Promise.all(invitations.map(async (invitation) => {
@@ -290,7 +292,8 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
   router.get("/projects/:projectId", validateRequest("params", projectParams), asyncRoute(async (request, response) => {
     const { user } = requireVerified(request); const project = await accessibleProject((request.params as any).projectId, user._id);
     const role = (await projectRole(project, user._id))!; const client = await Client.findById(project.clientId).lean();
-    response.json({ project: projectView(project, client, role, await projectScopeSummary(project._id, role)) });
+    const [scope, changeControl] = await Promise.all([projectScopeSummary(project._id, role), changeControlSummary(project._id, role)]);
+    response.json({ project: projectView(project, client, role, scope, changeControl) });
   }));
 
   router.get("/projects/:projectId/members", validateRequest("params", projectParams), asyncRoute(async (request, response) => {

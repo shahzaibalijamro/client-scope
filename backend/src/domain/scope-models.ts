@@ -29,16 +29,22 @@ const scopeDraftSchema = new Schema({
 const scopeVersionSchema = new Schema({
   workspaceId: { ...id(), index: true }, projectId: { ...id(), index: true },
   number: { type: Number, required: true },
-  status: { type: String, enum: ["in-review", "approved", "changes-requested", "withdrawn"], required: true },
+  status: { type: String, enum: ["in-review", "approved", "superseded", "changes-requested", "withdrawn"], required: true },
   groups: { type: [groupSchema], required: true }, requirements: { type: [snapshotRequirementSchema], required: true },
   revisionSummary: { type: String }, submitterId: id(), submitterName: { type: String, required: true },
   submitterRole: { type: String, enum: ["workspace-owner"], required: true }, submittedAt: { type: Date, required: true },
   commentSequence: { type: Number, required: true, default: 0 },
   terminalActorId: { type: Schema.Types.ObjectId }, terminalActorName: { type: String },
   terminalRole: { type: String }, terminalAt: { type: Date }, terminalNote: { type: String },
+  supersededAt: { type: Date }, supersededByChangeRequestId: { type: Schema.Types.ObjectId },
+  supersededByProposalId: { type: Schema.Types.ObjectId }, successorScopeVersionId: { type: Schema.Types.ObjectId },
+  basedOnScopeVersionId: { type: Schema.Types.ObjectId }, approvedFromChangeRequestId: { type: Schema.Types.ObjectId },
+  approvedFromProposalId: { type: Schema.Types.ObjectId }, proposalSubmitterId: { type: Schema.Types.ObjectId },
+  proposalSubmitterName: { type: String }, approvingClientId: { type: Schema.Types.ObjectId }, approvingClientName: { type: String },
 }, options);
 scopeVersionSchema.index({ projectId: 1, number: 1 }, { unique: true });
 scopeVersionSchema.index({ projectId: 1, status: 1 }, { unique: true, partialFilterExpression: { status: "in-review" } });
+scopeVersionSchema.index({ projectId: 1, status: 1 }, { unique: true, partialFilterExpression: { status: "approved" }, name: "one_current_approved_scope" });
 
 const scopeCommentSchema = new Schema({
   workspaceId: { ...id(), index: true }, projectId: { ...id(), index: true }, versionId: { ...id(), index: true },
