@@ -158,3 +158,44 @@ test("withdrawal consumes a version number and concurrent review actions have on
   const other = await baseProject(owner, `Other${key}`); const denied = await first.page.request.get(`/api/v1/projects/${other.projectId}/scope`); expect(denied.status()).toBe(404);
   await Promise.all([owner.context.close(), first.context.close(), second.context.close()]);
 });
+
+test("formal change approval preserves the original agreement and establishes its exact successor", async ({ browser }) => {
+  test.slow(); const key = Date.now();
+  const owner = await account(browser, `change-owner-${key}@example.com`, "Owner"); const setup = await baseProject(owner, `D${key}`);
+  const member = await account(browser, `change-member-${key}@example.com`, "Team Member");
+  const participant = await account(browser, `change-participant-${key}@example.com`, "Participant", true);
+  const approver = await account(browser, `change-approver-${key}@example.com`, "Approver", true);
+  await grantService(owner, member, setup); await grantClient(owner, participant, setup, "client-participant"); await grantClient(owner, approver, setup, "client-approver");
+
+  const initial = await mutate<{ draft: { revisionToken: string } }>(owner.page, "POST", `/projects/${setup.projectId}/scope/draft`, {});
+  const filled = await mutate<{ draft: { revisionToken: string } }>(owner.page, "PUT", `/projects/${setup.projectId}/scope/draft`, {
+    revisionToken: initial.draft.revisionToken, groups: [], requirements: [{ title: "Homepage", description: "Original homepage.", acceptanceCriteria: ["Works on mobile"], order: 0 }],
+  });
+  const submittedScope = await mutate<{ version: { id: string } }>(owner.page, "POST", `/projects/${setup.projectId}/scope/submissions`, { revisionToken: filled.draft.revisionToken, confirmed: true });
+  await mutate(approver.page, "POST", `/projects/${setup.projectId}/scope/versions/${submittedScope.version.id}/decisions`, { outcome: "approved", confirmed: true });
+
+  await openProject(member.page, setup.projectName);
+  await member.page.getByLabel("Change request title").fill("Add contact workflow"); await member.page.getByRole("button", { name: "Start change request" }).click();
+  const editor = member.page.locator(".scope-editor").last(); await expect(editor.getByRole("heading", { name: "Draft a scope change" })).toBeVisible();
+  await editor.getByLabel("Rationale").fill("Clients need a direct contact path."); await editor.getByLabel("Impact summary (optional)").fill("Adds one client-facing capability.");
+  await editor.locator(".requirement-editor").first().getByLabel("Title").fill("Homepage and contact");
+  await editor.getByRole("button", { name: "Add requirement" }).focus(); await member.page.keyboard.press("Enter"); const added = editor.locator(".requirement-editor").nth(1);
+  await added.getByLabel("Title").fill("Contact form"); await added.getByLabel("Description").fill("Allow visitors to send a message."); await added.getByLabel("Criterion 1").fill("A valid message can be sent.");
+  await editor.getByRole("button", { name: "Save proposal" }).click(); await expect(editor.getByText("Change proposal draft saved.")).toBeVisible();
+  await expect(editor.getByRole("button", { name: "Submit for client review" })).not.toBeVisible();
+
+  await openProject(owner.page, setup.projectName); await owner.page.getByRole("button", { name: "Submit for client review" }).click();
+  await owner.page.getByRole("dialog").getByRole("button", { name: "Submit proposal" }).click(); await expect(owner.page.getByRole("heading", { name: "Total effect against scope v1" })).toBeVisible();
+  await participant.page.setViewportSize({ width: 390, height: 844 }); await openProject(participant.page, setup.projectName); await expect(participant.page.getByRole("heading", { name: "Contact form" })).toBeVisible();
+  expect(await participant.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await expect(participant.page.getByRole("button", { name: "Approve proposal" })).not.toBeVisible();
+  await participant.page.getByLabel("Comment on total effect against scope v1").fill("The change is clear."); await participant.page.getByRole("button", { name: "Post comment" }).click();
+
+  await approver.page.goto("/"); await expect(approver.page.getByText("decision required")).toBeVisible(); await openProject(approver.page, setup.projectName);
+  await approver.page.getByRole("button", { name: "Approve proposal" }).click(); const dialog = approver.page.getByRole("dialog");
+  await expect(dialog).toContainText("supersedes scope v1"); await dialog.getByRole("button", { name: "Approve proposal" }).click();
+  await expect(approver.page.getByText("Established from an approved change proposal", { exact: false })).toBeVisible();
+  await expect(approver.page.getByText("Superseded through formal change control", { exact: false })).toBeVisible();
+  await expect(approver.page.getByLabel("Scope · approved").getByRole("heading", { name: "Contact form" })).toBeVisible();
+  await Promise.all([owner.context.close(), member.context.close(), participant.context.close(), approver.context.close()]);
+});

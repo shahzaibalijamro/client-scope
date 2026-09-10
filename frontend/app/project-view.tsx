@@ -7,6 +7,7 @@ import { api, json } from "./api-client";
 import { messageResponseSchema, projectMembersResponseSchema, projectResponseSchema } from "./api-schemas";
 import { ConfirmDialog } from "./confirm-dialog";
 import { ScopePanel } from "./scope-panel";
+import { ChangeControlPanel } from "./change-control-panel";
 
 function ErrorNote({ error }: { error: unknown }) {
   if (!error) return null;
@@ -62,6 +63,7 @@ export function ProjectView({ projectId, onBack }: Readonly<{ projectId: string;
         </div>
       </div>
       <ScopePanel projectId={projectId} />
+      <ChangeControlPanel projectId={projectId} />
       <section className="panel">
         <div className="panel-heading"><div><p className="eyebrow">Shared access</p><h2>Project members</h2></div></div>
         {members.isPending && <p role="status">Loading members…</p>}

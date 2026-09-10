@@ -344,4 +344,14 @@ Slice 1.3 is safe to merge only when:
 
 ## Implementation Evidence
 
-No implementation evidence is recorded yet. This section is populated only after the requirements are approved and Slice 1.3 application implementation has been completed and validated.
+### Local implementation run — 2026-09-10
+
+- Source baseline: `fe7062c370eb463d325d383b7f83d1de82a1be23` on `codex/slice-1-3-formal-change-control`, with the Slice 1.3 implementation present as uncommitted workspace changes.
+- Environment: local Windows workspace with Node.js `v22.23.0` and npm `10.9.8`; both production Docker builds used the pinned `node:24.20.0-bookworm-slim` image.
+- Backend: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed. The final full test run reported 9 files and 70 tests passing. Added transaction-failure coverage proves rollback for comparison persistence, copied revision drafts, and successor-scope creation; additional checks cover stale writes, invalid item targets, current-authority loss, notification exceptions, recipient exclusion, numbering preservation, and retry after rollback.
+- Frontend: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed. The test run reported 5 files and 23 tests passing.
+- Browser: the first full Chromium run passed the six existing critical journeys. The new formal-change journey initially exposed an ambiguous test locator; after narrowing it to semantic heading/region targets, its focused rerun passed. The rerun also exercised keyboard activation for authoring and a 390×844 client viewport with no document-level horizontal overflow. The local Windows Playwright process required manual interruption during web-server teardown after reporting the test result, so the clean Linux CI job remains required before merge.
+- Containers: both production Dockerfiles built successfully with the established frontend backend-origin argument. The backend image was started against an isolated ephemeral MongoDB 8.0 container and returned exactly `{ "status": "ok", "database": "connected" }` from `/api/v1/health`; the temporary containers and network were removed afterward.
+- Static diff hygiene: `git diff --check` passed. No browser screenshots or traces were retained.
+- Manual UI inspection: the Windows computer-use helper failed to initialize with `failed to write kernel assets` after its required reset and single retry. No screen-reader or visual-manual result is claimed from this run.
+- Roadmap status remains unchanged. The GitHub Actions `CI gate`, the complete manual responsive/accessibility review, and the remaining exhaustive fault-injection matrix are not represented as complete by this local evidence.
