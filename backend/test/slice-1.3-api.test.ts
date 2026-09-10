@@ -66,6 +66,23 @@ async function materialProposalDraft(f: Awaited<ReturnType<typeof fixture>>, tit
   return { requestId: started.body.requestId as string, revisionToken: saved.body.draft.revisionToken as string };
 }
 
+async function submittedMaterialProposal(f: Awaited<ReturnType<typeof fixture>>, title: string) {
+  const draft = await materialProposalDraft(f, title);
+  const submitted = await mutate(f.owner, "post", `/api/v1/projects/${f.projectId}/change-requests/${draft.requestId}/submissions`, {
+    revisionToken: draft.revisionToken, confirmed: true,
+  }).expect(201);
+  return { requestId: draft.requestId, proposalId: submitted.body.proposalId as string };
+}
+
+async function expectApprovalRolledBack(f: Awaited<ReturnType<typeof fixture>>, requestId: string, proposalId: string) {
+  expect(await ChangeDecision.countDocuments({ proposalId })).toBe(0);
+  expect(await ScopeVersion.countDocuments({ projectId: f.projectId })).toBe(1);
+  expect(await ScopeVersion.findById(f.base._id).lean()).toMatchObject({ status: "approved" });
+  expect(await ChangeProposal.findById(proposalId).lean()).toMatchObject({ outcome: "in-review", open: true });
+  expect(await ChangeRequest.findById(requestId).lean()).toMatchObject({ state: "in-review", active: true });
+  expect(await Activity.countDocuments({ projectId: f.projectId, action: "change-request.approved" })).toBe(0);
+}
+
 beforeAll(async () => { vi.spyOn(console, "info").mockImplementation(() => undefined); vi.spyOn(console, "warn").mockImplementation(() => undefined); vi.spyOn(console, "error").mockImplementation(() => undefined); database = await MongoMemoryReplSet.create({ replSet: { count: 1 } }); await mongoose.connect(database.getUri()); await syncDomainIndexes(); }, 300_000);
 beforeEach(async () => { email = new FakeEmail(); await Promise.all([
   AccountToken.deleteMany({}), Activity.deleteMany({}), Client.deleteMany({}), ClientMembership.deleteMany({}), EffectiveProjectAccess.deleteMany({}), Invitation.deleteMany({}), Project.deleteMany({}), ProjectAssignment.deleteMany({}),
@@ -227,5 +244,66 @@ describe("Slice 1.3 formal change-control API", () => {
     await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${draft.requestId}/proposals/${submitted.body.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(404);
     expect(await ChangeDecision.countDocuments({ proposalId: submitted.body.proposalId })).toBe(0);
     expect(await ScopeVersion.findById(f.base._id).lean()).toMatchObject({ status: "approved" });
+  });
+
+  it("rolls back approval when decision persistence fails", async () => {
+    const f = await fixture(); const submitted = await submittedMaterialProposal(f, "Decision rollback");
+    const failure = vi.spyOn(ChangeDecision.prototype, "save").mockRejectedValueOnce(new Error("injected decision failure"));
+    try {
+      await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${submitted.requestId}/proposals/${submitted.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(500);
+    } finally { failure.mockRestore(); }
+    await expectApprovalRolledBack(f, submitted.requestId, submitted.proposalId);
+  });
+
+  it("rolls back approval when scope-number allocation fails", async () => {
+    const f = await fixture(); const submitted = await submittedMaterialProposal(f, "Number rollback");
+    const baseQuery = ScopeVersion.findOne({ _id: f.base._id, projectId: f.projectId, status: "approved" });
+    const failure = vi.spyOn(ScopeVersion, "findOne")
+      .mockImplementationOnce(() => baseQuery)
+      .mockImplementationOnce(() => { throw new Error("injected scope-number failure"); });
+    try {
+      await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${submitted.requestId}/proposals/${submitted.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(500);
+    } finally { failure.mockRestore(); }
+    await expectApprovalRolledBack(f, submitted.requestId, submitted.proposalId);
+  });
+
+  it("rolls back approval when base supersession fails", async () => {
+    const f = await fixture(); const submitted = await submittedMaterialProposal(f, "Supersession rollback");
+    const failure = vi.spyOn(ScopeVersion, "updateOne").mockRejectedValueOnce(new Error("injected supersession failure"));
+    try {
+      await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${submitted.requestId}/proposals/${submitted.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(500);
+    } finally { failure.mockRestore(); }
+    await expectApprovalRolledBack(f, submitted.requestId, submitted.proposalId);
+  });
+
+  it("rolls back approval when proposal or request closure fails", async () => {
+    const f = await fixture(); const proposalFailureCase = await submittedMaterialProposal(f, "Proposal closure rollback");
+    const proposalFailure = vi.spyOn(ChangeProposal, "updateOne").mockRejectedValueOnce(new Error("injected proposal closure failure"));
+    try {
+      await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${proposalFailureCase.requestId}/proposals/${proposalFailureCase.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(500);
+    } finally { proposalFailure.mockRestore(); }
+    await expectApprovalRolledBack(f, proposalFailureCase.requestId, proposalFailureCase.proposalId);
+
+    const requestFailure = vi.spyOn(ChangeRequest, "updateOne").mockRejectedValueOnce(new Error("injected request closure failure"));
+    try {
+      await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${proposalFailureCase.requestId}/proposals/${proposalFailureCase.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(500);
+    } finally { requestFailure.mockRestore(); }
+    await expectApprovalRolledBack(f, proposalFailureCase.requestId, proposalFailureCase.proposalId);
+  });
+
+  it("rolls back approval when activity persistence fails and succeeds exactly on retry", async () => {
+    const f = await fixture(); const submitted = await submittedMaterialProposal(f, "Activity rollback");
+    const failure = vi.spyOn(Activity.prototype, "save").mockRejectedValueOnce(new Error("injected activity failure"));
+    try {
+      await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${submitted.requestId}/proposals/${submitted.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(500);
+    } finally { failure.mockRestore(); }
+    await expectApprovalRolledBack(f, submitted.requestId, submitted.proposalId);
+    await mutate(f.approver, "post", `/api/v1/projects/${f.projectId}/change-requests/${submitted.requestId}/proposals/${submitted.proposalId}/decisions`, { outcome: "approved", confirmed: true }).expect(200);
+    const scopes = await ScopeVersion.find({ projectId: f.projectId }).sort({ number: 1 }).lean();
+    expect(scopes).toHaveLength(2);
+    expect(scopes[0]).toMatchObject({ status: "superseded", successorScopeVersionId: scopes[1]!._id, supersededByChangeRequestId: new mongoose.Types.ObjectId(submitted.requestId), supersededByProposalId: new mongoose.Types.ObjectId(submitted.proposalId) });
+    expect(scopes[1]).toMatchObject({ status: "approved", basedOnScopeVersionId: f.base._id, approvedFromChangeRequestId: new mongoose.Types.ObjectId(submitted.requestId), approvedFromProposalId: new mongoose.Types.ObjectId(submitted.proposalId) });
+    expect(await ChangeDecision.countDocuments({ proposalId: submitted.proposalId })).toBe(1);
+    expect(await Activity.countDocuments({ projectId: f.projectId, action: "change-request.approved" })).toBe(1);
   });
 });
