@@ -11,6 +11,8 @@ import { createChangeControlRouter } from "./domain/change-control-routes.js";
 import { createMilestoneRouter } from "./domain/milestone-routes.js";
 import type { Clock } from "./domain/milestone-service.js";
 import { developmentEmail, SafeDevelopmentEmailService, type EmailService } from "./domain/email.js";
+import { createDeliverableRouter } from "./domain/deliverable-routes.js";
+import { DeterministicPrivateAssetStorage, type PrivateAssetStorage } from "./domain/private-asset-storage.js";
 
 export function safeDiagnosticPath(path: string): string {
   return path.replace(/(\/invitation-links\/)[^/]+/u, "$1:token");
@@ -42,11 +44,13 @@ export type AppOptions = Readonly<{
   readDatabaseState?: DatabaseStateReader;
   emailService?: EmailService;
   clock?: Clock;
+  privateAssetStorage?: PrivateAssetStorage;
 }>;
 
 export function createApp(options: AppOptions = {}): Express {
   const app = express();
   const emailService = options.emailService ?? developmentEmail;
+  const privateAssetStorage = options.privateAssetStorage ?? new DeterministicPrivateAssetStorage();
 
   app.disable("x-powered-by");
   app.use(requestDiagnostics());
@@ -58,6 +62,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use("/api/v1", createScopeRouter(emailService));
   app.use("/api/v1", createChangeControlRouter(emailService));
   app.use("/api/v1", createMilestoneRouter(options.clock));
+  app.use("/api/v1", createDeliverableRouter(emailService, privateAssetStorage));
   if (process.env.NODE_ENV !== "production" && process.env.E2E_TEST_MODE === "1" && emailService instanceof SafeDevelopmentEmailService) {
     app.get("/api/v1/test/emails", (request, response) => {
       const to = String(request.query.to ?? "");

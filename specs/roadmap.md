@@ -111,6 +111,8 @@ Milestones communicate client-facing progress only. Detailed tasks, assignees, p
 
 ### Slice 1.5 — Deliverables, feedback, and revisions
 
+**Status:** Complete — validated 2026-09-12
+
 Outcome: a provider can submit work with supporting files, links, and notes; clients can review it; and new versions, feedback, revision requests, and approvals remain traceable.
 
 This slice incorporates Cloudinary-backed attachments where the workflow needs them and preserves each meaningful deliverable version rather than overwriting prior review context.

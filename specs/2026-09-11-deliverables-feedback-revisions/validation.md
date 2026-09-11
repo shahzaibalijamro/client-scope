@@ -1,6 +1,6 @@
 # Slice 1.5: Deliverables, Feedback, and Revisions Validation
 
-**Status:** Approved validation plan — 2026-09-11
+**Status:** Complete — validated 2026-09-12
 
 ## Validation Goal
 
@@ -356,7 +356,26 @@ Update this section only after checks run. Record:
 - Private-storage verification outcome without asset signatures, provider identifiers, or permanent URLs.
 - Any approved exception, owner, rationale, and follow-up.
 
-Current state: no implementation evidence recorded; this is an approved validation plan.
+### Implementation evidence — updated 2026-09-12
+
+- Source: working tree on branch `codex/deliverables-feedback-revisions`, based on commit `01dd479a9158a4d8e78ef40a5e0e35b54fdd776a`.
+- Environment: local Windows development host, Node.js `v22.23.0`, npm `10.9.8`; MongoDB integration tests used an isolated `mongodb-memory-server` replica set and deterministic fake email/private-storage adapters. No managed-service credentials, provider identifiers, signatures, or signed URLs were recorded.
+- Backend `npm run typecheck`: exit 0.
+- Backend `npm run lint`: exit 0.
+- Backend `npm test`: exit 0; 14 test files and 91 tests passed. Slice 1.5 coverage includes contract rules, provider/client authority, draft privacy, approved-scope gating, optimistic mutation races, the concurrent final open slot, first-writer-wins approval, numbering rollback after injected activity failure, immutable link/file history, withdrawal-before-cancellation, exact attachment authorization, safe activity, and the Cloudinary/deterministic storage boundaries.
+- Backend `npm run build`: exit 0.
+- Frontend `npm run typecheck`: exit 0.
+- Frontend `npm run lint`: exit 0.
+- Frontend `npm test`: exit 0 when run without competing build load; 7 test files and 29 tests passed. The Slice 1.5 interface tests cover inert plain-text rendering, Participant/Approver control separation and confirmation, and provider-private revision-summary behavior. Parallel test/build attempts exceeded pre-existing five-second UI-test timeouts; the isolated required test command passed.
+- Frontend `npm run build`: exit 0; the Next.js production build compiled, type checked, generated all static pages, and finalized successfully.
+- Focused Playwright Journey A (`playwright test --config=.tmp-playwright-host.config.ts e2e/slice-1.5.spec.ts --project=chromium`, with backend and frontend supplied as external servers): exit 0; 1 Chromium test passed in 27.1 seconds (24.0-second test body). The Windows validation harness terminated the spawned frontend, backend, and MongoDB process trees explicitly, the enclosing command returned normally, and no harness-owned process or listener remained. The journey covers submission, Participant feedback, Approver revision request, version 2 resubmission, approval, preserved history, mobile width, and missing Participant decision controls. Earlier managed-server runs also passed the test body five times but exposed a Windows-only wrapper teardown hang; external-server execution provided the required clean Playwright exit without identifying an application defect.
+- Backend Docker build (`docker build --tag clientscope-backend:local ./backend`): exit 0.
+- Frontend Docker build (`docker build --build-arg BACKEND_API_ORIGIN=http://backend:4000 --tag clientscope-frontend:local ./frontend`): exit 0.
+- Backend-container runtime smoke: exit 0. The built backend image ran as non-root UID 1000 against an isolated MongoDB 8.0 container and returned exactly `status=ok` with `database=connected`. The two disposable containers and dedicated Docker network were removed after the check.
+- Live Cloudinary verification: exit 0 using dedicated values loaded from the ignored backend `.env` without printing them. One PNG, JPEG, WebP, PDF, and ZIP passed signed authenticated upload, trusted response verification, and authorized delivery. A tampered response was rejected, an unsigned delivery attempt was denied, a short-lived signed URL stopped working after expiry, and each validation asset passed idempotent deletion. All created validation assets were deleted; no credential, provider identifier, signature, or URL was recorded.
+- Manual responsive/accessibility review: passed at narrow mobile and desktop widths. Provider authoring/submission and Participant/Approver review paths were operable by keyboard; focus order and visibility, dialog focus behavior, labels, errors, progress/status semantics, headings, and landmarks were acceptable. Long content and action groups wrapped without core horizontal scrolling, attachment/link actions had clear accessible names, and state or outcome meaning was not conveyed by color alone.
+
+Acceptance validation is complete. Repository checks, container validation, live private-storage verification, the focused browser journey, and the manual responsive/accessibility review satisfy the Slice 1.5 merge gate; no product-code defect or approved exception remains open.
 
 ## Merge Gate
 
