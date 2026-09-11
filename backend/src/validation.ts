@@ -23,7 +23,11 @@ export function validateRequest(part: RequestPart, schema: ZodType): RequestHand
       return;
     }
 
-    request[part] = result.data;
+    if (part === "query") {
+      Object.defineProperty(request, "query", { value: result.data, writable: true, configurable: true, enumerable: true });
+    } else {
+      request[part] = result.data;
+    }
     next();
   };
 }

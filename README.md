@@ -1,6 +1,6 @@
 # ClientScope
 
-ClientScope is a spec-driven application for keeping client scope, reviews, decisions, and delivery history clear. The current vertical slices implement global accounts, verification and recovery, workspaces, clients, projects, contextual access, invitations, and a complete requirements-agreement workflow with private provider drafts, immutable submitted versions, review comments, authorized decisions, revision comparison, activity history, and pending work.
+ClientScope is a spec-driven application for keeping client scope, reviews, decisions, and delivery history clear. The current vertical slices implement global accounts, verification and recovery, workspaces, clients, projects, contextual access, invitations, requirements agreement, formal change control, and shared client-facing delivery milestones with immutable status history and terminal archives.
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ npm run build
 
 Backend integration tests use an isolated, ephemeral in-memory MongoDB instance. They do not read Atlas credentials or contact an external database. Normal development and future deployed environments use MongoDB Atlas. A production build validates code and configuration shape only; it does not connect to MongoDB or require either service to be running.
 
-Install Chromium once, then run the isolated Slice 1.1 access journeys and Slice 1.2 requirements-agreement journeys from `frontend/`:
+Install Chromium once, then run the isolated access, requirements-agreement, formal-change, and milestone journeys from `frontend/`:
 
 ```text
 npx playwright install chromium
@@ -86,6 +86,8 @@ npm run test:e2e -- --grep "service assignment"
 ```
 
 The Slice 1.2 API is served under `/api/v1/projects/:projectId/scope`. Draft mutations require the current opaque revision token. Submission, comments, decisions, and withdrawal are transactional; submitted versions and comments have no edit or delete endpoints. Email is attempted only after authoritative state commits, so the project view and `Your work` indicators remain the source of truth when delivery fails.
+
+The Slice 1.4 API is served under `/api/v1/projects/:projectId/milestones`. Providers receive an opaque timeline revision for create, edit, status, complete-order, and archive mutations; clients receive the same shared progress and archive content without a mutation token. Overdue state is derived by Express from one UTC date per response. Milestone changes and their activity records commit transactionally, and milestone operations do not send email.
 
 Playwright starts a disposable MongoDB replica set plus local backend and frontend servers on ports 4101 and 4200. It enables a non-production-only email inspection route so verification and invitation links are deterministic; that route is absent unless `NODE_ENV` is non-production and `E2E_TEST_MODE=1`. No Atlas database, Gmail mailbox, committed account credential, or reusable token is used.
 

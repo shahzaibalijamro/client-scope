@@ -1,6 +1,7 @@
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
 import { syncScopeIndexes } from "./scope-models.js";
 import { syncChangeControlIndexes } from "./change-control-models.js";
+import { syncMilestoneIndexes } from "./milestone-models.js";
 
 const timestamps = { timestamps: true, autoCreate: false, autoIndex: false } as const;
 
@@ -227,5 +228,6 @@ export async function syncDomainIndexes(): Promise<void> {
     Activity.syncIndexes(), Throttle.syncIndexes(),
     syncScopeIndexes(),
     syncChangeControlIndexes(),
+    syncMilestoneIndexes(),
   ]);
 }

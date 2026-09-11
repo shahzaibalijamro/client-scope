@@ -8,6 +8,7 @@ import { messageResponseSchema, projectMembersResponseSchema, projectResponseSch
 import { ConfirmDialog } from "./confirm-dialog";
 import { ScopePanel } from "./scope-panel";
 import { ChangeControlPanel } from "./change-control-panel";
+import { MilestonePanel } from "./milestone-panel";
 
 function ErrorNote({ error }: { error: unknown }) {
   if (!error) return null;
@@ -64,6 +65,7 @@ export function ProjectView({ projectId, onBack }: Readonly<{ projectId: string;
       </div>
       <ScopePanel projectId={projectId} />
       <ChangeControlPanel projectId={projectId} />
+      <MilestonePanel projectId={projectId} />
       <section className="panel">
         <div className="panel-heading"><div><p className="eyebrow">Shared access</p><h2>Project members</h2></div></div>
         {members.isPending && <p role="status">Loading members…</p>}
