@@ -8,6 +8,8 @@ import { createIdentityRouter } from "./domain/identity-routes.js";
 import { createWorkspaceRouter } from "./domain/workspace-routes.js";
 import { createScopeRouter } from "./domain/scope-routes.js";
 import { createChangeControlRouter } from "./domain/change-control-routes.js";
+import { createMilestoneRouter } from "./domain/milestone-routes.js";
+import type { Clock } from "./domain/milestone-service.js";
 import { developmentEmail, SafeDevelopmentEmailService, type EmailService } from "./domain/email.js";
 
 export function safeDiagnosticPath(path: string): string {
@@ -39,6 +41,7 @@ function requestDiagnostics(): RequestHandler {
 export type AppOptions = Readonly<{
   readDatabaseState?: DatabaseStateReader;
   emailService?: EmailService;
+  clock?: Clock;
 }>;
 
 export function createApp(options: AppOptions = {}): Express {
@@ -54,6 +57,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use("/api/v1", createWorkspaceRouter(emailService));
   app.use("/api/v1", createScopeRouter(emailService));
   app.use("/api/v1", createChangeControlRouter(emailService));
+  app.use("/api/v1", createMilestoneRouter(options.clock));
   if (process.env.NODE_ENV !== "production" && process.env.E2E_TEST_MODE === "1" && emailService instanceof SafeDevelopmentEmailService) {
     app.get("/api/v1/test/emails", (request, response) => {
       const to = String(request.query.to ?? "");

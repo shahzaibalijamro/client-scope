@@ -85,6 +85,42 @@ textarea { resize:vertical; } label small { color:var(--danger); font-weight:600
 .dialog h2 { font:700 1.65rem Georgia,serif; }
 .dialog>p:not(.eyebrow) { color:var(--muted);line-height:1.6; }
 .dialog-actions { display:flex;justify-content:flex-end;gap:.7rem;margin-top:1.4rem; }
+.milestone-workflow { margin-top:2rem; }
+.milestone-create { display:grid;gap:1rem;margin:1rem 0; }
+.milestone-list,.archived-list { list-style:none;padding:0;margin:1rem 0;display:grid;gap:1rem; }
+.milestone-card { overflow-wrap:anywhere; }
+.milestone-heading { display:flex;justify-content:space-between;align-items:flex-start;gap:1rem; }
+.milestone-heading h3,.milestone-archive h3 { margin:.2rem 0; }
+.milestone-facts { display:flex;flex-wrap:wrap;align-items:center;gap:.65rem;color:var(--muted);font-size:.86rem; }
+.milestone-description { overflow-wrap:anywhere;margin:1rem 0;line-height:1.65; }
+.milestone-status { font-weight:800;text-transform:capitalize; }
+.milestone-status.in-progress { background:#fff1c9;color:#674d00; }
+.milestone-status.completed { background:var(--mint);color:var(--available); }
+.overdue { color:var(--danger); }
+.transition-context,.archive-context { margin-top:1rem;border-left:3px solid #89a895;padding:.75rem 1rem;background:#f5f8f5;overflow-wrap:anywhere; }
+.transition-context p,.archive-context p { margin:.35rem 0 0;color:var(--muted);font-size:.85rem;line-height:1.55; }
+.milestone-actions { border-top:1px solid var(--border);padding-top:1rem;margin-top:1rem; }
+.milestone-archive { margin-top:1.5rem; }
+.archived-milestone { padding:1rem 0;border-top:1px solid var(--border);overflow-wrap:anywhere; }
+.archived-milestone h4 { margin:0 0 .75rem; }
+.milestone-workflow { margin-top:2.5rem; }
+.milestone-create { display:grid;gap:1rem;margin:1rem 0; }
+.milestone-list,.archived-list { list-style:none;padding:0;display:grid;gap:1rem; }
+.milestone-card { overflow-wrap:anywhere; }
+.milestone-heading { display:flex;justify-content:space-between;gap:1rem; }
+.milestone-heading h3 { margin:.15rem 0 .7rem; }
+.milestone-facts { display:flex;align-items:center;gap:.65rem;flex-wrap:wrap;color:var(--muted);font-size:.86rem; }
+.milestone-status { text-transform:capitalize;color:var(--foreground);font-weight:800; }
+.milestone-status.in-progress { background:#fff1c9;color:#674d00; }
+.milestone-status.completed { background:var(--mint);color:var(--available); }
+.overdue { color:var(--unavailable); }
+.milestone-description { margin:1rem 0;line-height:1.65;overflow-wrap:anywhere; }
+.transition-context,.archive-context { margin-top:1rem;padding:.85rem;background:#f5f8f5;border-radius:.65rem;overflow-wrap:anywhere; }
+.transition-context p,.archive-context p { margin:.35rem 0 0;color:var(--muted);font-size:.84rem;line-height:1.5; }
+.milestone-actions { margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem; }
+.milestone-archive { margin-top:1.5rem; }
+.archived-milestone { padding:1rem 0;border-top:1px solid var(--border);overflow-wrap:anywhere; }
+.archived-milestone h4 { margin:0 0 .7rem; }
 
 @media (max-width:760px) {
   .account>div:not(.profile-popover) { display:none; }
@@ -93,4 +129,5 @@ textarea { resize:vertical; } label small { color:var(--danger); font-weight:600
   .dialog-actions { display:grid; }
   .dialog-actions button { width:100%; }
   .scope-heading,.version-heading,.draft-row,.criterion-row { display:grid;grid-template-columns:1fr;align-items:stretch; }.scope-editor .row-actions>button,.decision-box .row-actions>button { flex:1; }.scope-version { padding:1rem; }
+  .milestone-actions>button { flex:1 1 9rem; }.milestone-heading { display:grid; }
 }

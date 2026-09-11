@@ -227,3 +227,35 @@ export const changeCommentResponseSchema = z.object({ comment: changeCommentSche
 export type ChangeControl = z.infer<typeof changeControlSchema>;
 export type ChangeRequestRecord = z.infer<typeof changeRequestSchema>;
 export type ChangeProposal = z.infer<typeof changeProposalSchema>;
+
+export const milestoneStatusSchema = z.enum(["upcoming", "in-progress", "completed"]);
+const milestoneActorSchema = z.object({
+  id: z.string(), displayName: z.string(), role: z.enum(["workspace-owner", "service-team-member"]),
+}).strict();
+export const milestoneTransitionSchema = z.object({
+  id: z.string(), previousStatus: milestoneStatusSchema, nextStatus: milestoneStatusSchema,
+  actor: milestoneActorSchema, transitionedAt: z.string(), note: z.string().optional(),
+}).strict();
+export const milestoneSchema = z.object({
+  id: z.string(), title: z.string(), description: z.string().optional(), targetDate: z.string().optional(),
+  status: milestoneStatusSchema, recordState: z.enum(["active", "archived"]), position: z.number().int(), isOverdue: z.boolean(),
+  createdAt: z.string(), updatedAt: z.string(), latestTransition: milestoneTransitionSchema.optional(),
+  archive: z.object({ actor: milestoneActorSchema, archivedAt: z.string(), reason: z.string() }).strict().optional(),
+}).strict();
+const milestonePermissionsSchema = z.object({
+  canCreate: z.boolean(), canEdit: z.boolean(), canTransition: z.boolean(), canReorder: z.boolean(), canArchive: z.boolean(),
+}).strict();
+export const milestoneTimelineSchema = z.object({
+  available: z.boolean(), activeCount: z.number().int().min(0).max(50), limit: z.literal(50),
+  permissions: milestonePermissionsSchema, revisionToken: z.string().optional(), milestones: z.array(milestoneSchema).max(50),
+}).strict();
+export const milestoneTimelineResponseSchema = z.object({ timeline: milestoneTimelineSchema }).strict();
+export const milestoneArchiveSchema = z.object({ milestones: z.array(milestoneSchema).max(50), nextCursor: z.string().optional() }).strict();
+export const milestoneArchiveResponseSchema = z.object({ archive: milestoneArchiveSchema }).strict();
+export const milestoneMutationResponseSchema = z.object({
+  milestone: milestoneSchema, revisionToken: z.string(), activeCount: z.number().int().optional(), unchanged: z.boolean().optional(),
+}).strict();
+export const milestoneOrderResponseSchema = z.object({ revisionToken: z.string(), unchanged: z.boolean(), milestoneIds: z.array(z.string()).max(50) }).strict();
+export type Milestone = z.infer<typeof milestoneSchema>;
+export type MilestoneTimeline = z.infer<typeof milestoneTimelineSchema>;
+export type MilestoneStatus = z.infer<typeof milestoneStatusSchema>;
