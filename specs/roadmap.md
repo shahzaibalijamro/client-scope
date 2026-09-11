@@ -103,6 +103,8 @@ Outcome: proposed additions or material changes to agreed scope can be represent
 
 ### Slice 1.4 — Client-facing milestones
 
+**Status:** Complete — validated 2026-09-11
+
 Outcome: the provider can communicate meaningful project stages and progress to the client without introducing internal task management.
 
 Milestones communicate client-facing progress only. Detailed tasks, assignees, priorities, backlogs, boards, and sprint workflows are not part of this slice.

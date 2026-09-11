@@ -1,6 +1,6 @@
 # Slice 1.4: Client-Facing Milestones Validation
 
-**Status:** Approved validation plan — 2026-09-10
+**Status:** Complete — validated 2026-09-11
 
 ## Validation Goal
 
@@ -294,4 +294,6 @@ Slice 1.4 implementation is safe to merge only when:
 - Browser: all eight Chromium journeys reported passing, including the new milestone journey for scope approval, create/order/status/reopen/archive behavior, immutable latest-note presentation, a 390×844 client view, read-only client controls, and no document-level horizontal overflow. As in the previous slice's local Windows run, the Playwright process required manual interruption after every test had reported `ok` while its managed web servers were tearing down; the clean Linux CI job remains required before merge.
 - Containers: both production Dockerfiles built successfully with the established frontend backend-origin argument. The backend image started against a temporary MongoDB 8.0 container and returned exactly `status=ok` and `database=connected` from `/api/v1/health`; both explicitly named temporary containers and their network were removed afterward. No image was published and no deployment provider was invoked.
 - Static diff hygiene: `git diff --check` passed. No Playwright failure screenshots or traces were retained.
-- Manual acceptance and pull-request CI have not yet been recorded. The roadmap therefore remains unchanged and Slice 1.4 must not be marked complete until the approved responsive, keyboard, focus, screen-reader, privacy inspection, and Linux CI checks are completed.
+- Pull-request CI — 2026-09-11: GitHub Actions run `34575761351` completed successfully for commit `978ff5c320d436efb3bdd7a628bc22b1f1525922`. Backend checks, frontend checks, critical browser journeys, container checks, and the aggregate CI gate all passed on the pull-request runner. Image publication and Northflank deployment were skipped as designed for pull-request validation.
+- Manual acceptance — 2026-09-11: the project owner confirmed completion of the approved responsive, keyboard, focus, screen-reader, provider/client-role, and privacy checks with no issues or unresolved release blockers.
+- Completion decision — 2026-09-11: automated evidence, clean pull-request CI, and the project-owner acceptance sign-off satisfy the Slice 1.4 merge gate. The roadmap now records Slice 1.4 as complete.
