@@ -5,6 +5,7 @@ import { ConfigurationError, loadConfig } from "./config.js";
 import { databaseConnection } from "./database.js";
 import { logDiagnostic } from "./logger.js";
 import { configuredEmailService } from "./domain/email.js";
+import { configuredPrivateAssetStorage } from "./domain/private-asset-storage.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -34,7 +35,7 @@ async function startServer(): Promise<void> {
     return;
   }
 
-  const app = createApp({ emailService: configuredEmailService() });
+  const app = createApp({ emailService: configuredEmailService(), privateAssetStorage: configuredPrivateAssetStorage() });
   const server = app.listen(config.PORT, () => {
     logDiagnostic("info", "server.started", {
       port: config.PORT,

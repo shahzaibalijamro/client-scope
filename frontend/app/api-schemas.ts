@@ -31,6 +31,10 @@ export const projectSchema = z.object({
     state: z.enum(["draft", "in-review", "revision-draft", "approved", "rejected", "canceled"]),
     pendingAction: z.enum(["decision-required", "change-revision", "change-submission", "change-editing"]).optional(),
   }).strict().optional(),
+  deliverables: z.object({
+    pendingAction: z.enum(["review-requested", "decision-required", "revision-required"]).optional(),
+    pendingCount: z.number().int().min(0),
+  }).strict().optional(),
 }).strict();
 
 export const invitationSchema = z.object({
@@ -259,3 +263,46 @@ export const milestoneOrderResponseSchema = z.object({ revisionToken: z.string()
 export type Milestone = z.infer<typeof milestoneSchema>;
 export type MilestoneTimeline = z.infer<typeof milestoneTimelineSchema>;
 export type MilestoneStatus = z.infer<typeof milestoneStatusSchema>;
+
+export const deliverableRoleSchema = z.enum(["workspace-owner", "service-team-member", "client-participant", "client-approver"]);
+export const deliverableStateSchema = z.enum(["draft", "in-review", "revision-draft", "approved", "canceled"]);
+export const deliverableOutcomeSchema = z.enum(["in-review", "changes-requested", "withdrawn", "approved"]);
+const deliverableActorSchema = z.object({ id: z.string(), displayName: z.string(), role: deliverableRoleSchema }).strict();
+const deliverableLinkSchema = z.object({ id: z.string(), label: z.string(), url: z.string().url(), order: z.number().int() }).strict();
+const deliverableAttachmentSchema = z.object({ id: z.string(), filename: z.string(), mediaType: z.enum(["application/pdf", "image/png", "image/jpeg", "image/webp", "application/zip"]), byteSize: z.number().int(), order: z.number().int(), preview: z.boolean() }).strict();
+export const deliverableVersionSchema = z.object({
+  id: z.string(), number: z.number().int().positive(), outcome: deliverableOutcomeSchema, title: z.string(), notes: z.string().optional(), revisionSummary: z.string().optional(),
+  links: z.array(deliverableLinkSchema).max(10), attachments: z.array(deliverableAttachmentSchema).max(10),
+  scopeVersion: z.object({ id: z.string(), number: z.number().int().positive() }).strict(), submitter: deliverableActorSchema, submittedAt: z.string(),
+  terminal: z.object({ actor: deliverableActorSchema, at: z.string(), note: z.string().optional() }).strict().optional(),
+}).strict();
+const deliverableDraftSchema = z.object({
+  id: z.string(), revisionToken: z.string(), copiedFromVersionId: z.string().optional(), editableTitle: z.string().optional(), notes: z.string().optional(), revisionSummary: z.string().optional(),
+  links: z.array(deliverableLinkSchema).max(10), attachments: z.array(deliverableAttachmentSchema).max(10),
+}).strict();
+const deliverablePermissionsSchema = z.object({
+  canView: z.boolean(), canCreate: z.boolean(), canEditDraft: z.boolean(), canSubmit: z.boolean(), canDiscard: z.boolean(), canComment: z.boolean(), canDecide: z.boolean(), canWithdraw: z.boolean(), canCancel: z.boolean(),
+}).strict();
+export const deliverableSchema = z.object({
+  id: z.string(), number: z.number().int().positive().optional(), title: z.string(), state: deliverableStateSchema,
+  creator: deliverableActorSchema, createdAt: z.string(), updatedAt: z.string(), permissions: deliverablePermissionsSchema,
+  currentVersion: deliverableVersionSchema.optional(), draft: deliverableDraftSchema.optional(),
+  terminal: z.object({ actor: deliverableActorSchema, at: z.string(), reason: z.string().optional() }).strict().optional(),
+}).strict();
+export const deliverableCollectionResponseSchema = z.object({ deliverables: z.object({
+  available: z.boolean(), role: deliverableRoleSchema, openCount: z.number().int().min(0).max(50), limit: z.literal(50),
+  permissions: z.object({ canCreate: z.boolean() }).strict(), deliverables: z.array(deliverableSchema).max(50),
+}).strict() }).strict();
+export const deliverableMutationResponseSchema = z.object({ deliverable: deliverableSchema, openCount: z.number().int().optional(), unchanged: z.boolean().optional() }).strict();
+export const deliverableVersionActionResponseSchema = z.object({ version: deliverableVersionSchema, outcome: z.string().optional(), warning: z.string().optional() }).strict();
+export const deliverableHistoryResponseSchema = z.object({ history: z.object({ deliverables: z.array(deliverableSchema), nextCursor: z.string().optional() }).strict() }).strict();
+export const deliverableVersionsResponseSchema = z.object({ history: z.object({ versions: z.array(deliverableVersionSchema), nextCursor: z.string().optional() }).strict() }).strict();
+export const deliverableCommentSchema = z.object({ id: z.string(), sequence: z.number().int().positive(), body: z.string(), author: deliverableActorSchema, postedAt: z.string() }).strict();
+export const deliverableCommentsResponseSchema = z.object({ history: z.object({ comments: z.array(deliverableCommentSchema), nextCursor: z.string().optional() }).strict() }).strict();
+export const deliverableCommentResponseSchema = z.object({ comment: deliverableCommentSchema }).strict();
+export const uploadAuthorizationResponseSchema = z.object({ reservationId: z.string(), uploadUrl: z.string().url(), fields: z.record(z.string(), z.string()), expiresAt: z.string() }).strict();
+export const attachmentAccessResponseSchema = z.object({ url: z.string().url(), expiresAt: z.string(), preview: z.boolean(), filename: z.string() }).strict();
+export type Deliverable = z.infer<typeof deliverableSchema>;
+export type DeliverableVersion = z.infer<typeof deliverableVersionSchema>;
+export type DeliverableDraft = z.infer<typeof deliverableDraftSchema>;
+export type DeliverableAttachment = z.infer<typeof deliverableAttachmentSchema>;

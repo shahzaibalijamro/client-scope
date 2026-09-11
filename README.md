@@ -1,6 +1,6 @@
 # ClientScope
 
-ClientScope is a spec-driven application for keeping client scope, reviews, decisions, and delivery history clear. The current vertical slices implement global accounts, verification and recovery, workspaces, clients, projects, contextual access, invitations, requirements agreement, formal change control, and shared client-facing delivery milestones with immutable status history and terminal archives.
+ClientScope is a spec-driven application for keeping client scope, reviews, decisions, and delivery history clear. The current vertical slices implement global accounts, verification and recovery, workspaces, clients, projects, contextual access, invitations, requirements agreement, formal change control, shared client-facing delivery milestones, and immutable versioned deliverable review with feedback, revision, approval, and private attachments.
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ backend/.env.example  -> backend/.env
 frontend/.env.example -> frontend/.env.local
 ```
 
-Replace the safe placeholders in `backend/.env`, especially `MONGODB_URI` and `SESSION_SECRET`. Keep them server-side and never commit them. `BACKEND_API_ORIGIN` is also server-only; it must never use the `NEXT_PUBLIC_` prefix. For live email, set `EMAIL_DELIVERY_MODE=gmail`, `GMAIL_USER`, and `GMAIL_APP_PASSWORD` to a Gmail address and its Google App Password; never supply the account's normal password. Automated tests use a fake email provider, so Gmail credentials are not required for tests or builds.
+Replace the safe placeholders in `backend/.env`, especially `MONGODB_URI` and `SESSION_SECRET`. Keep them server-side and never commit them. `BACKEND_API_ORIGIN` is also server-only; it must never use the `NEXT_PUBLIC_` prefix. For live email, set `EMAIL_DELIVERY_MODE=gmail`, `GMAIL_USER`, and `GMAIL_APP_PASSWORD` to a Gmail address and its Google App Password; never supply the account's normal password. For real private attachments, set `PRIVATE_ASSET_STORAGE_MODE=cloudinary` plus `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Those values stay in the backend environment. Automated tests use deterministic fake email and private-storage adapters, so managed-service credentials are not required for tests or builds.
 
 ## Run locally
 
@@ -88,6 +88,8 @@ npm run test:e2e -- --grep "service assignment"
 The Slice 1.2 API is served under `/api/v1/projects/:projectId/scope`. Draft mutations require the current opaque revision token. Submission, comments, decisions, and withdrawal are transactional; submitted versions and comments have no edit or delete endpoints. Email is attempted only after authoritative state commits, so the project view and `Your work` indicators remain the source of truth when delivery fails.
 
 The Slice 1.4 API is served under `/api/v1/projects/:projectId/milestones`. Providers receive an opaque timeline revision for create, edit, status, complete-order, and archive mutations; clients receive the same shared progress and archive content without a mutation token. Overdue state is derived by Express from one UTC date per response. Milestone changes and their activity records commit transactionally, and milestone operations do not send email.
+
+The Slice 1.5 API is served under `/api/v1/projects/:projectId/deliverables`. Provider drafts are private and use opaque revision tokens. Successful submissions freeze the title, allocate project and version numbers transactionally, snapshot approved-scope provenance, and create immutable review versions. Participants may comment; only current Client Approvers may approve or request revision. Private files are uploaded directly through a short-lived authorization, trusted by the backend only after signed finalization, and accessed through a new five-minute authorization on every preview or download. Provider/storage identifiers and permanent URLs are never part of deliverable responses.
 
 Playwright starts a disposable MongoDB replica set plus local backend and frontend servers on ports 4101 and 4200. It enables a non-production-only email inspection route so verification and invitation links are deterministic; that route is absent unless `NODE_ENV` is non-production and `E2E_TEST_MODE=1`. No Atlas database, Gmail mailbox, committed account credential, or reusable token is used.
 
