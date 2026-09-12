@@ -15,6 +15,7 @@ import { assertBrowserMutation, hashToken, normalizeEmail, randomToken } from ".
 import { projectScopeSummary } from "./scope-service.js";
 import { changeControlSummary } from "./change-control-service.js";
 import { deliverableSummary } from "./deliverable-service.js";
+import { lifecycleSummary } from "./lifecycle-service.js";
 import {
   dateOnly, email, name, objectId, optionalEmail, optionalName, optionalText,
 } from "./validation.js";
@@ -51,6 +52,14 @@ async function noEffectiveRole(projectId: mongoose.Types.ObjectId | string, user
   if (await projectRole(project, userId)) {
     throw new ApiError(409, "ACCESS_CONFLICT", "This person already has access to the project.");
   }
+}
+
+async function lockAccessExpansion(projectId: mongoose.Types.ObjectId | string, session: ClientSession): Promise<void> {
+  const result = await Project.updateOne(
+    { _id: projectId, $or: [{ lifecycleState: "active" }, { lifecycleState: { $exists: false } }] },
+    { $inc: { workflowSequence: 1 } }, { session },
+  );
+  if (result.matchedCount !== 1) throw new ApiError(409, "PROJECT_LOCKED", "Project access cannot be expanded in its current lifecycle state.");
 }
 
 async function transaction<T>(work: (session: ClientSession) => Promise<T>): Promise<T> {
@@ -106,7 +115,7 @@ function event(input: {
   return session ? record.save({ session }) : record.save();
 }
 
-function projectView(project: any, client: any, role: Role, scope?: Awaited<ReturnType<typeof projectScopeSummary>>, changeControl?: Awaited<ReturnType<typeof changeControlSummary>>, deliverables?: Awaited<ReturnType<typeof deliverableSummary>>) {
+function projectView(project: any, client: any, role: Role, scope?: Awaited<ReturnType<typeof projectScopeSummary>>, changeControl?: Awaited<ReturnType<typeof changeControlSummary>>, deliverables?: Awaited<ReturnType<typeof deliverableSummary>>, lifecycle?: Awaited<ReturnType<typeof lifecycleSummary>>) {
   return {
     id: String(project._id), workspaceId: String(project.workspaceId), name: project.name,
     client: {
@@ -117,7 +126,7 @@ function projectView(project: any, client: any, role: Role, scope?: Awaited<Retu
       } : {}),
     },
     description: project.description,
-    targetDeadline: project.targetDeadline, role, ...(scope ? { scope } : {}), ...(changeControl ? { changeControl } : {}), ...(deliverables ? { deliverables } : {}),
+    targetDeadline: project.targetDeadline, role, ...(scope ? { scope } : {}), ...(changeControl ? { changeControl } : {}), ...(deliverables ? { deliverables } : {}), ...(lifecycle ? { lifecycle } : {}),
   };
 }
 
@@ -148,21 +157,25 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
     const clients = await Client.find({ _id: { $in: allProjects.map((project) => project.clientId) } }).select("name companyName primaryContactEmail").lean();
     const clientById = new Map(clients.map((client) => [String(client._id), client]));
     const workspaceById = new Map(workspaces.map((workspace) => [String(workspace._id), workspace]));
-    const groups = await Promise.all(workspaces.map(async (workspace) => ({
+    const groups = await Promise.all(workspaces.map(async (workspace) => {
+      const views = await Promise.all(allProjects.filter((project) => String(project.workspaceId) === String(workspace._id)).map(async (project) => {
+        const assignment = assignments.find((item) => String(item.projectId) === String(project._id));
+        const membership = clientMemberships.find((item) => String(item.projectId) === String(project._id));
+        const role: Role = String(workspace.ownerId) === String(user._id) ? "workspace-owner" : assignment ? "service-team-member" : membership!.role as Role;
+        const [scope, changeControl, deliverables, lifecycle] = await Promise.all([projectScopeSummary(project._id, role), changeControlSummary(project._id, role), deliverableSummary(project._id, role), lifecycleSummary(project, role)]);
+        return projectView(project, clientById.get(String(project.clientId)), role, scope, changeControl, deliverables, lifecycle);
+      }));
+      return {
       id: String(workspace._id), name: workspace.name,
       relationship: String(workspace.ownerId) === String(user._id)
         ? "owner"
         : joined.some((item) => String(item.workspaceId) === String(workspace._id))
           ? "service-team-member"
           : "client",
-      projects: await Promise.all(allProjects.filter((project) => String(project.workspaceId) === String(workspace._id)).map(async (project) => {
-        const assignment = assignments.find((item) => String(item.projectId) === String(project._id));
-        const membership = clientMemberships.find((item) => String(item.projectId) === String(project._id));
-        const role: Role = String(workspace.ownerId) === String(user._id) ? "workspace-owner" : assignment ? "service-team-member" : membership!.role as Role;
-        const [scope, changeControl, deliverables] = await Promise.all([projectScopeSummary(project._id, role), changeControlSummary(project._id, role), deliverableSummary(project._id, role)]);
-        return projectView(project, clientById.get(String(project.clientId)), role, scope, changeControl, deliverables);
-      })),
-    })));
+      projects: views.filter((item) => item.lifecycle?.state === "active" || item.lifecycle?.state === "completion-in-review"),
+      completedProjects: views.filter((item) => item.lifecycle?.state === "completed"),
+      archivedProjects: views.filter((item) => item.lifecycle?.state === "archived"),
+    }; }));
     const invitationViews = await Promise.all(invitations.map(async (invitation) => {
       const workspace = workspaceById.get(String(invitation.workspaceId)) ?? await Workspace.findById(invitation.workspaceId).lean();
       const project = invitation.projectId ? await Project.findById(invitation.projectId).lean() : null;
@@ -283,7 +296,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         if (!sameWorkspaceClient) throw new ApiError(400, "INVALID_CLIENT", "Select a client from this workspace.");
         const created = new Project({ workspaceId, ...body });
         await created.save({ session });
-        await event({ workspaceId, projectId: created._id, actorId: user._id, actorName: user.displayName, action: "project.created", audience: "project", context: { projectName: created.name, clientName: sameWorkspaceClient.name } }, session);
+        await event({ workspaceId, projectId: created._id, actorId: user._id, actorName: user.displayName, action: "project.created", audience: "project", context: { projectName: created.name, clientName: sameWorkspaceClient.name, actorRole: "workspace-owner" } }, session);
         return created;
       });
       response.status(201).json({ project: projectView(project, client, "workspace-owner") });
@@ -293,8 +306,8 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
   router.get("/projects/:projectId", validateRequest("params", projectParams), asyncRoute(async (request, response) => {
     const { user } = requireVerified(request); const project = await accessibleProject((request.params as any).projectId, user._id);
     const role = (await projectRole(project, user._id))!; const client = await Client.findById(project.clientId).lean();
-    const [scope, changeControl, deliverables] = await Promise.all([projectScopeSummary(project._id, role), changeControlSummary(project._id, role), deliverableSummary(project._id, role)]);
-    response.json({ project: projectView(project, client, role, scope, changeControl, deliverables) });
+    const [scope, changeControl, deliverables, lifecycle] = await Promise.all([projectScopeSummary(project._id, role), changeControlSummary(project._id, role), deliverableSummary(project._id, role), lifecycleSummary(project, role)]);
+    response.json({ project: projectView(project, client, role, scope, changeControl, deliverables, lifecycle) });
   }));
 
   router.get("/projects/:projectId/members", validateRequest("params", projectParams), asyncRoute(async (request, response) => {
@@ -362,6 +375,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       const rawToken = randomToken();
       const now = new Date();
       const invitation = await transaction(async (session) => {
+        if (body.kind === "project") await lockAccessExpansion(body.projectId, session);
         const previous = await Invitation.findOne({
           workspaceId, projectId: body.projectId, kind: body.kind, normalizedEmail, status: "pending",
         }).session(session);
@@ -465,6 +479,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         }
         const project = await Project.findOne({ _id: accepted.projectId, workspaceId: accepted.workspaceId }).session(session);
         if (!project) throw new ApiError(409, "STALE_STATE", "The invitation target is no longer available.");
+        await lockAccessExpansion(project._id, session);
         const projectId = project._id;
         const membership = new ClientMembership({
           workspaceId: accepted.workspaceId, projectId, userId: user._id,
@@ -476,7 +491,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
           role: accepted.role, sourceId: membership._id,
         });
         await access.save({ session });
-        await event({ workspaceId: accepted.workspaceId, projectId, actorId: user._id, actorName: user.displayName, action: "client.joined", audience: "project", context: { membershipId: String(membership._id), role: accepted.role } }, session);
+        await event({ workspaceId: accepted.workspaceId, projectId, actorId: user._id, actorName: user.displayName, action: "client.joined", audience: "project", context: { membershipId: String(membership._id), role: accepted.role, actorRole: accepted.role } }, session);
       });
     } catch (error) {
       duplicateAccess(error);
@@ -517,6 +532,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
     const assignment = await (async () => {
       try {
         return await transaction(async (session) => {
+        await lockAccessExpansion(project._id, session);
         const activeMembership = await WorkspaceMembership.exists({
           workspaceId: project.workspaceId, userId: targetId, status: "active",
         }).session(session);
@@ -531,7 +547,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
           role: "service-team-member", sourceId: created._id,
         });
         await access.save({ session });
-        await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: user._id, actorName: user.displayName, action: "service-member.assigned", audience: "project", context: { assignmentId: String(created._id), memberName: target.displayName } }, session);
+        await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: user._id, actorName: user.displayName, action: "service-member.assigned", audience: "project", context: { assignmentId: String(created._id), memberName: target.displayName, actorRole: "workspace-owner" } }, session);
         return created;
         });
       } catch (error) {
@@ -551,7 +567,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       const target = await User.findById(updated.userId).session(session);
       const access = await EffectiveProjectAccess.deleteOne({ projectId: project._id, userId: updated.userId, sourceId: updated._id }, { session });
       if (access.deletedCount !== 1 || !target) throw new ApiError(409, "STALE_STATE", "The assignment state changed. Refresh and try again.");
-      await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: user._id, actorName: user.displayName, action: "service-member.unassigned", audience: "project", context: { assignmentId: String(updated._id), memberName: target.displayName } }, session);
+      await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: user._id, actorName: user.displayName, action: "service-member.unassigned", audience: "project", context: { assignmentId: String(updated._id), memberName: target.displayName, actorRole: "workspace-owner" } }, session);
       return updated;
     });
     const target = await User.findById(assignment.userId).lean();
@@ -584,7 +600,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         workspaceId, userId: targetId, sourceId: { $in: assignments.map((item) => item._id) },
       }, { session });
       await event({ workspaceId, actorId: actor._id, actorName: actor.displayName, action: `workspace-member.${reason}`, audience: "owner", context: { membershipId: String(membership._id), memberName: target.displayName } }, session);
-      await Promise.all(assignments.map((assignment) => event({ workspaceId, projectId: assignment.projectId, actorId: actor._id, actorName: actor.displayName, action: "service-member.workspace-access-ended", audience: "project", context: { assignmentId: String(assignment._id), memberName: target.displayName, reason } }, session)));
+      await Promise.all(assignments.map((assignment) => event({ workspaceId, projectId: assignment.projectId, actorId: actor._id, actorName: actor.displayName, action: "service-member.workspace-access-ended", audience: "project", context: { assignmentId: String(assignment._id), memberName: target.displayName, reason, actorRole: voluntary ? "service-team-member" : "workspace-owner" } }, session)));
     });
     const delivery = await sendEmail({ category: "access-removal", to: target!.email, subject: `Workspace access ${reason}`, text: "Your workspace and assigned-project access has ended." });
     response.json({ message: voluntary ? "You left the workspace." : "Member removed from the workspace.", warning: delivery.delivered ? undefined : "Access changed, but notification email failed." });
@@ -597,6 +613,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
     if (!project) throw new ApiError(404, "NOT_FOUND", "The requested resource was not found."); await owner(String(project.workspaceId), user._id);
     const nextRole = (request.body as any).role as "client-participant" | "client-approver";
     const result = await transaction(async (session) => {
+      if (nextRole === "client-approver") await lockAccessExpansion(project._id, session);
       const membership = await ClientMembership.findOne({ _id: String(request.params.membershipId), projectId: project._id, status: "active" }).session(session);
       if (!membership) throw new ApiError(409, "STALE_STATE", "The membership state changed. Refresh and try again.");
       if (membership.role === nextRole) throw new ApiError(409, "STALE_STATE", "The member already has that role.");
@@ -619,7 +636,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         { session },
       );
       if (access.modifiedCount !== 1) throw new ApiError(409, "STALE_STATE", "The membership state changed. Refresh and try again.");
-      await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: user._id, actorName: user.displayName, action: "client-member.role-changed", audience: "project", context: { membershipId: String(replacement._id), memberName: target.displayName, previousRole, role: nextRole } }, session);
+      await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: user._id, actorName: user.displayName, action: "client-member.role-changed", audience: "project", context: { membershipId: String(replacement._id), memberName: target.displayName, previousRole, role: nextRole, actorRole: "workspace-owner" } }, session);
       return { replacement, target };
     });
     const delivery = await sendEmail({ category: "role-change", to: result.target.email, subject: `Role changed for ${project.name}`, text: `Your role is now ${result.replacement.role}.` });
@@ -638,7 +655,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       const target = await User.findById(updated.userId).session(session);
       const access = await EffectiveProjectAccess.deleteOne({ projectId: project._id, userId: updated.userId, sourceId: updated._id }, { session });
       if (access.deletedCount !== 1 || !target) throw new ApiError(409, "STALE_STATE", "The membership state changed. Refresh and try again.");
-      await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: actor._id, actorName: actor.displayName, action: voluntary ? "client-member.left" : "client-member.removed", audience: "project", context: { membershipId: String(updated._id), memberName: target.displayName, role: updated.role } }, session);
+      await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: actor._id, actorName: actor.displayName, action: voluntary ? "client-member.left" : "client-member.removed", audience: "project", context: { membershipId: String(updated._id), memberName: target.displayName, role: updated.role, actorRole: voluntary ? updated.role : "workspace-owner" } }, session);
       return updated;
     });
     const target = await User.findById(membership.userId).lean();

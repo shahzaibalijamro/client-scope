@@ -9,6 +9,17 @@ export const userSchema = z.object({
 
 export const sessionResponseSchema = z.object({ user: userSchema.nullable() }).strict();
 
+const lifecyclePermissionsSchema = z.object({
+  canRequestCompletion: z.boolean(), canWithdrawCompletion: z.boolean(), canDecideCompletion: z.boolean(),
+  canArchive: z.boolean(), canRestore: z.boolean(),
+}).strict();
+
+const lifecycleSummarySchema = z.object({
+  state: z.enum(["active", "completion-in-review", "completed", "archived"]), readOnly: z.boolean(),
+  pendingAction: z.enum(["completion-ready", "completion-pending", "completion-decision"]).optional(),
+  permissions: lifecyclePermissionsSchema,
+}).strict();
+
 export const projectSchema = z.object({
   id: z.string(),
   workspaceId: z.string(),
@@ -35,6 +46,7 @@ export const projectSchema = z.object({
     pendingAction: z.enum(["review-requested", "decision-required", "revision-required"]).optional(),
     pendingCount: z.number().int().min(0),
   }).strict().optional(),
+  lifecycle: lifecycleSummarySchema.optional(),
 }).strict();
 
 export const invitationSchema = z.object({
@@ -53,6 +65,8 @@ export const workspaceGroupSchema = z.object({
   name: z.string(),
   relationship: z.enum(["owner", "service-team-member", "client"]),
   projects: z.array(projectSchema),
+  completedProjects: z.array(projectSchema).default([]),
+  archivedProjects: z.array(projectSchema).default([]),
 }).strict();
 
 export const workResponseSchema = z.object({
@@ -128,6 +142,41 @@ export type Project = z.infer<typeof projectSchema>;
 export type WorkspaceGroup = z.infer<typeof workspaceGroupSchema>;
 export type ClientRecord = z.infer<typeof clientSchema>;
 export type AccessData = z.infer<typeof accessResponseSchema>;
+
+const lifecycleActorSchema = z.object({ id: z.string(), displayName: z.string(), role: z.enum(["workspace-owner", "service-team-member", "client-participant", "client-approver"]) }).strict();
+const readinessBlockerSchema = z.object({
+  code: z.enum(["NO_APPROVED_SCOPE", "NO_APPROVED_DELIVERABLE", "NO_ACTIVE_CLIENT_APPROVER", "PENDING_SCOPE_REVIEW", "ACTIVE_CHANGE_REQUEST", "OPEN_DELIVERABLE", "INCOMPLETE_ACTIVE_MILESTONE"]),
+  count: z.number().int().optional(), ids: z.array(z.string()).optional(),
+}).strict();
+const completionRoundSchema = z.object({
+  id: z.string(), number: z.number().int().positive(), status: z.enum(["in-review", "approved", "returned", "withdrawn"]), revisionToken: z.string(),
+  requester: lifecycleActorSchema, requestedAt: z.string(), requestSummary: z.string().optional(),
+  readiness: z.object({
+    scope: z.object({ id: z.string(), number: z.number().int().positive() }).strict(),
+    deliverables: z.array(z.object({ id: z.string(), number: z.number().int().positive(), title: z.string(), versionId: z.string(), versionNumber: z.number().int().positive() }).strict()),
+    milestones: z.array(z.object({ id: z.string(), title: z.string(), status: z.literal("completed") }).strict()),
+    evaluatedAt: z.string(),
+  }).strict(),
+  terminal: z.object({ actor: lifecycleActorSchema, at: z.string(), outcome: z.enum(["approved", "returned", "withdrawn"]), note: z.string().optional() }).strict().optional(),
+}).strict();
+export const lifecycleSchema = lifecycleSummarySchema.extend({
+  revision: z.string(),
+  readiness: z.object({ ready: z.boolean(), blockers: z.array(readinessBlockerSchema) }).strict().optional(),
+  currentRoundId: z.string().optional(), rounds: z.array(completionRoundSchema),
+  archiveHistory: z.array(z.object({
+    id: z.string(), action: z.enum(["archived", "restored"]), actor: lifecycleActorSchema, occurredAt: z.string(), reason: z.string(),
+    previousState: z.enum(["completed", "archived"]), nextState: z.enum(["completed", "archived"]),
+  }).strict()),
+}).strict();
+export const lifecycleResponseSchema = z.object({ lifecycle: lifecycleSchema, warning: z.string().optional() }).strict();
+export type ProjectLifecycle = z.infer<typeof lifecycleSchema>;
+
+const activityItemSchema = z.object({
+  id: z.string(), type: z.string(), occurredAt: z.string(),
+  actor: z.object({ id: z.string(), displayName: z.string(), role: z.string().optional() }).strict().optional(),
+  entity: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+}).strict();
+export const activityResponseSchema = z.object({ activity: z.object({ items: z.array(activityItemSchema), nextCursor: z.string().optional() }).strict() }).strict();
 
 export const scopeRoleSchema = z.enum(["workspace-owner", "service-team-member", "client-participant", "client-approver"]);
 export const scopeGroupSchema = z.object({ id: z.string(), name: z.string(), order: z.number().int() }).strict();

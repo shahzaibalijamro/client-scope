@@ -119,6 +119,8 @@ This slice incorporates Cloudinary-backed attachments where the workflow needs t
 
 ### Slice 1.6 — Completion, history, and archival
 
+**Status:** Complete — validated 2026-09-13
+
 Outcome: both sides can understand the significant story of the project, the provider can request final completion, an authorized client can approve it, and completed work becomes protected from ordinary modification while remaining available as a record.
 
 Activity history should be created incrementally by earlier slices; this slice validates its coherence across the complete lifecycle and adds the final completion and normal archival outcomes. Any permanent-deletion behavior requires its own explicit specification and strong administrative safeguards.

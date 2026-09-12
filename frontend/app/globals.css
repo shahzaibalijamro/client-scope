@@ -152,6 +152,21 @@ textarea { resize:vertical; } label small { color:var(--danger); font-weight:600
 .milestone-archive { margin-top:1.5rem; }
 .archived-milestone { padding:1rem 0;border-top:1px solid var(--border);overflow-wrap:anywhere; }
 .archived-milestone h4 { margin:0 0 .7rem; }
+.lifecycle-panel { margin-bottom:2rem;overflow-wrap:anywhere; }
+.lifecycle-panel .badge { text-transform:capitalize;font-weight:800; }
+.lifecycle-completion-in-review { background:#fff1c9;color:#674d00; }
+.lifecycle-completed { background:var(--mint);color:var(--available); }
+.lifecycle-archived { background:#eceeed;color:#4a514d; }
+.readiness,.completion-round { padding:1rem;margin:1rem 0;border-radius:.75rem;background:#f5f8f5; }
+.readiness ul { margin-bottom:0;display:grid;gap:.45rem; }
+.completion-round p:last-child { margin-bottom:0; }
+.lifecycle-panel details { margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem; }
+.lifecycle-panel summary { cursor:pointer;font-weight:750; }
+.activity-list { list-style:none;padding:0;margin:0 0 1rem;display:grid; }
+.activity-list li { display:flex;justify-content:space-between;gap:1rem;padding:.8rem 0;border-top:1px solid var(--border);overflow-wrap:anywhere; }
+.activity-list time { color:var(--muted);font-size:.8rem;white-space:nowrap; }
+.project-collection { margin-top:1.2rem; }
+.project-collection h4 { margin:0;color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase; }
 
 @media (max-width:760px) {
   .account>div:not(.profile-popover) { display:none; }
@@ -161,4 +176,5 @@ textarea { resize:vertical; } label small { color:var(--danger); font-weight:600
   .dialog-actions button { width:100%; }
   .scope-heading,.version-heading,.draft-row,.criterion-row { display:grid;grid-template-columns:1fr;align-items:stretch; }.scope-editor .row-actions>button,.decision-box .row-actions>button { flex:1; }.scope-version { padding:1rem; }
   .milestone-actions>button { flex:1 1 9rem; }.milestone-heading { display:grid; }
+  .activity-list li { display:grid; }.activity-list time { white-space:normal; }
 }
