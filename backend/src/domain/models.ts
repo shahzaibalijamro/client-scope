@@ -1,8 +1,11 @@
+import { randomBytes } from "node:crypto";
+
 import mongoose, { Schema, type InferSchemaType } from "mongoose";
 import { syncScopeIndexes } from "./scope-models.js";
 import { syncChangeControlIndexes } from "./change-control-models.js";
 import { syncMilestoneIndexes } from "./milestone-models.js";
 import { syncDeliverableIndexes } from "./deliverable-models.js";
+import { syncLifecycleIndexes } from "./lifecycle-models.js";
 
 const timestamps = { timestamps: true, autoCreate: false, autoIndex: false } as const;
 
@@ -89,6 +92,17 @@ const projectSchema = new Schema(
     name: { type: String, required: true },
     description: { type: String },
     targetDeadline: { type: String },
+    lifecycleState: {
+      type: String,
+      enum: ["active", "completion-in-review", "completed", "archived"],
+      required: true,
+      default: "active",
+      index: true,
+    },
+    lifecycleRevision: { type: String, required: true, default: () => randomBytes(32).toString("base64url") },
+    currentCompletionRoundId: { type: Schema.Types.ObjectId },
+    nextCompletionRoundNumber: { type: Number, required: true, min: 0, default: 0 },
+    workflowSequence: { type: Number, required: true, min: 0, default: 0 },
   },
   timestamps,
 );
@@ -231,5 +245,6 @@ export async function syncDomainIndexes(): Promise<void> {
     syncChangeControlIndexes(),
     syncMilestoneIndexes(),
     syncDeliverableIndexes(),
+    syncLifecycleIndexes(),
   ]);
 }

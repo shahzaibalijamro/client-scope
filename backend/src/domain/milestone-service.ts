@@ -124,7 +124,7 @@ export async function readMilestones(projectId: string, userId: mongoose.Types.O
   const today = utcDate(clock);
   return {
     available, activeCount: timeline?.activeCount ?? records.length, limit: MILESTONE_LIMIT,
-    permissions: permissions(role, available),
+    permissions: permissions(role, available && (!project.lifecycleState || project.lifecycleState === "active")),
     ...(provider(role) ? { revisionToken: timeline?.revisionToken ?? initialRevision(project._id) } : {}),
     milestones: await views(records, today),
   };

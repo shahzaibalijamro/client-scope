@@ -87,16 +87,16 @@ function proposalView(proposal: any, items: any[], comments: any[], decision?: a
   };
 }
 
-function requestPermissions(role: ProjectRole, state: string) {
+function requestPermissions(role: ProjectRole, state: string, mutable = true) {
   const provider = role === "workspace-owner" || role === "service-team-member";
   return {
-    canEditDraft: provider && (state === "draft" || state === "revision-draft"),
-    canSubmit: role === "workspace-owner" && (state === "draft" || state === "revision-draft"),
-    canDiscard: role === "workspace-owner" && state === "draft",
-    canWithdraw: role === "workspace-owner" && state === "in-review",
-    canCancel: role === "workspace-owner" && state === "revision-draft",
-    canComment: state === "in-review",
-    canDecide: role === "client-approver" && state === "in-review",
+    canEditDraft: mutable && provider && (state === "draft" || state === "revision-draft"),
+    canSubmit: mutable && role === "workspace-owner" && (state === "draft" || state === "revision-draft"),
+    canDiscard: mutable && role === "workspace-owner" && state === "draft",
+    canWithdraw: mutable && role === "workspace-owner" && state === "in-review",
+    canCancel: mutable && role === "workspace-owner" && state === "revision-draft",
+    canComment: mutable && state === "in-review",
+    canDecide: mutable && role === "client-approver" && state === "in-review",
   };
 }
 
@@ -109,7 +109,8 @@ export function proposalTransitionAllowed(from: string, to: string): boolean {
 }
 
 export async function readChangeControl(projectId: string, userId: mongoose.Types.ObjectId) {
-  const { role } = await projectContext(projectId, userId);
+  const { project, role } = await projectContext(projectId, userId);
+  const mutable = !project.lifecycleState || project.lifecycleState === "active";
   const provider = role === "workspace-owner" || role === "service-team-member";
   const requestFilter = provider ? { projectId } : { projectId, number: { $exists: true } };
   const requests = await ChangeRequest.find(requestFilter).sort({ createdAt: -1 }).lean();
@@ -138,7 +139,7 @@ export async function readChangeControl(projectId: string, userId: mongoose.Type
         baseScopeVersion: { id: String(request.baseScopeVersionId), number: request.baseScopeVersionNumber },
         creator: actorView(request.creatorId, request.creatorName, request.creatorRole), createdAt: new Date(request.createdAt).toISOString(),
         terminal: request.terminalAt ? { actor: actorView(request.terminalActorId, request.terminalActorName, request.terminalActorRole), at: new Date(request.terminalAt).toISOString(), reason: request.terminalReason } : undefined,
-        permissions: requestPermissions(role, request.state), ...(draft ? { draft: draftView(draft, Boolean(request.number)) } : {}),
+        permissions: requestPermissions(role, request.state, mutable), ...(draft ? { draft: draftView(draft, Boolean(request.number)) } : {}),
         proposals: requestProposals.map((proposal) => proposalView(
           proposal,
           items.filter((item) => String(item.proposalId) === String(proposal._id)),
@@ -277,7 +278,7 @@ export async function submitChangeProposal(projectId: string, requestId: string,
     const removed = await ChangeProposalDraft.deleteOne({ _id: draft._id, revisionToken }, { session });
     const closed = await ChangeRequest.updateOne({ _id: requestId, state: request.state, active: true }, { $set: { number: requestNumber, state: "in-review", title: request.title } }, { session });
     if (removed.deletedCount !== 1 || closed.modifiedCount !== 1) throw stale();
-    await projectEvent({ project, actor, action: "change-request.proposal-submitted", context: { requestId, requestNumber, proposalId: String(proposal._id), proposalNumber, baseScopeVersionNumber: request.baseScopeVersionNumber } }, session);
+    await projectEvent({ project, actor, role, action: "change-request.proposal-submitted", context: { requestId, requestNumber, proposalId: String(proposal._id), proposalNumber, baseScopeVersionNumber: request.baseScopeVersionNumber } }, session);
     return { project, requestNumber, proposalNumber, proposalId: String(proposal._id) };
   });
   const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), "scope-review", `${result.project.name}: change request ${result.requestNumber} is ready`, `Change request ${result.requestNumber}, proposal ${result.proposalNumber}, is ready for review in ClientScope.`);
@@ -300,7 +301,7 @@ export async function postChangeComment(projectId: string, requestId: string, pr
       comparisonKind: input.comparisonKind, changeItemId: input.changeItemId, authorId: actor._id, authorName: actor.displayName, authorRole: role, postedAt: new Date(),
     });
     await comment.save({ session });
-    await projectEvent({ project, actor, action: "change-request.comment-posted", context: { requestId, proposalId, proposalNumber: proposal.number, target: input.changeItemId ? "change-item" : "proposal", comparisonKind: input.comparisonKind } }, session);
+    await projectEvent({ project, actor, role, action: "change-request.comment-posted", context: { requestId, proposalId, proposalNumber: proposal.number, target: input.changeItemId ? "change-item" : "proposal", comparisonKind: input.comparisonKind } }, session);
     return { comment: commentView(comment) };
   });
 }
@@ -362,7 +363,7 @@ export async function decideChangeProposal(projectId: string, requestId: string,
     if (input.outcome !== "changes-requested") Object.assign(requestUpdate, { terminalActorId: actor._id, terminalActorName: actor.displayName, terminalActorRole: role, terminalAt: now, terminalReason: input.note });
     const closed = await ChangeRequest.updateOne({ _id: requestId, state: "in-review", active: true }, { $set: requestUpdate }, { session });
     if (closed.modifiedCount !== 1) throw stale();
-    await projectEvent({ project, actor, action: input.outcome === "approved" ? "change-request.approved" : input.outcome === "rejected" ? "change-request.rejected" : "change-request.changes-requested", context: {
+    await projectEvent({ project, actor, role, action: input.outcome === "approved" ? "change-request.approved" : input.outcome === "rejected" ? "change-request.rejected" : "change-request.changes-requested", context: {
       requestId, requestNumber: request.number, proposalId, proposalNumber: proposal.number,
       ...(successor ? { baseScopeVersionNumber: request.baseScopeVersionNumber, successorScopeVersionNumber: successor.number } : {}),
     } }, session);
@@ -383,7 +384,7 @@ export async function withdrawChangeProposal(projectId: string, requestId: strin
     await copiedProposalDraft(project, request, proposal).save({ session });
     const updated = await ChangeRequest.updateOne({ _id: requestId, state: "in-review", active: true }, { $set: { state: "revision-draft" } }, { session });
     if (updated.modifiedCount !== 1) throw stale();
-    await projectEvent({ project, actor, action: "change-request.proposal-withdrawn", context: { requestId, requestNumber: request.number, proposalId, proposalNumber: proposal.number } }, session);
+    await projectEvent({ project, actor, role, action: "change-request.proposal-withdrawn", context: { requestId, requestNumber: request.number, proposalId, proposalNumber: proposal.number } }, session);
     return { project, requestNumber: request.number!, proposalNumber: proposal.number, outcome: "withdrawn" as const };
   });
   const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), "scope-review", `${result.project.name}: change request ${result.requestNumber} withdrawn`, `Change request ${result.requestNumber}, proposal ${result.proposalNumber}, is no longer awaiting review in ClientScope.`);
@@ -400,7 +401,7 @@ export async function cancelChangeRequest(projectId: string, requestId: string, 
     if (!request) throw stale();
     const removed = await ChangeProposalDraft.deleteOne({ requestId }, { session });
     if (removed.deletedCount !== 1) throw stale();
-    await projectEvent({ project, actor, action: "change-request.canceled", context: { requestId, requestNumber: request.number } }, session);
+    await projectEvent({ project, actor, role, action: "change-request.canceled", context: { requestId, requestNumber: request.number } }, session);
     return { project, requestNumber: request.number! };
   });
   const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), "scope-review", `${result.project.name}: change request ${result.requestNumber} canceled`, `Change request ${result.requestNumber} was canceled in ClientScope.`);

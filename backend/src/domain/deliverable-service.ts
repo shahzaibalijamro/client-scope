@@ -18,7 +18,7 @@ import { sendEmailSafely } from "./email.js";
 import { Activity, ClientMembership, ProjectAssignment, User, Workspace, WorkspaceMembership } from "./models.js";
 import type { PrivateAssetStorage } from "./private-asset-storage.js";
 import { ScopeVersion } from "./scope-models.js";
-import { assertProvider, projectContext, type Actor, type ProjectRecord } from "./scope-service.js";
+import { assertProjectContentMutable, assertProvider, projectContext, type Actor, type ProjectRecord } from "./scope-service.js";
 
 const notFound = () => new ApiError(404, "NOT_FOUND", "The requested resource was not found.");
 const stale = () => new ApiError(409, "STALE_STATE", "The deliverable changed. Refresh and try again.");
@@ -166,10 +166,12 @@ export async function readDeliverables(projectId: string, userId: mongoose.Types
   const draftIds = provider(role) ? visible.flatMap((record) => record.currentDraftId ? [record.currentDraftId] : []) : [];
   const [versions, drafts] = await Promise.all([DeliverableVersion.find({ _id: { $in: versionIds } }).lean(), DeliverableDraft.find({ _id: { $in: draftIds } }).lean()]);
   const versionById = new Map(versions.map((item) => [String(item._id), item])); const draftById = new Map(drafts.map((item) => [String(item._id), item]));
+  const mutable = !project.lifecycleState || project.lifecycleState === "active";
+  const deliverables = await Promise.all(visible.map((record) => aggregateView(record, role, record.currentVersionId ? versionById.get(String(record.currentVersionId)) : undefined, record.currentDraftId ? draftById.get(String(record.currentDraftId)) : undefined)));
   return {
     available: Boolean(scope), role, openCount: provider(role) ? (state?.openCount ?? records.length) : visible.length, limit: DELIVERABLE_LIMIT,
-    permissions: { canCreate: provider(role) && Boolean(scope) },
-    deliverables: await Promise.all(visible.map((record) => aggregateView(record, role, record.currentVersionId ? versionById.get(String(record.currentVersionId)) : undefined, record.currentDraftId ? draftById.get(String(record.currentDraftId)) : undefined))),
+    permissions: { canCreate: mutable && provider(role) && Boolean(scope) },
+    deliverables: deliverables.map((item) => mutable ? item : { ...item, permissions: Object.fromEntries(Object.keys(item.permissions).map((key) => [key, false])) }),
   };
 }
 
@@ -246,6 +248,7 @@ export async function discardDeliverable(projectId: string, deliverableId: strin
 export async function authorizeDeliverableUpload(projectId: string, deliverableId: string, actor: Actor, input: AuthorizeUploadInput, storage: PrivateAssetStorage) {
   if (!filenameMatchesType(input.filename, input.mediaType)) throw new ApiError(422, "FILE_TYPE_MISMATCH", "The filename extension does not match the selected file type.");
   const initialContext = await projectContext(projectId, actor._id); assertProvider(initialContext.role);
+  assertProjectContentMutable(initialContext.project);
   const providerIdentifier = `clientscope/${randomBytes(24).toString("base64url")}${input.mediaType === "application/zip" ? ".zip" : ""}`; const expiresAt = new Date(Date.now() + UPLOAD_LIFETIME_MS);
   const authorization = await storage.authorizeUpload({ providerIdentifier, mediaType: input.mediaType, byteSize: input.byteSize, expiresAt });
   const reservation = await transact(async (session) => {
@@ -261,6 +264,7 @@ export async function authorizeDeliverableUpload(projectId: string, deliverableI
 
 export async function finalizeDeliverableUpload(projectId: string, deliverableId: string, actor: Actor, input: FinalizeUploadInput, storage: PrivateAssetStorage) {
   const initialContext = await projectContext(projectId, actor._id); assertProvider(initialContext.role);
+  assertProjectContentMutable(initialContext.project);
   const reservation = await UploadReservation.findOne({ _id: input.reservationId, projectId, deliverableId, consumedAt: { $exists: false }, expiresAt: { $gt: new Date() } }).lean();
   if (!reservation) throw new ApiError(409, "UPLOAD_RESERVATION_INVALID", "The upload authorization is expired or already used. Start the upload again.");
   const verified = await storage.verifyUpload({ providerIdentifier: reservation.providerIdentifier, mediaType: reservation.mediaType as any, byteSize: reservation.byteSize, providerResult: input.providerResult });

@@ -10,6 +10,7 @@ import { ScopePanel } from "./scope-panel";
 import { ChangeControlPanel } from "./change-control-panel";
 import { MilestonePanel } from "./milestone-panel";
 import { DeliverablePanel } from "./deliverable-panel";
+import { LifecyclePanel } from "./lifecycle-panel";
 
 function ErrorNote({ error }: { error: unknown }) {
   if (!error) return null;
@@ -64,6 +65,7 @@ export function ProjectView({ projectId, onBack }: Readonly<{ projectId: string;
           <span>Target deadline</span><strong>{item.targetDeadline || "Not set"}</strong>
         </div>
       </div>
+      <LifecyclePanel projectId={projectId} />
       <ScopePanel projectId={projectId} />
       <ChangeControlPanel projectId={projectId} />
       <MilestonePanel projectId={projectId} />

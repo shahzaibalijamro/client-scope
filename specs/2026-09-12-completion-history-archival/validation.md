@@ -249,7 +249,28 @@ Run from each application directory as appropriate and record exact results.
 
 ## Implementation Evidence
 
-_To be completed only after Slice 1.6 implementation and acceptance validation. Do not record credentials, recipient addresses, tokens, private content, provider diagnostics, or other sensitive data._
+### 2026-09-12 implementation run
+
+- Backend lifecycle models, readiness evaluation, exact-round transitions, workflow locking, safe activity projection, notification routing, and project collection placement were implemented with focused rule and API integration coverage.
+- Frontend lifecycle/readiness controls, immutable completion and archive histories, paginated activity, read-only presentation, and active/completed/archived collections were implemented with React Testing Library coverage.
+- Backend required checks passed: typecheck, lint, 16 Vitest files / 99 tests, and production TypeScript build.
+- Frontend required checks passed: typecheck, lint, 8 Vitest files / 32 tests, and Next.js production build.
+- The focused Slice 1.6 Chromium journey passed, covering authoritative readiness, final-review locking, client approval, permanent completion protection, archive, and restore.
+- The ten existing and new Chromium journeys were exercised. After correcting an active-project fallback label exposed by two Slice 1.1 checks, all three Slice 1.1 journeys passed on rerun; the other seven regression/lifecycle journeys passed in the preceding full run. On this Windows host, Playwright's child web servers did not exit after reporting results and the runner required manual termination after completion output.
+- Frontend and backend Docker builds and the backend-container smoke test were initially unavailable because the Docker Desktop Linux engine was not running (`dockerDesktopLinuxEngine` pipe not found).
+- Responsive/manual multi-browser review remained outstanding beyond the automated Chromium and component-level accessibility checks at the end of this run.
+
+The roadmap status remained unchanged after this implementation run pending the Docker and manual acceptance gates.
+
+### 2026-09-13 completion gate
+
+- The user confirmed the responsive/manual acceptance review is complete.
+- The production backend image built successfully as `clientscope-backend:slice-1.6` from the pinned Node.js `24.20.0` Dockerfile.
+- The production frontend image built successfully as `clientscope-frontend:slice-1.6` with `BACKEND_API_ORIGIN=http://backend:4000`.
+- The backend image ran against a disposable MongoDB 8.0 container on an isolated Docker network and returned exactly `{"status":"ok","database":"connected"}` through `127.0.0.1:4400`.
+- The disposable backend container, MongoDB container, and isolated network were removed after the successful smoke check. The locally built validation images remain available.
+- The Windows Playwright child-process teardown behavior did not invalidate the reported passing browser assertions; all required journeys and regression checks are accepted as passed.
+- The complete Slice 1.6 acceptance and repository delivery gates now pass. The roadmap status is updated to complete.
 
 ## Merge Gate
 

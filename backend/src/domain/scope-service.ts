@@ -12,7 +12,10 @@ import { ScopeComment, ScopeDecision, ScopeDraft, ScopeVersion } from "./scope-m
 
 export type ProjectRole = "workspace-owner" | "service-team-member" | "client-participant" | "client-approver";
 export type Actor = { _id: mongoose.Types.ObjectId; displayName: string };
-export type ProjectRecord = { _id: mongoose.Types.ObjectId; workspaceId: mongoose.Types.ObjectId; name: string };
+export type ProjectRecord = {
+  _id: mongoose.Types.ObjectId; workspaceId: mongoose.Types.ObjectId; name: string;
+  lifecycleState?: "active" | "completion-in-review" | "completed" | "archived";
+};
 
 const notFound = () => new ApiError(404, "NOT_FOUND", "The requested resource was not found.");
 const stale = () => new ApiError(409, "STALE_STATE", "The scope changed. Refresh and try again.");
@@ -54,7 +57,22 @@ export async function projectContext(projectId: string, userId: mongoose.Types.O
   if (!project) throw notFound();
   const role = await roleFor(project, userId, session, lockAccess);
   if (!role) throw notFound();
+  if (lockAccess && session) {
+    const lifecycleLock = await Project.updateOne(
+      { _id: project._id, $or: [{ lifecycleState: "active" }, { lifecycleState: { $exists: false } }] },
+      { $inc: { workflowSequence: 1 } }, { session },
+    );
+    if (lifecycleLock.matchedCount !== 1) {
+      throw new ApiError(409, "PROJECT_LOCKED", "Project content is read-only in its current lifecycle state.");
+    }
+  }
   return { project, role };
+}
+
+export function assertProjectContentMutable(project: ProjectRecord): void {
+  if (project.lifecycleState && project.lifecycleState !== "active") {
+    throw new ApiError(409, "PROJECT_LOCKED", "Project content is read-only in its current lifecycle state.");
+  }
 }
 
 export function assertProvider(role: ProjectRole): void {
@@ -66,12 +84,12 @@ export function assertOwner(role: ProjectRole): void {
 }
 
 export function projectEvent(input: {
-  project: ProjectRecord; actor: Actor; action: string; context: Record<string, unknown>;
+  project: ProjectRecord; actor: Actor; role: ProjectRole; action: string; context: Record<string, unknown>;
 }, session: ClientSession) {
   return new Activity({
     workspaceId: input.project.workspaceId, projectId: input.project._id,
     actorId: input.actor._id, actorName: input.actor.displayName,
-    action: input.action, audience: "project", context: input.context, occurredAt: new Date(),
+    action: input.action, audience: "project", context: { ...input.context, actorRole: input.role }, occurredAt: new Date(),
   }).save({ session });
 }
 
@@ -164,7 +182,7 @@ export function compareVersions(previous: ComparableVersion | undefined, current
 }
 
 export async function readScope(projectId: string, userId: mongoose.Types.ObjectId) {
-  const { role } = await projectContext(projectId, userId);
+  const { project, role } = await projectContext(projectId, userId);
   const [draft, versions, comments] = await Promise.all([
     role === "workspace-owner" || role === "service-team-member" ? ScopeDraft.findOne({ projectId }).lean() : null,
     ScopeVersion.find({ projectId }).sort({ number: -1 }).lean(),
@@ -180,15 +198,16 @@ export async function readScope(projectId: string, userId: mongoose.Types.Object
   const source = draft?.sourceVersionId ? versions.find((version) => String(version._id) === String(draft.sourceVersionId)) : undefined;
   const actualState = approved ? "approved" : inReview ? "in-review" : draft ? source?.status ?? "draft" : "not-started";
   const provider = role === "workspace-owner" || role === "service-team-member";
+  const mutable = !project.lifecycleState || project.lifecycleState === "active";
   const state = !provider && actualState === "draft" ? "not-started" : actualState;
   const chronological = [...versions].reverse();
   return {
     state, role,
     permissions: {
-      canStartDraft: provider && state === "not-started",
-      canEditDraft: provider && Boolean(draft), canSubmit: role === "workspace-owner" && Boolean(draft),
-      canWithdraw: role === "workspace-owner" && Boolean(inReview),
-      canComment: Boolean(inReview), canDecide: role === "client-approver" && Boolean(inReview),
+      canStartDraft: mutable && provider && state === "not-started",
+      canEditDraft: mutable && provider && Boolean(draft), canSubmit: mutable && role === "workspace-owner" && Boolean(draft),
+      canWithdraw: mutable && role === "workspace-owner" && Boolean(inReview),
+      canComment: mutable && Boolean(inReview), canDecide: mutable && role === "client-approver" && Boolean(inReview),
     },
     pendingAction: role === "client-approver" && inReview ? "decision-required"
       : draft && (role === "workspace-owner" ? "scope-submission" : "scope-editing") || undefined,
@@ -327,7 +346,7 @@ export async function submitDraft(projectId: string, actor: Actor, input: { revi
     await version.save({ session });
     const removed = await ScopeDraft.deleteOne({ _id: draft._id, revisionToken: input.revisionToken }, { session });
     if (removed.deletedCount !== 1) throw stale();
-    await projectEvent({ project, actor, action: "scope.version-submitted", context: { versionId: String(version._id), versionNumber: version.number } }, session);
+    await projectEvent({ project, actor, role, action: "scope.version-submitted", context: { versionId: String(version._id), versionNumber: version.number } }, session);
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "approvers");
@@ -352,7 +371,7 @@ export async function postComment(projectId: string, versionId: string, actor: A
       authorName: actor.displayName, authorRole: role, postedAt,
     });
     await comment.save({ session });
-    await projectEvent({ project, actor, action: "scope.comment-posted", context: {
+    await projectEvent({ project, actor, role, action: "scope.comment-posted", context: {
       versionId, versionNumber: version.number, target: input.requirementSnapshotId ? "requirement" : "scope",
     } }, session);
     return { comment: versionView(version, [comment]).comments[0] };
@@ -386,7 +405,7 @@ export async function decideScope(projectId: string, versionId: string, actor: A
     });
     await decision.save({ session });
     if (input.outcome === "changes-requested") await copiedDraft(project, version).save({ session });
-    await projectEvent({ project, actor, action: input.outcome === "approved" ? "scope.version-approved" : "scope.changes-requested", context: { versionId, versionNumber: version.number, outcome: input.outcome } }, session);
+    await projectEvent({ project, actor, role, action: input.outcome === "approved" ? "scope.version-approved" : "scope.changes-requested", context: { versionId, versionNumber: version.number, outcome: input.outcome } }, session);
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "providers");
@@ -405,7 +424,7 @@ export async function withdrawScope(projectId: string, versionId: string, actor:
     );
     if (!version) throw stale();
     await copiedDraft(project, version).save({ session });
-    await projectEvent({ project, actor, action: "scope.review-withdrawn", context: { versionId, versionNumber: version.number, outcome: "withdrawn" } }, session);
+    await projectEvent({ project, actor, role, action: "scope.review-withdrawn", context: { versionId, versionNumber: version.number, outcome: "withdrawn" } }, session);
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "approvers");
