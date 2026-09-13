@@ -6,6 +6,7 @@ import { createApp } from "../src/app.js";
 import { syncDomainIndexes } from "../src/domain/models.js";
 import type { RequirementStructuringProvider } from "../src/domain/ai-requirement-provider.js";
 import type { RequirementQualityReviewProvider } from "../src/domain/ai-requirement-review-provider.js";
+import type { FeedbackSummarizationProvider } from "../src/domain/ai-feedback-summary-provider.js";
 
 process.env.NODE_ENV = "test";
 process.env.FRONTEND_ORIGIN = "http://127.0.0.1:4200";
@@ -51,7 +52,22 @@ const deterministicQualityReview: RequirementQualityReviewProvider = {
   },
 };
 
-const server = createApp({ requirementStructuringProvider: deterministicAi, requirementQualityReviewProvider: deterministicQualityReview }).listen(4101, "127.0.0.1", () => {
+const deterministicFeedbackSummary: FeedbackSummarizationProvider = {
+  available: true,
+  async summarize(input) {
+    const first = input.records[0]!; const last = input.records.at(-1)!;
+    return {
+      output: {
+        themes: [{ text: "Responsive layout feedback appears across the review.", citations: input.records.map(({ feedbackRecordId, versionId }) => ({ feedbackRecordId, versionId })) }],
+        requestedActions: [{ text: "Adjust the mobile layout as requested.", citations: [{ feedbackRecordId: first.feedbackRecordId, versionId: first.versionId }] }],
+        tensions: [{ text: "The relationship between mobile and desktop spacing needs clarification.", citations: [first, last].map(({ feedbackRecordId, versionId }) => ({ feedbackRecordId, versionId })) }],
+      },
+      operationId: "playwright-feedback-summary", providerId: "deterministic-test", modelId: "deterministic-test", durationMs: 1,
+    };
+  },
+};
+
+const server = createApp({ requirementStructuringProvider: deterministicAi, requirementQualityReviewProvider: deterministicQualityReview, feedbackSummarizationProvider: deterministicFeedbackSummary }).listen(4101, "127.0.0.1", () => {
   process.stdout.write("ClientScope E2E backend ready\n");
 });
 

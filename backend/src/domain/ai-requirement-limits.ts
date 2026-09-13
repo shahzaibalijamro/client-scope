@@ -28,11 +28,11 @@ export async function admitAiRequirementRequest(userId: mongoose.Types.ObjectId,
     const cutoff = new Date(now.getTime() - AI_GENERATION_WINDOW_MS);
     const recent: Date[] = ledger.admittedAt.filter((date: Date) => date > cutoff);
     if (ledger.inFlightUntil && ledger.inFlightUntil > now) {
-      throw new ApiError(429, "AI_GENERATION_IN_FLIGHT", "Wait for your current AI requirement request to finish before starting another.");
+      throw new ApiError(429, "AI_GENERATION_IN_FLIGHT", "Wait for your current AI request to finish before starting another.");
     }
     if (recent.length >= AI_GENERATION_LIMIT) {
       const retryAt = new Date(recent[0]!.getTime() + AI_GENERATION_WINDOW_MS);
-      throw new ApiError(429, "AI_RATE_LIMITED", "The hourly AI requirement limit has been reached. Try again later.", {
+      throw new ApiError(429, "AI_RATE_LIMITED", "The shared hourly AI request limit has been reached. Try again later.", {
         retryAfterSeconds: Math.max(1, Math.ceil((retryAt.getTime() - now.getTime()) / 1_000)),
       });
     }

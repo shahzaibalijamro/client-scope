@@ -8,6 +8,7 @@ import { syncDeliverableIndexes } from "./deliverable-models.js";
 import { syncLifecycleIndexes } from "./lifecycle-models.js";
 import { syncAiRequirementIndexes } from "./ai-requirement-models.js";
 import { syncAiRequirementReviewIndexes } from "./ai-requirement-review-models.js";
+import { syncAiFeedbackSummaryIndexes } from "./ai-feedback-summary-models.js";
 
 const timestamps = { timestamps: true, autoCreate: false, autoIndex: false } as const;
 
@@ -250,5 +251,6 @@ export async function syncDomainIndexes(): Promise<void> {
     syncLifecycleIndexes(),
     syncAiRequirementIndexes(),
     syncAiRequirementReviewIndexes(),
+    syncAiFeedbackSummaryIndexes(),
   ]);
 }

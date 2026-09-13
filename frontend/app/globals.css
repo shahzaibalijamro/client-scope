@@ -181,6 +181,12 @@ textarea { resize:vertical; } label small { color:var(--danger); font-weight:600
 .check-row { display:flex;grid-template-columns:auto 1fr;align-items:center;gap:.55rem; }
 .check-row input { width:auto; }
 .quality-findings { display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr));margin:1rem 0; }
+.feedback-summary { margin-top:1rem; }
+.feedback-summary-result,.feedback-summary-section { display:grid;gap:.65rem; }
+.feedback-summary-result { padding-top:.75rem;border-top:1px solid var(--border); }
+.feedback-summary-section>ul { margin-top:0; }
+.feedback-citations { font-size:.82rem;color:var(--muted);overflow-wrap:anywhere; }
+.feedback-summary code { font-size:.78rem; }
 .value-comparison { display:grid;gap:.75rem;grid-template-columns:repeat(2,minmax(0,1fr)); }
 .value-comparison>div { min-width:0;overflow-wrap:anywhere; }
 
