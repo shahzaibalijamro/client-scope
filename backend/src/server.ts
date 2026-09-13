@@ -8,6 +8,7 @@ import { configuredEmailService } from "./domain/email.js";
 import { configuredPrivateAssetStorage } from "./domain/private-asset-storage.js";
 import { configuredRequirementStructuringProvider } from "./domain/ai-requirement-provider.js";
 import { configuredRequirementQualityReviewProvider } from "./domain/ai-requirement-review-provider.js";
+import { configuredFeedbackSummarizationProvider } from "./domain/ai-feedback-summary-provider.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -41,6 +42,7 @@ async function startServer(): Promise<void> {
     emailService: configuredEmailService(), privateAssetStorage: configuredPrivateAssetStorage(),
     requirementStructuringProvider: configuredRequirementStructuringProvider(config),
     requirementQualityReviewProvider: configuredRequirementQualityReviewProvider(config),
+    feedbackSummarizationProvider: configuredFeedbackSummarizationProvider(config),
   });
   const server = app.listen(config.PORT, () => {
     logDiagnostic("info", "server.started", {

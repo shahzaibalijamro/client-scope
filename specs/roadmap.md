@@ -151,6 +151,8 @@ Outcome: a provider can request advisory feedback about vagueness, missing accep
 
 ### Slice 2.3 — Client feedback summarization
 
+**Status:** Complete — validated 2026-09-14
+
 Outcome: a provider can summarize accumulated client feedback into useful themes while original comments remain the source of truth.
 
 ### Phase 2 release gate

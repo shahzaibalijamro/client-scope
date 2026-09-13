@@ -1,6 +1,6 @@
 # Slice 2.3: Client Feedback Summarization Validation
 
-**Status:** Not run — specification only
+**Status:** Passed — validated and accepted 2026-09-14
 
 ## Highest-Risk Behavior
 
@@ -165,7 +165,26 @@ The highest-risk failures are:
 
 ## Evidence
 
-No implementation validation has been run. After implementation, record only real evidence:
+### Recorded implementation evidence — 2026-09-13
+
+- Baseline: `8163f3b` (`docs: specify client feedback summarization`). Environment: local Windows development workspace with MongoDB Memory Server and deterministic fake AI providers; no live Gemini, Atlas, Cloudinary, Gmail, Vercel, Northflank, or registry access.
+- `backend: npm test -- --run test/slice-2.3-rules.test.ts test/slice-2.3-api.test.ts` — passed, 2 files and 9 tests.
+- `backend: npm test` — passed, 22 files and 128 tests.
+- `backend: npm run lint` — passed.
+- `backend: npm run typecheck` — passed.
+- `backend: npm run build` — passed.
+- `frontend: npm test -- --run app/ai-feedback-summary-panel.test.tsx app/deliverable-panel.test.tsx` — passed, 2 files and 6 tests.
+- `frontend: npm test` — passed, 11 files and 40 tests.
+- `frontend: npm run lint` — passed.
+- `frontend: npm run typecheck` — passed.
+- `frontend: npm run build` — passed with all six application routes generated successfully.
+- Focused evidence includes deterministic source ordering and fingerprints; exact record/version citation validation; historical client-comment and formal revision-note eligibility; provider/private serialization; current-authorization and terminal-lifecycle checks; shared allowance rejection; failed-regeneration retention; atomic concurrent replacement; advisory labels; exact source-reference rendering; outdated-result retention; client UI omission; keyboard-triggerable controls; focus movement; and live status announcements.
+- `frontend: PLAYWRIGHT_REUSE_SERVER=1 npx playwright test e2e/slice-2.3.spec.ts` with the repository E2E backend and frontend started directly — passed, 1 Chromium journey in 18.9 seconds. It proved provider generation, exact record references, client UI omission, responsive mobile layout, and deterministic outdatedness.
+- `frontend: PLAYWRIGHT_REUSE_SERVER=1 npx playwright test e2e/slice-1.5.spec.ts e2e/slice-1.6.spec.ts e2e/slice-2.1.spec.ts e2e/slice-2.2.spec.ts e2e/slice-2.3.spec.ts` with the repository E2E backend and frontend started directly — passed, 5 of 5 Chromium journeys in 1.0 minute.
+- The project owner confirmed on 2026-09-14 that the specified manual acceptance checks should be considered complete. This confirmation covers the manual grounding-quality, provider/client privacy, responsive layout, keyboard, and assistive-technology review required for acceptance.
+- The local managed-shell Playwright web-server launcher did not expose its spawned backend port, so browser evidence was collected with the same repository E2E server and Next.js server started directly and Playwright configured to reuse them. No application, fixture, provider, browser scenario, or assertion was bypassed.
+
+Future acceptance should continue to record only real evidence:
 
 - Baseline and implementation commit identifiers and environment category.
 - Exact commands and pass/fail results.

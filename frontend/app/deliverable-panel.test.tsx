@@ -19,6 +19,7 @@ function record(role: "participant" | "approver" | "provider"): Deliverable { re
 function fetchFor(item: Deliverable, role: "client-participant" | "client-approver" | "workspace-owner" = "client-participant") {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.includes("/feedback-summary")) return response({ availability: { enabled: false, eligibleCount: 0, minimumRequired: 2, canGenerate: false, unavailableReason: "insufficient-feedback" } });
     if (url.includes("/comments")) return response({ history: { comments: [] } });
     if (url.includes("/history")) return response({ history: { deliverables: [] } });
     if (url.includes("/versions")) return response({ history: { versions: [version] } });
@@ -35,6 +36,7 @@ describe("Slice 1.5 deliverable interface", () => {
     expect(screen.getByText((_content, element) => element?.textContent === "Line one\nLine two")).toHaveClass("plain-text");
     expect(screen.getByRole("link", { name: /Safe preview/ })).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getByLabelText("Comment")).toBeVisible(); expect(screen.queryByRole("button", { name: "Approve exact version" })).not.toBeInTheDocument(); expect(screen.queryByRole("button", { name: "Request revision" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Summarize client feedback" })).not.toBeInTheDocument();
   });
 
   it("shows exact-version decision confirmations only to Approvers", async () => {

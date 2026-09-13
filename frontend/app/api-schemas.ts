@@ -452,3 +452,25 @@ export type Deliverable = z.infer<typeof deliverableSchema>;
 export type DeliverableVersion = z.infer<typeof deliverableVersionSchema>;
 export type DeliverableDraft = z.infer<typeof deliverableDraftSchema>;
 export type DeliverableAttachment = z.infer<typeof deliverableAttachmentSchema>;
+
+const feedbackCitationSchema = z.object({ feedbackRecordId: z.string(), versionId: z.string() }).strict();
+const feedbackSummaryItemSchema = z.object({ text: z.string(), citations: z.array(feedbackCitationSchema).min(1).max(20) }).strict();
+const feedbackSourceReferenceSchema = z.object({
+  feedbackRecordId: z.string(), versionId: z.string(), versionNumber: z.number().int().positive(), kind: z.enum(["comment", "revision-request"]),
+  author: z.object({ id: z.string(), displayName: z.string(), role: z.enum(["client-participant", "client-approver"]) }).strict(), createdAt: z.string(),
+}).strict();
+export const feedbackSummarySchema = z.object({
+  id: z.string(), deliverableId: z.string(), freshness: z.enum(["current", "outdated"]), generatedAt: z.string(),
+  generatedBy: z.object({ id: z.string(), displayName: z.string() }).strict(), sourceFingerprint: z.string(), sourceReferences: z.array(feedbackSourceReferenceSchema),
+  output: z.object({ themes: z.array(feedbackSummaryItemSchema).max(50), requestedActions: z.array(feedbackSummaryItemSchema).max(50), tensions: z.array(feedbackSummaryItemSchema).max(50) }).strict(),
+  provenance: z.object({
+    promptVersion: z.string(), schemaVersion: z.string(), operationId: z.string(), provider: z.object({ id: z.string(), model: z.string() }).strict(), execution: z.object({ durationMs: z.number().nonnegative() }).strict(),
+  }).strict(),
+}).strict();
+const feedbackSummaryAvailabilitySchema = z.object({
+  enabled: z.boolean(), eligibleCount: z.number().int().nonnegative(), minimumRequired: z.literal(2), canGenerate: z.boolean(),
+  unavailableReason: z.enum(["project-locked", "insufficient-feedback", "ai-disabled"]).optional(),
+}).strict();
+export const feedbackSummaryStatusResponseSchema = z.object({ availability: feedbackSummaryAvailabilitySchema, summary: feedbackSummarySchema.optional() }).strict();
+export const feedbackSummaryMutationResponseSchema = z.object({ summary: feedbackSummarySchema }).strict();
+export type FeedbackSummary = z.infer<typeof feedbackSummarySchema>;
