@@ -10,7 +10,7 @@ function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{children}</QueryClientProvider>;
 }
 function response(body: unknown, status = 200) { return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }); }
-const draft = { revisionToken: "d".repeat(32), groups: [], requirements: [] };
+const draft = { id: "draft", revisionToken: "d".repeat(32), groups: [], requirements: [] };
 const pending = {
   id: "proposal", state: "pending" as const,
   binding: { projectId: "project", draftId: "draft", baseDraftRevision: "d".repeat(32) },

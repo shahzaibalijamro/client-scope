@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { createApp } from "../src/app.js";
 import { syncDomainIndexes } from "../src/domain/models.js";
 import type { RequirementStructuringProvider } from "../src/domain/ai-requirement-provider.js";
+import type { RequirementQualityReviewProvider } from "../src/domain/ai-requirement-review-provider.js";
 
 process.env.NODE_ENV = "test";
 process.env.FRONTEND_ORIGIN = "http://127.0.0.1:4200";
@@ -32,7 +33,25 @@ const deterministicAi: RequirementStructuringProvider = {
   },
 };
 
-const server = createApp({ requirementStructuringProvider: deterministicAi }).listen(4101, "127.0.0.1", () => {
+const deterministicQualityReview: RequirementQualityReviewProvider = {
+  available: true,
+  async review(input) {
+    const target = input.requirements[0]!;
+    return {
+      output: {
+        findings: [
+          { key: "vague_title", category: "vagueness", explanation: "The title can state the existing subject more directly.", primaryRequirementId: target.logicalRequirementId },
+          { key: "missing_measure", category: "clarification-needed", explanation: "A measurable response target is not stated.", primaryRequirementId: target.logicalRequirementId },
+        ],
+        suggestions: [{ key: "clear_title", rationale: "This keeps the existing subject while clarifying the wording.", patch: { findingKey: "vague_title", targetRequirementId: target.logicalRequirementId, kind: "replace-title", expectedValue: target.title, proposedValue: `Reviewed ${target.title}` } }],
+        clarificationQuestions: [{ findingKey: "missing_measure", requirementIds: [target.logicalRequirementId], question: "What measurable response target should be used?" }],
+      },
+      operationId: "playwright-quality-review", providerId: "deterministic-test", modelId: "deterministic-test", durationMs: 1,
+    };
+  },
+};
+
+const server = createApp({ requirementStructuringProvider: deterministicAi, requirementQualityReviewProvider: deterministicQualityReview }).listen(4101, "127.0.0.1", () => {
   process.stdout.write("ClientScope E2E backend ready\n");
 });
 

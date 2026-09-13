@@ -145,6 +145,8 @@ Outcome: a provider can turn messy source input into reviewable draft requiremen
 
 ### Slice 2.2 — Requirement quality and ambiguity review
 
+**Status:** Complete — validated 2026-09-13
+
 Outcome: a provider can request advisory feedback about vagueness, missing acceptance detail, conflicts, and clarification needs, then choose whether to apply, edit, or ignore the suggestions.
 
 ### Slice 2.3 — Client feedback summarization
