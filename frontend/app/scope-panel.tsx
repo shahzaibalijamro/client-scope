@@ -10,6 +10,7 @@ import {
 } from "./api-schemas";
 import { ConfirmDialog } from "./confirm-dialog";
 import { AiRequirementPanel } from "./ai-requirement-panel";
+import { AiRequirementReviewPanel } from "./ai-requirement-review-panel";
 
 function ErrorNote({ error }: { error: unknown }) {
   if (!error) return null;
@@ -95,6 +96,7 @@ function DraftEditor({ projectId, draft, canSubmit, reload }: Readonly<{
     <div className="panel-heading"><div><p className="eyebrow">Private provider draft</p><h3 id="draft-heading">Shape the proposed scope</h3></div><span className="badge">Not visible to clients</span></div>
     <p className="fine">Owner and assigned team members can edit. Only the workspace owner can submit the complete version.</p>
     <AiRequirementPanel projectId={projectId} draft={draft} reloadDraft={loadLatest} />
+    <AiRequirementReviewPanel projectId={projectId} draft={{ ...draft, revisionToken, groups, requirements }} reloadDraft={loadLatest} />
     {Object.keys(fieldErrors).length > 0 && <p id="draft-errors" tabIndex={-1} role="alert" className="notice error">Review the highlighted draft fields before saving.</p>}
     {message && <p className={message.includes("teammate") ? "notice warning" : "notice success"} role="status">{message}</p>}
     <ErrorNote error={save.error || submit.error} />

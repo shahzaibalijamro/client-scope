@@ -45,13 +45,13 @@ Never invent technologies, integrations, dates, permissions, platforms, performa
 Omit unsupported, conflicting, or materially ambiguous details from commitments. Add a concise warning categorized as unsupported-detail, conflict, or ambiguity instead. Never resolve a warning yourself.
 Return only the requested structured JSON. Each local key must contain 1-64 ASCII letters, digits, underscores, or hyphens. Requirements must be complete and contain at least one acceptance criterion.`;
 
-function responseSchema(capacity: RequirementOutputCapacity) {
+function responseSchema() {
   return {
-    type: "OBJECT", additionalProperties: false, required: ["groups", "requirements", "warnings"],
+    type: "OBJECT", required: ["groups", "requirements", "warnings"],
     properties: {
-      groups: { type: "ARRAY", maxItems: capacity.groups, items: { type: "OBJECT", additionalProperties: false, required: ["key", "name"], properties: { key: { type: "STRING" }, name: { type: "STRING" } } } },
-      requirements: { type: "ARRAY", minItems: 1, maxItems: capacity.requirements, items: { type: "OBJECT", additionalProperties: false, required: ["key", "title", "description", "acceptanceCriteria"], properties: { key: { type: "STRING" }, groupKey: { type: "STRING" }, title: { type: "STRING" }, description: { type: "STRING" }, acceptanceCriteria: { type: "ARRAY", minItems: 1, maxItems: 50, items: { type: "STRING" } } } } },
-      warnings: { type: "ARRAY", maxItems: 50, items: { type: "OBJECT", additionalProperties: false, required: ["category", "message"], properties: { category: { type: "STRING", enum: ["unsupported-detail", "conflict", "ambiguity"] }, message: { type: "STRING" }, targetKey: { type: "STRING" } } } },
+      groups: { type: "ARRAY", items: { type: "OBJECT", required: ["key", "name"], properties: { key: { type: "STRING" }, name: { type: "STRING" } } } },
+      requirements: { type: "ARRAY", items: { type: "OBJECT", required: ["key", "title", "description", "acceptanceCriteria"], properties: { key: { type: "STRING" }, groupKey: { type: "STRING" }, title: { type: "STRING" }, description: { type: "STRING" }, acceptanceCriteria: { type: "ARRAY", items: { type: "STRING" } } } } },
+      warnings: { type: "ARRAY", items: { type: "OBJECT", required: ["category", "message"], properties: { category: { type: "STRING", enum: ["unsupported-detail", "conflict", "ambiguity"] }, message: { type: "STRING" }, targetKey: { type: "STRING" } } } },
     },
   };
 }
@@ -87,7 +87,7 @@ export class GeminiRequirementStructuringProvider implements RequirementStructur
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: `${REQUIREMENT_STRUCTURING_PROMPT}\nPrompt version: ${AI_PROMPT_VERSION}.\nReturn at most ${capacity.groups} groups and ${capacity.requirements} requirements.` }] },
             contents: [{ role: "user", parts: [{ text: `<untrusted-source>\n${source}\n</untrusted-source>` }] }],
-            generationConfig: { responseMimeType: "application/json", responseSchema: responseSchema(capacity) },
+            generationConfig: { responseMimeType: "application/json", responseSchema: responseSchema() },
           }),
         },
       );

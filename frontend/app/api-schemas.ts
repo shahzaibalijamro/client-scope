@@ -185,7 +185,7 @@ export const scopeRequirementSchema = z.object({
   title: z.string(), description: z.string(), acceptanceCriteria: z.array(z.string()), order: z.number().int(),
 }).strict();
 export const scopeDraftSchema = z.object({
-  revisionToken: z.string(), copiedFromVersionId: z.string().optional(),
+  id: z.string(), revisionToken: z.string(), copiedFromVersionId: z.string().optional(),
   groups: z.array(scopeGroupSchema), requirements: z.array(scopeRequirementSchema),
 }).strict();
 const actorSchema = z.object({ id: z.string(), displayName: z.string(), role: scopeRoleSchema }).strict();
@@ -273,6 +273,55 @@ export const aiProvenanceResponseSchema = z.object({ provenance: z.object({
 export type AiPendingProposal = z.infer<typeof aiPendingProposalSchema>;
 export type AiWorkingProposal = z.infer<typeof aiWorkingSchema>;
 export type AiProvenance = z.infer<typeof aiProvenanceResponseSchema>["provenance"];
+
+const aiReviewFindingSchema = z.object({
+  key: z.string(), category: z.enum(["vagueness", "missing-acceptance-detail", "conflict", "clarification-needed"]),
+  explanation: z.string(), primaryRequirementId: z.string(), relatedRequirementIds: z.array(z.string()).optional(),
+}).strict();
+const aiReviewPatchSchema = z.object({
+  findingKey: z.string(), targetRequirementId: z.string(),
+  kind: z.enum(["replace-title", "replace-description", "replace-acceptance-criteria", "append-acceptance-criteria"]),
+  expectedValue: z.union([z.string(), z.array(z.string())]), proposedValue: z.union([z.string(), z.array(z.string())]),
+}).strict();
+const aiReviewSuggestionSchema = z.object({ key: z.string(), rationale: z.string(), patch: aiReviewPatchSchema }).strict();
+const aiReviewQuestionSchema = z.object({ findingKey: z.string(), requirementIds: z.array(z.string()), question: z.string() }).strict();
+const aiReviewOriginalSchema = z.object({
+  findings: z.array(aiReviewFindingSchema), suggestions: z.array(aiReviewSuggestionSchema), clarificationQuestions: z.array(aiReviewQuestionSchema),
+}).strict();
+const aiReviewActorSchema = z.object({ id: z.string(), displayName: z.string() }).strict();
+const aiReviewDetailSchema = z.object({
+  id: z.string(), state: z.enum(["pending-review", "applied"]), freshness: z.enum(["fresh", "stale"]),
+  binding: z.object({ projectId: z.string(), draftId: z.string(), baseDraftRevision: z.string() }).strict(),
+  reviewRevision: z.string(), createdAt: z.string(), generatedAt: z.string().optional(), expiresAt: z.string().optional(),
+  initiatedBy: aiReviewActorSchema,
+  boundDraft: z.object({ version: z.literal("requirement-quality-review-input-v1"), requirements: z.array(z.object({
+    logicalRequirementId: z.string(), groupLabel: z.string().optional(), title: z.string(), description: z.string(), acceptanceCriteria: z.array(z.string()),
+  }).strict()) }).strict(),
+  original: aiReviewOriginalSchema,
+  workingSuggestions: z.array(aiReviewSuggestionSchema.extend({ selected: z.boolean() }).strict()).optional(),
+  finalSelectedPatches: z.array(aiReviewPatchSchema).optional(), appliedAt: z.string().optional(), appliedBy: aiReviewActorSchema.optional(), appliedDraftRevision: z.string().optional(),
+  actions: z.object({ canEdit: z.boolean(), canDiscard: z.boolean(), canApply: z.boolean() }).strict(),
+}).strict();
+const aiReviewAppliedResultSchema = z.object({
+  id: z.string(), state: z.literal("applied"), appliedAt: z.string(), draft: z.object({ revisionToken: z.string() }).strict(),
+}).strict();
+export const aiReviewResponseSchema = z.object({ review: z.union([aiReviewDetailSchema, aiReviewAppliedResultSchema]) }).strict();
+export const aiReviewTerminalResponseSchema = z.object({ review: z.object({ id: z.string(), state: z.literal("discarded") }).strict() }).strict();
+const aiReviewRunSchema = z.object({
+  id: z.string(), state: z.enum(["generating", "pending-review", "applied"]), freshness: z.enum(["fresh", "stale"]),
+  createdAt: z.string(), generatedAt: z.string().optional(), expiresAt: z.string().optional(), appliedAt: z.string().optional(), initiatedBy: aiReviewActorSchema,
+  counts: z.object({ findings: z.number().int(), suggestions: z.number().int(), clarificationQuestions: z.number().int() }).strict(),
+}).strict();
+export const aiReviewRunsResponseSchema = z.object({ availability: z.object({ enabled: z.boolean() }).strict(), runs: z.array(aiReviewRunSchema) }).strict();
+export const aiReviewProvenanceResponseSchema = z.object({ provenance: z.object({
+  id: z.string(), state: z.literal("applied"), binding: z.object({ projectId: z.string(), draftId: z.string(), baseDraftRevision: z.string() }).strict(),
+  canonicalInput: aiReviewDetailSchema.shape.boundDraft, original: aiReviewOriginalSchema, finalSelectedPatches: z.array(aiReviewPatchSchema),
+  initiatedBy: aiReviewActorSchema, appliedBy: aiReviewActorSchema, generatedAt: z.string(), appliedAt: z.string(), promptVersion: z.string(), operationId: z.string(),
+  provider: z.object({ id: z.string(), model: z.string() }).strict(), execution: z.object({ durationMs: z.number() }).strict(),
+}).strict() }).strict();
+export type AiRequirementReview = z.infer<typeof aiReviewDetailSchema>;
+export type AiReviewWorkingSuggestion = NonNullable<AiRequirementReview["workingSuggestions"]>[number];
+export type AiReviewProvenance = z.infer<typeof aiReviewProvenanceResponseSchema>["provenance"];
 
 const changeItemSchema = z.object({
   id: z.string(), comparisonKind: z.enum(["base-scope", "previous-proposal"]), entityKind: z.enum(["group", "requirement"]),

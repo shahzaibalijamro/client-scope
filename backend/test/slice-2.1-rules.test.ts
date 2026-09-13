@@ -58,6 +58,9 @@ describe("Slice 2.1 Gemini boundary", () => {
     expect(((request.systemInstruction as { parts: Array<{ text: string }> }).parts[0]!.text).startsWith(REQUIREMENT_STRUCTURING_PROMPT)).toBe(true);
     expect(serialized).toContain("Return at most 3 groups and 4 requirements");
     expect(serialized).not.toContain("membership");
+    expect(serialized).not.toContain("additionalProperties");
+    expect(serialized).not.toContain("minItems");
+    expect(serialized).not.toContain("maxItems");
     expect((call[1] as RequestInit).headers).toEqual(expect.objectContaining({ "x-goog-api-key": "private-key" }));
   });
 

@@ -16,6 +16,8 @@ import { createLifecycleRouter } from "./domain/lifecycle-routes.js";
 import { DeterministicPrivateAssetStorage, type PrivateAssetStorage } from "./domain/private-asset-storage.js";
 import { createAiRequirementRouter } from "./domain/ai-requirement-routes.js";
 import { DisabledRequirementStructuringProvider, type RequirementStructuringProvider } from "./domain/ai-requirement-provider.js";
+import { createAiRequirementReviewRouter } from "./domain/ai-requirement-review-routes.js";
+import { DisabledRequirementQualityReviewProvider, type RequirementQualityReviewProvider } from "./domain/ai-requirement-review-provider.js";
 
 export function safeDiagnosticPath(path: string): string {
   return path.replace(/(\/invitation-links\/)[^/]+/u, "$1:token");
@@ -49,6 +51,7 @@ export type AppOptions = Readonly<{
   clock?: Clock;
   privateAssetStorage?: PrivateAssetStorage;
   requirementStructuringProvider?: RequirementStructuringProvider;
+  requirementQualityReviewProvider?: RequirementQualityReviewProvider;
   aiClock?: Clock;
 }>;
 
@@ -57,6 +60,7 @@ export function createApp(options: AppOptions = {}): Express {
   const emailService = options.emailService ?? developmentEmail;
   const privateAssetStorage = options.privateAssetStorage ?? new DeterministicPrivateAssetStorage();
   const requirementStructuringProvider = options.requirementStructuringProvider ?? new DisabledRequirementStructuringProvider();
+  const requirementQualityReviewProvider = options.requirementQualityReviewProvider ?? new DisabledRequirementQualityReviewProvider();
 
   app.disable("x-powered-by");
   app.use(requestDiagnostics());
@@ -67,6 +71,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use("/api/v1", createWorkspaceRouter(emailService));
   app.use("/api/v1", createScopeRouter(emailService));
   app.use("/api/v1", createAiRequirementRouter(requirementStructuringProvider, options.aiClock));
+  app.use("/api/v1", createAiRequirementReviewRouter(requirementQualityReviewProvider, options.aiClock));
   app.use("/api/v1", createChangeControlRouter(emailService));
   app.use("/api/v1", createMilestoneRouter(options.clock));
   app.use("/api/v1", createDeliverableRouter(emailService, privateAssetStorage));

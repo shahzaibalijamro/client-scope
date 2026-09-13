@@ -61,7 +61,7 @@ describe("Slice 1.2 scope interface", () => {
     const initial = { scope: {
       state: "draft", role: "service-team-member", pendingAction: "scope-editing",
       permissions: { canStartDraft: false, canEditDraft: true, canSubmit: false, canWithdraw: false, canComment: false, canDecide: false },
-      draft: { revisionToken: "r".repeat(32), groups: [], requirements: [{ logicalId: "logical", title: "Homepage", description: "Description", acceptanceCriteria: ["Done"], order: 0 }] }, versions: [],
+      draft: { id: "draft", revisionToken: "r".repeat(32), groups: [], requirements: [{ logicalId: "logical", title: "Homepage", description: "Description", acceptanceCriteria: ["Done"], order: 0 }] }, versions: [],
     } };
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = String(input);

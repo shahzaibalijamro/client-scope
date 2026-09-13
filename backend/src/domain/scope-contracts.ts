@@ -2,7 +2,10 @@ import { z } from "zod";
 
 import { objectId } from "./validation.js";
 
-const plainText = (minimum: number, maximum: number) => z.string().trim().min(minimum).max(maximum);
+export const plainText = (minimum: number, maximum: number) => z.string().trim().min(minimum).max(maximum);
+export const scopeTitle = plainText(1, 120);
+export const scopeDescription = plainText(1, 5_000);
+export const scopeAcceptanceCriteria = z.array(plainText(1, 2_000)).min(1).max(50);
 const optionalNarrative = z.string().trim().max(2_000).transform((value) => value || undefined).optional();
 
 export const scopeGroupInput = z.object({
@@ -14,9 +17,9 @@ export const scopeGroupInput = z.object({
 export const scopeRequirementInput = z.object({
   logicalId: objectId.optional(),
   groupId: objectId.optional(),
-  title: plainText(1, 120),
-  description: plainText(1, 5_000),
-  acceptanceCriteria: z.array(plainText(1, 2_000)).min(1).max(50),
+  title: scopeTitle,
+  description: scopeDescription,
+  acceptanceCriteria: scopeAcceptanceCriteria,
   order: z.number().int().min(0),
 }).strict();
 

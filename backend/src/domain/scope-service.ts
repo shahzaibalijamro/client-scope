@@ -112,6 +112,7 @@ function requirementView(requirement: {
 
 function draftView(draft: InstanceType<typeof ScopeDraft> | Record<string, any>) {
   return {
+    id: String(draft._id),
     revisionToken: draft.revisionToken,
     copiedFromVersionId: draft.sourceVersionId ? String(draft.sourceVersionId) : undefined,
     groups: [...draft.groups].sort((a, b) => a.order - b.order).map(groupView),

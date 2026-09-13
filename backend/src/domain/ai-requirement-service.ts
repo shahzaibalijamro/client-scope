@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- private persistence records are exposed only through explicit allow-list projections. */
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 import mongoose, { type ClientSession } from "mongoose";
 
 import { ApiError } from "../errors.js";
 import {
-  AI_GENERATION_LIMIT, AI_GENERATION_WINDOW_MS, AI_PROMPT_VERSION, AI_PROPOSAL_TTL_MS,
+  AI_PROMPT_VERSION, AI_PROPOSAL_TTL_MS,
   AI_RESPONSE_MAX_BYTES, generatedProposalSchema, workingProposalSchema,
   type ApplyProposalInput, type GeneratedProposal, type UpdateWorkingProposalInput, type WorkingProposal,
 } from "./ai-requirement-contracts.js";
-import { AiGenerationLedger, AiRequirementProposal } from "./ai-requirement-models.js";
+import { AiRequirementProposal } from "./ai-requirement-models.js";
+import { admitAiRequirementRequest, releaseAiRequirementRequest } from "./ai-requirement-limits.js";
 import {
   AiProviderError, type RequirementStructuringProvider,
 } from "./ai-requirement-provider.js";
@@ -131,36 +132,6 @@ async function expirePending(projectId: string, now: Date): Promise<void> {
   );
 }
 
-async function admitGeneration(userId: mongoose.Types.ObjectId, now: Date): Promise<string> {
-  const operationId = randomUUID();
-  await transact(async (session) => {
-    const ledger: any = await AiGenerationLedger.findOneAndUpdate(
-      { userId }, { $inc: { sequence: 1 }, $setOnInsert: { admittedAt: [] } },
-      { upsert: true, returnDocument: "after", session },
-    );
-    const cutoff = new Date(now.getTime() - AI_GENERATION_WINDOW_MS);
-    const recent = ledger.admittedAt.filter((date: Date) => date > cutoff);
-    if (ledger.inFlightUntil && ledger.inFlightUntil > now) {
-      throw new ApiError(429, "AI_GENERATION_IN_FLIGHT", "Wait for your current AI generation request to finish before starting another.");
-    }
-    if (recent.length >= AI_GENERATION_LIMIT) {
-      const retryAt = new Date(recent[0]!.getTime() + AI_GENERATION_WINDOW_MS);
-      throw new ApiError(429, "AI_RATE_LIMITED", "The hourly AI generation limit has been reached. Try again later.", {
-        retryAfterSeconds: Math.max(1, Math.ceil((retryAt.getTime() - now.getTime()) / 1_000)),
-      });
-    }
-    ledger.admittedAt = [...recent, now];
-    ledger.inFlightOperationId = operationId;
-    ledger.inFlightUntil = new Date(now.getTime() + 60_000);
-    await ledger.save({ session });
-  });
-  return operationId;
-}
-
-async function releaseGeneration(userId: mongoose.Types.ObjectId, operationId: string): Promise<void> {
-  await AiGenerationLedger.updateOne({ userId, inFlightOperationId: operationId }, { $unset: { inFlightOperationId: 1, inFlightUntil: 1 } });
-}
-
 function providerFailure(error: unknown): ApiError {
   const category = error instanceof AiProviderError ? error.category : "transport";
   if (category === "disabled" || category === "configuration") return new ApiError(503, "AI_UNAVAILABLE", "AI requirement structuring is unavailable. Manual requirement editing remains available.");
@@ -190,7 +161,7 @@ export class AiRequirementService {
     const capacity = { groups: Math.min(10, Math.max(0, 50 - draft.groups.length)), requirements: Math.min(25, Math.max(0, 200 - draft.requirements.length)) };
     if (capacity.requirements === 0) throw new ApiError(409, "AI_DRAFT_CAPACITY", "The requirement draft has no remaining requirement capacity.");
     if (!this.provider.available) throw providerFailure(new AiProviderError("disabled"));
-    const admissionId = await admitGeneration(actor._id, now);
+    const admissionId = await admitAiRequirementRequest(actor._id, now);
     try {
       const result = await this.provider.generate(source, capacity);
       if (Buffer.byteLength(JSON.stringify(result.output), "utf8") > AI_RESPONSE_MAX_BYTES) throw new AiProviderError("oversized");
@@ -207,7 +178,7 @@ export class AiRequirementService {
       });
       return pendingView(proposal, true);
     } catch (error) { throw providerFailure(error); }
-    finally { await releaseGeneration(actor._id, admissionId).catch(() => undefined); }
+    finally { await releaseAiRequirementRequest(actor._id, admissionId).catch(() => undefined); }
   }
 
   async get(projectId: string, proposalId: string, actor: Actor) {
