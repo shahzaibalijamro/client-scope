@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { createApp } from "../src/app.js";
 import { syncDomainIndexes } from "../src/domain/models.js";
+import type { RequirementStructuringProvider } from "../src/domain/ai-requirement-provider.js";
 
 process.env.NODE_ENV = "test";
 process.env.FRONTEND_ORIGIN = "http://127.0.0.1:4200";
@@ -16,7 +17,22 @@ const database = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
 await mongoose.connect(database.getUri());
 await syncDomainIndexes();
 
-const server = createApp().listen(4101, "127.0.0.1", () => {
+const deterministicAi: RequirementStructuringProvider = {
+  available: true,
+  async generate(source, capacity) {
+    void source;
+    return {
+      output: {
+        groups: capacity.groups > 0 ? [{ key: "experience", name: "Experience" }] : [],
+        requirements: [{ key: "contact", ...(capacity.groups > 0 ? { groupKey: "experience" } : {}), title: "Contact page", description: "Provide a contact page for visitors.", acceptanceCriteria: ["Visitors can view contact details."] }],
+        warnings: [{ category: "ambiguity", message: "The source does not state a delivery date." }],
+      },
+      operationId: "playwright-deterministic-operation", providerId: "deterministic-test", modelId: "deterministic-test", durationMs: 1,
+    };
+  },
+};
+
+const server = createApp({ requirementStructuringProvider: deterministicAi }).listen(4101, "127.0.0.1", () => {
   process.stdout.write("ClientScope E2E backend ready\n");
 });
 
@@ -28,5 +44,10 @@ async function close() {
   await database.stop();
 }
 
-process.once("SIGINT", () => void close().finally(() => process.exit(0)));
-process.once("SIGTERM", () => void close().finally(() => process.exit(0)));
+function shutdown() {
+  const forced = setTimeout(() => process.exit(0), 5_000);
+  void close().catch(() => undefined).finally(() => { clearTimeout(forced); process.exit(0); });
+}
+
+process.once("SIGINT", shutdown);
+process.once("SIGTERM", shutdown);

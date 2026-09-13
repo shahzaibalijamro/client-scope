@@ -22,6 +22,9 @@ describe("loadConfig", () => {
       SESSION_SECRET: validEnvironment.SESSION_SECRET,
       AUTH_THROTTLE_LIMIT: 12,
       EMAIL_DELIVERY_MODE: "local",
+      AI_ENABLED: false,
+      GEMINI_MODEL: "gemini-2.5-flash",
+      AI_TIMEOUT_MS: 30_000,
     });
   });
 
@@ -54,5 +57,12 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ ...validEnvironment, MONGODB_URI: secret })).toThrowError(
       expect.objectContaining({ message: expect.not.stringContaining(secret) }),
     );
+  });
+
+  it("requires a server-only credential only when AI is enabled", () => {
+    expect(() => loadConfig({ ...validEnvironment, AI_ENABLED: "true" })).toThrow("GEMINI_API_KEY");
+    expect(loadConfig({ ...validEnvironment, AI_ENABLED: "true", GEMINI_API_KEY: "secret", GEMINI_MODEL: "configured-model" })).toMatchObject({
+      AI_ENABLED: true, GEMINI_API_KEY: "secret", GEMINI_MODEL: "configured-model", AI_TIMEOUT_MS: 30_000,
+    });
   });
 });

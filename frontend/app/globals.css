@@ -167,6 +167,19 @@ textarea { resize:vertical; } label small { color:var(--danger); font-weight:600
 .activity-list time { color:var(--muted);font-size:.8rem;white-space:nowrap; }
 .project-collection { margin-top:1.2rem; }
 .project-collection h4 { margin:0;color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase; }
+.ai-panel { display:grid;gap:1rem;padding:1rem;border:1px solid #cfe0d4;border-radius:.85rem;background:#f7fbf8;overflow-wrap:anywhere; }
+.ai-panel h4,.ai-panel h5,.ai-stage h4,.ai-stage h5 { margin:.2rem 0; }
+.ai-panel ul,.ai-warnings ul,.ai-history ul { display:grid;gap:.6rem;margin:.5rem 0;padding-left:1.2rem; }
+.ai-panel li { line-height:1.5; }
+.ai-stage { display:grid;gap:1rem; }
+.ai-stage details,.ai-provenance details { padding:.8rem;border:1px solid var(--border);border-radius:.65rem;background:#fff; }
+.ai-stage summary,.ai-provenance summary { cursor:pointer;font-weight:750; }
+.ai-source-preview { max-height:18rem;overflow:auto;margin:.8rem 0 0;padding:.8rem;background:#f5f6f5;border-radius:.5rem;font:inherit;overflow-wrap:anywhere; }
+.ai-warnings { padding:1rem;border-left:4px solid #b58a1c;background:#fff7de;border-radius:.5rem; }
+.ai-history { border-top:1px solid var(--border);padding-top:1rem; }
+.ai-provenance { margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:.75rem;background:#fff; }
+.check-row { display:flex;grid-template-columns:auto 1fr;align-items:center;gap:.55rem; }
+.check-row input { width:auto; }
 
 @media (max-width:760px) {
   .account>div:not(.profile-popover) { display:none; }
@@ -177,4 +190,5 @@ textarea { resize:vertical; } label small { color:var(--danger); font-weight:600
   .scope-heading,.version-heading,.draft-row,.criterion-row { display:grid;grid-template-columns:1fr;align-items:stretch; }.scope-editor .row-actions>button,.decision-box .row-actions>button { flex:1; }.scope-version { padding:1rem; }
   .milestone-actions>button { flex:1 1 9rem; }.milestone-heading { display:grid; }
   .activity-list li { display:grid; }.activity-list time { white-space:normal; }
+  .ai-panel .panel-heading,.ai-stage .panel-heading { align-items:flex-start; }
 }
