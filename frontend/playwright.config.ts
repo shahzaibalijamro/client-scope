@@ -20,14 +20,14 @@ export default defineConfig({
       command: "npm --prefix ../backend exec -- tsx ../backend/test/e2e-server.ts",
       url: "http://127.0.0.1:4101/api/v1/health",
       timeout: 120_000,
-      reuseExistingServer: false,
+      reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === "1",
     },
     {
       command: "npm run dev -- --hostname 127.0.0.1 --port 4200",
       url: "http://127.0.0.1:4200/health",
       env: { BACKEND_API_ORIGIN: "http://127.0.0.1:4101" },
       timeout: 120_000,
-      reuseExistingServer: false,
+      reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === "1",
     },
   ],
 });

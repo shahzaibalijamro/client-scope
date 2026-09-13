@@ -226,6 +226,54 @@ export type ScopeData = z.infer<typeof scopeSchema>;
 export type ScopeDraft = z.infer<typeof scopeDraftSchema>;
 export type ScopeVersion = z.infer<typeof scopeVersionSchema>;
 
+const aiGroupSchema = z.object({ key: z.string(), name: z.string() }).strict();
+const aiRequirementSchema = z.object({
+  key: z.string(), groupKey: z.string().optional(), title: z.string(), description: z.string(), acceptanceCriteria: z.array(z.string()),
+}).strict();
+const aiWarningSchema = z.object({
+  category: z.enum(["unsupported-detail", "conflict", "ambiguity"]), message: z.string(), targetKey: z.string().optional(),
+}).strict();
+const aiWorkingSchema = z.object({
+  groups: z.array(aiGroupSchema), requirements: z.array(aiRequirementSchema.extend({ selected: z.boolean() }).strict()),
+}).strict();
+const aiActorSchema = z.object({ id: z.string(), displayName: z.string() }).strict();
+const aiAppliedResultSchema = z.object({
+  id: z.string(), state: z.literal("applied"), appliedAt: z.string(),
+  draft: z.object({ revisionToken: z.string() }).strict(),
+  appended: z.object({ groupIds: z.array(z.string()), requirementIds: z.array(z.string()) }).strict(),
+}).strict();
+export const aiPendingProposalSchema = z.object({
+  id: z.string(), state: z.literal("pending"),
+  binding: z.object({ projectId: z.string(), draftId: z.string(), baseDraftRevision: z.string() }).strict(),
+  proposalRevision: z.string(), expiresAt: z.string(), createdAt: z.string(), initiatedBy: aiActorSchema,
+  rawSource: z.string(),
+  original: z.object({ groups: z.array(aiGroupSchema), requirements: z.array(aiRequirementSchema), warnings: z.array(aiWarningSchema) }).strict(),
+  working: aiWorkingSchema, warnings: z.array(aiWarningSchema),
+  actions: z.object({ canEdit: z.boolean(), canDiscard: z.boolean(), canApply: z.boolean() }).strict(),
+}).strict();
+export const aiProposalResponseSchema = z.object({ proposal: z.union([aiPendingProposalSchema, aiAppliedResultSchema]) }).strict();
+export const aiTerminalProposalResponseSchema = z.object({
+  proposal: z.union([aiAppliedResultSchema, z.object({ id: z.string(), state: z.enum(["discarded", "expired"]) }).strict()]),
+}).strict();
+const aiRunSummarySchema = z.object({
+  id: z.string(), state: z.enum(["pending", "applied"]), createdAt: z.string(), expiresAt: z.string(), appliedAt: z.string().optional(),
+  initiatedBy: aiActorSchema,
+  counts: z.object({ groups: z.number().int(), requirements: z.number().int(), warnings: z.number().int() }).strict(),
+}).strict();
+export const aiRunsResponseSchema = z.object({ availability: z.object({ enabled: z.boolean() }).strict(), runs: z.array(aiRunSummarySchema) }).strict();
+export const aiProvenanceResponseSchema = z.object({ provenance: z.object({
+  id: z.string(), state: z.literal("applied"),
+  binding: z.object({ projectId: z.string(), draftId: z.string(), baseDraftRevision: z.string() }).strict(),
+  rawSource: z.string(), original: z.object({ groups: z.array(aiGroupSchema), requirements: z.array(aiRequirementSchema), warnings: z.array(aiWarningSchema) }).strict(),
+  finalSelection: z.object({ groups: z.array(aiGroupSchema), requirements: z.array(aiRequirementSchema) }).strict(),
+  initiatedBy: aiActorSchema, appliedBy: aiActorSchema, createdAt: z.string(), appliedAt: z.string(),
+  promptVersion: z.string(), operationId: z.string(), provider: z.object({ id: z.string(), model: z.string() }).strict(),
+  execution: z.object({ durationMs: z.number() }).strict(),
+}).strict() }).strict();
+export type AiPendingProposal = z.infer<typeof aiPendingProposalSchema>;
+export type AiWorkingProposal = z.infer<typeof aiWorkingSchema>;
+export type AiProvenance = z.infer<typeof aiProvenanceResponseSchema>["provenance"];
+
 const changeItemSchema = z.object({
   id: z.string(), comparisonKind: z.enum(["base-scope", "previous-proposal"]), entityKind: z.enum(["group", "requirement"]),
   entityId: z.string(), changeKinds: z.array(z.enum(["added", "removed", "content-changed", "moved"])),

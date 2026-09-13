@@ -139,6 +139,8 @@ Add AI only on top of the working Phase 1 workflows. All three capabilities belo
 
 ### Slice 2.1 — Requirement structuring
 
+**Status:** Complete — validated 2026-09-13
+
 Outcome: a provider can turn messy source input into reviewable draft requirements, with no AI-generated result entering the official project record without explicit human confirmation.
 
 ### Slice 2.2 — Requirement quality and ambiguity review

@@ -1,5 +1,7 @@
 # Slice 2.1: AI Requirement Structuring Validation
 
+**Status:** Passed — accepted 2026-09-13
+
 ## Highest-Risk Behavior
 
 Validation must prove that AI remains optional and advisory; private source and provenance never leak to clients; current tenant, project, and lifecycle authority is enforced; proposal content cannot drift to another draft revision; and Apply is atomic, append-only, and exactly once.
@@ -228,6 +230,30 @@ Confirm the implementation introduces none of the following:
 - Review the diff against the approved specification and constitutions.
 
 ## Evidence
+
+### 2026-09-13 implementation evidence
+
+- Baseline commit: `f9bf6965480d144504535a924087438ecd16cec6` (implementation working tree not yet committed).
+- Environment: local Windows development/test environment, Node.js 24.20.0, isolated `mongodb-memory-server` replica sets, deterministic fake AI provider, Chromium through Playwright. No Gemini, Atlas, Cloudinary, Gmail, Vercel, Northflank, or registry credential was used.
+- Backend `npm run typecheck`: pass.
+- Backend `npm run lint`: pass.
+- Backend `npm test`: pass, 18 files and 110 tests.
+- Backend `npm run build`: pass.
+- Frontend `npm run typecheck`: pass.
+- Frontend `npm run lint`: pass.
+- Frontend `npm test`: pass, 9 files and 34 tests.
+- Frontend `npm run build`: pass.
+- Frontend `npm run test:e2e`: pass, 11 Chromium journeys in 2.9 minutes, including all existing critical lifecycle journeys and the Slice 2.1 selective-Apply journey.
+- Backend `docker build --tag clientscope-backend:slice-2-1 ./backend`: pass.
+- Frontend `docker build --build-arg BACKEND_API_ORIGIN=http://backend:4000 --tag clientscope-frontend:slice-2-1 ./frontend`: pass.
+- Backend-container smoke test against a disposable MongoDB 8 container: pass; `/api/v1/health` returned `status=ok` and `database=connected`, and the temporary containers and network were removed.
+- Focused backend `npm test -- --run test/slice-2.1-api.test.ts test/slice-2.1-rules.test.ts`: pass, 10 tests covering strict input/output contracts, inert untrusted source, fixed prompt/capacity boundary, malformed/blocked/truncated/oversized responses, private generation, tenant/role denial, immutable original output, stale draft binding, append-only identities, idempotent and concurrent Apply, authoritative expiry, safe provider failure, retained manual draft state, and rolling per-user admission limits.
+- Focused frontend `npm test -- --run app/ai-requirement-panel.test.tsx app/scope-panel.test.tsx`: pass, 5 tests covering disabled-AI manual availability, warning separation, save-before-Apply, explicit append confirmation, focus movement, and unchanged requirements review behavior.
+- Focused responsive browser `npx playwright test e2e/slice-2.1.spec.ts`: pass at a 390 by 844 viewport. The journey generates through the deterministic provider, reviews a grounding warning, edits and saves staging content, confirms append-only Apply, refreshes the ordinary draft, exposes provider-only applied-run history, and verifies no horizontal overflow.
+- `git diff --check`: pass. No credentials, raw private source fixture, or full provider response is stored in this evidence record.
+- Manual live-Gemini grounding, provider/client privacy, responsive-layout, keyboard, focus/announcement, and assistive-technology checks were completed and accepted by the product owner on 2026-09-13.
+- Final implementation review against the approved requirements, exclusions, mission, technology stack, and roadmap: pass. No unrelated AI workflow, document ingestion, retrieval system, autonomous action, Redis, queue, worker, or other prohibited infrastructure was introduced.
+- Product-owner acceptance was received on 2026-09-13. Slice 2.1 was marked complete in the roadmap only after the automated, container, manual, privacy, and specification-review gates passed.
 
 Record after implementation:
 

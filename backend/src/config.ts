@@ -24,6 +24,10 @@ const configurationSchema = z.object({
   GMAIL_USER: z.string().email().optional(),
   GMAIL_APP_PASSWORD: z.string().min(1).optional(),
   EMAIL_FROM_NAME: z.string().trim().min(1).max(120).optional(),
+  AI_ENABLED: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
+  GEMINI_API_KEY: z.string().min(1).optional(),
+  GEMINI_MODEL: z.string().trim().min(1).max(120).default("gemini-2.5-flash"),
+  AI_TIMEOUT_MS: z.string().regex(/^\d+$/u).transform(Number).pipe(z.number().int().min(1_000).max(30_000)).default(30_000),
 });
 
 export type AppConfig = Readonly<z.infer<typeof configurationSchema>>;
@@ -47,6 +51,10 @@ export function loadConfig(environment: NodeJS.ProcessEnv): AppConfig {
     GMAIL_USER: environment.GMAIL_USER || undefined,
     GMAIL_APP_PASSWORD: environment.GMAIL_APP_PASSWORD || undefined,
     EMAIL_FROM_NAME: environment.EMAIL_FROM_NAME || undefined,
+    AI_ENABLED: environment.AI_ENABLED || undefined,
+    GEMINI_API_KEY: environment.GEMINI_API_KEY || undefined,
+    GEMINI_MODEL: environment.GEMINI_MODEL || undefined,
+    AI_TIMEOUT_MS: environment.AI_TIMEOUT_MS || undefined,
   });
 
   if (!result.success) {
@@ -55,6 +63,10 @@ export function loadConfig(environment: NodeJS.ProcessEnv): AppConfig {
       return `${field}: ${issue.message}`;
     });
     throw new ConfigurationError(problems);
+  }
+
+  if (result.data.AI_ENABLED && !result.data.GEMINI_API_KEY) {
+    throw new ConfigurationError(["GEMINI_API_KEY: GEMINI_API_KEY is required when AI_ENABLED is true."]);
   }
 
   return Object.freeze(result.data);
