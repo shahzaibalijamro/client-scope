@@ -168,6 +168,16 @@ Outcome: a provider can summarize accumulated client feedback into useful themes
 
 Turn the complete product into a reliable, understandable portfolio artifact rather than adding unrelated features.
 
+### Slice 3.1 — Project record export
+
+**Status:** Complete — validated 2026-09-14
+
+Outcome: every current project member can download a point-in-time copy of the complete shared project record, including a readable document, a safe attachment inventory, and available files from submitted deliverable versions. The export remains client-visible, informational, and subject to current project access; it does not expose provider-private or AI-working data and does not claim legal or compliance-grade authority.
+
+### Slice 3.2 — Portfolio release and presentation
+
+Outcome: harden, document, demonstrate, and present the complete product as a reliable portfolio artifact.
+
 Required outcomes:
 
 - Continued reliability and final hardening of the Phase 0 production path using Vercel, Northflank, private GHCR images, MongoDB Atlas, Cloudinary, Gmail SMTP through Nodemailer, and Gemini within free or effectively free demo constraints.
