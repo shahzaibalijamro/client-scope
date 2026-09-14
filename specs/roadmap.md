@@ -174,7 +174,24 @@ Turn the complete product into a reliable, understandable portfolio artifact rat
 
 Outcome: every current project member can download a point-in-time copy of the complete shared project record, including a readable document, a safe attachment inventory, and available files from submitted deliverable versions. The export remains client-visible, informational, and subject to current project access; it does not expose provider-private or AI-working data and does not claim legal or compliance-grade authority.
 
-### Slice 3.2 — Portfolio release and presentation
+### Slice 3.2 — UI navigation redesign
+
+Outcome: users can move directly among their work, understand what needs attention, and operate each project through a focused, responsive, accessible interface rather than long stacks of unrelated sections.
+
+Required outcomes:
+
+- A cohesive modern light-theme SaaS interface across authentication, My Work, workspace administration, project workflows, and utility states.
+- A responsive role-aware application shell, durable routes, browser-history support, and a keyboard-accessible global project switcher.
+- A unified project directory with search, focused filters, deterministic attention-first sorting, and equivalent desktop-table and mobile-card experiences.
+- A seven-section project structure with an action-first Overview and progressive disclosure of forms, history, resolved discussions, and archived material.
+- Resource-oriented workspace administration with direct sections and focused dialogs or drawers for mutations.
+- Consistent accessible feedback, loading, empty, error, confirmation, and unsaved-change behavior.
+- Preservation of all existing authorization, tenant isolation, workflow, concurrency, history, attachment, AI, email, export, and privacy guarantees.
+- Automated critical navigation coverage in Chromium, Firefox, and WebKit plus final responsive, keyboard, screen-reader, contrast, overflow, and reduced-motion review.
+
+This slice changes presentation and navigation, not the product's domain policy. Demo accounts, demo reset behavior, portfolio assets, and publishing remain part of Slice 3.3.
+
+### Slice 3.3 — Portfolio release and presentation
 
 Outcome: harden, document, demonstrate, and present the complete product as a reliable portfolio artifact.
 
@@ -191,6 +208,7 @@ Required outcomes:
 - Polished screenshots and a concise portfolio narrative covering features, technologies, engineering challenges, and learnings.
 - A short recorded walkthrough centered on the product story: agreement, scope change, delivery revision, approval, and preserved history.
 - Final responsive, accessibility, browser, privacy, and error-handling review at the project's stated quality level.
+- Demo behavior is explicitly deployment-configurable. Ordinary and self-hosted deployments do not create or expose dummy accounts unless demo mode is intentionally enabled.
 
 ## Portfolio-Ready Completion Gate
 
