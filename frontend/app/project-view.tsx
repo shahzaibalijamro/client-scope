@@ -11,6 +11,7 @@ import { ChangeControlPanel } from "./change-control-panel";
 import { MilestonePanel } from "./milestone-panel";
 import { DeliverablePanel } from "./deliverable-panel";
 import { LifecyclePanel } from "./lifecycle-panel";
+import { ProjectExportButton } from "./project-export-button";
 
 function ErrorNote({ error }: { error: unknown }) {
   if (!error) return null;
@@ -70,6 +71,7 @@ export function ProjectView({ projectId, onBack }: Readonly<{ projectId: string;
       <ChangeControlPanel projectId={projectId} />
       <MilestonePanel projectId={projectId} />
       <DeliverablePanel projectId={projectId} />
+      <ProjectExportButton projectId={projectId} />
       <section className="panel">
         <div className="panel-heading"><div><p className="eyebrow">Shared access</p><h2>Project members</h2></div></div>
         {members.isPending && <p role="status">Loading members…</p>}

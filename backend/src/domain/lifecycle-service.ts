@@ -338,7 +338,7 @@ function decodeCursor(value: string, projectId: string) {
   } catch { throw new ApiError(400, "INVALID_CURSOR", "The activity cursor is invalid."); }
 }
 
-function activityView(record: any) {
+export function safeActivityView(record: any) {
   const keys = activityFields[record.action] ?? [];
   const entity = Object.fromEntries(keys.flatMap((key) => record.context?.[key] === undefined ? [] : [[key, record.context[key]]]));
   const role = typeof record.context?.actorRole === "string" ? record.context.actorRole : undefined;
@@ -357,5 +357,5 @@ export async function readActivity(projectId: string, userId: mongoose.Types.Obj
   const records = await Activity.find(filter).sort({ occurredAt: -1, _id: -1 }).limit(input.limit + 1).lean();
   const page = records.slice(0, input.limit);
   const last = page.at(-1);
-  return { items: page.map(activityView), nextCursor: records.length > input.limit && last ? encodeCursor(String(project._id), last.occurredAt, last._id) : undefined };
+  return { items: page.map(safeActivityView), nextCursor: records.length > input.limit && last ? encodeCursor(String(project._id), last.occurredAt, last._id) : undefined };
 }

@@ -170,7 +170,7 @@ Turn the complete product into a reliable, understandable portfolio artifact rat
 
 ### Slice 3.1 — Project record export
 
-**Status:** Specification approved — 2026-09-14
+**Status:** Complete — validated 2026-09-14
 
 Outcome: every current project member can download a point-in-time copy of the complete shared project record, including a readable document, a safe attachment inventory, and available files from submitted deliverable versions. The export remains client-visible, informational, and subject to current project access; it does not expose provider-private or AI-working data and does not claim legal or compliance-grade authority.
 

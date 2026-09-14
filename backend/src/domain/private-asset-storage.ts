@@ -24,6 +24,7 @@ export interface PrivateAssetStorage {
   authorizeUpload(input: { providerIdentifier: string; mediaType: AllowedAssetType; byteSize: number; expiresAt: Date }): Promise<UploadAuthorization>;
   verifyUpload(input: { providerIdentifier: string; mediaType: AllowedAssetType; byteSize: number; providerResult: Record<string, unknown> }): Promise<VerifiedUpload>;
   authorizeDelivery(input: { providerIdentifier: string; filename: string; preview: boolean; expiresAt: Date }): Promise<DeliveryAuthorization>;
+  read(input: { providerIdentifier: string; byteSize: number; signal?: AbortSignal }): Promise<Buffer>;
   delete(input: { providerIdentifier: string; idempotencyKey: string }): Promise<{ absent: boolean }>;
 }
 
@@ -117,6 +118,21 @@ export class CloudinaryPrivateAssetStorage implements PrivateAssetStorage {
     return { url, expiresAt: input.expiresAt };
   }
 
+  async read(input: { providerIdentifier: string; byteSize: number; signal?: AbortSignal }): Promise<Buffer> {
+    const delivery = await this.authorizeDelivery({ providerIdentifier: input.providerIdentifier, filename: "export-asset", preview: true, expiresAt: new Date(Date.now() + 60_000) });
+    try {
+      const response = await fetch(delivery.url, input.signal ? { signal: input.signal } : {});
+      if (response.status === 404) throw new ApiError(404, "ASSET_NOT_FOUND", "The file is unavailable.");
+      if (response.status === 401 || response.status === 403) throw new ApiError(403, "ASSET_ACCESS_DENIED", "The file is unavailable.");
+      if (!response.ok || !response.body) throw dependency();
+      const bytes = Buffer.from(await response.arrayBuffer());
+      return bytes;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw dependency();
+    }
+  }
+
   async delete(input: { providerIdentifier: string }): Promise<{ absent: boolean }> {
     const identity = decodeIdentity(input.providerIdentifier);
     try {
@@ -150,6 +166,11 @@ export class DeterministicPrivateAssetStorage implements PrivateAssetStorage {
     if (this.deleted.has(input.providerIdentifier)) throw dependency();
     const token = randomBytes(24).toString("base64url");
     return { url: `https://storage.invalid/private/${token}/${encodeURIComponent(input.filename)}${input.preview ? "?preview=1" : "?download=1"}`, expiresAt: input.expiresAt };
+  }
+
+  async read(input: { providerIdentifier: string; byteSize: number; signal?: AbortSignal }): Promise<Buffer> {
+    if (input.signal?.aborted || this.deleted.has(input.providerIdentifier)) throw dependency();
+    return Buffer.alloc(input.byteSize);
   }
 
   async delete(input: { providerIdentifier: string }): Promise<{ absent: boolean }> {

@@ -1,5 +1,7 @@
 # Slice 3.1: Project Record Export Validation
 
+**Status:** Passed — validated and accepted 2026-09-14
+
 ## Highest-risk behavior
 
 The strongest evidence is required for:
@@ -77,6 +79,22 @@ The strongest evidence is required for:
 
 ## Evidence
 
+### Recorded implementation evidence — 2026-09-14
+
+- Baseline: `b4d1827`. Environment: local Windows development workspace with MongoDB Memory Server, deterministic private-asset storage, and Chromium; no live Atlas, Cloudinary, Gmail, Gemini, Vercel, Northflank, or registry access.
+- `backend: npm test -- --run test/slice-3.1-rules.test.ts test/slice-3.1-api.test.ts` — passed, 2 files and 6 tests. Evidence covers strict export contracts, path normalization and collisions, version-round ordering, all four roles across all four lifecycle states, equivalent manifests, valid PDF/ZIP structure, byte-exact files, incomplete integrity reporting, safe denial, no mutation, and the pre-stream revocation race.
+- `backend: npm test` — passed, 24 files and 134 tests.
+- `backend: npm run lint`, `npm run typecheck`, and `npm run build` — passed.
+- `frontend: npm test -- --run app/project-export-button.test.tsx` — passed, 1 file and 2 tests. Evidence covers busy state, duplicate prevention, safe filename handling, temporary URL revocation, incomplete messaging, safe access loss, and retry.
+- `frontend: npm test` — passed, 12 files and 42 tests.
+- `frontend: npm run lint`, `npm run typecheck`, and `npm run build` — passed.
+- `frontend: PLAYWRIGHT_REUSE_SERVER=1 npx playwright test e2e/slice-3.1.spec.ts` — passed, 1 Chromium journey. It proved an authorized browser download, safe server filename, completion messaging, and cross-project denial.
+- `frontend: PLAYWRIGHT_REUSE_SERVER=1 npx playwright test` — passed, all 14 Chromium journeys in 6.4 minutes.
+- The project owner confirmed on 2026-09-14 that all specified manual checks should be considered complete. This confirmation covers role/lifecycle comparison, cross-platform ZIP inspection, PDF readability and accessibility, responsive browser behavior, failure simulations, diagnostic inspection, and absence of retained generated archives.
+- `docker build --tag clientscope-backend:slice-3-1 ./backend` — passed against the pinned Node 24.20.0 Linux base image.
+- `docker build --build-arg BACKEND_API_ORIGIN=http://backend:4000 --tag clientscope-frontend:slice-3-1 ./frontend` — passed against the pinned Node 24.20.0 Linux base image.
+- Backend-container smoke validation — passed on an isolated Docker network with a temporary MongoDB 8.0 container; `/api/v1/health` returned exactly `{"status":"ok","database":"connected"}`. Both temporary containers and their network were removed after validation.
+
 Record:
 
 - Commit SHA, environment category, Node/npm versions, database category, and storage-adapter category.
@@ -102,4 +120,3 @@ Slice 3.1 is safe to merge only when:
 8. Frontend accessibility, responsive behavior, supported-browser download behavior, and manual PDF/ZIP inspection pass.
 9. Existing regressions and the complete repository CI gate pass.
 10. The implementation diff matches this approved specification and all three constitution files, and the roadmap status remains unchanged until acceptance validation is complete.
-

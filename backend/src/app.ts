@@ -20,6 +20,7 @@ import { createAiRequirementReviewRouter } from "./domain/ai-requirement-review-
 import { DisabledRequirementQualityReviewProvider, type RequirementQualityReviewProvider } from "./domain/ai-requirement-review-provider.js";
 import { createAiFeedbackSummaryRouter } from "./domain/ai-feedback-summary-routes.js";
 import { DisabledFeedbackSummarizationProvider, type FeedbackSummarizationProvider } from "./domain/ai-feedback-summary-provider.js";
+import { createProjectExportRouter } from "./domain/project-export-routes.js";
 
 export function safeDiagnosticPath(path: string): string {
   return path.replace(/(\/invitation-links\/)[^/]+/u, "$1:token");
@@ -81,6 +82,7 @@ export function createApp(options: AppOptions = {}): Express {
   app.use("/api/v1", createMilestoneRouter(options.clock));
   app.use("/api/v1", createDeliverableRouter(emailService, privateAssetStorage));
   app.use("/api/v1", createLifecycleRouter(emailService));
+  app.use("/api/v1", createProjectExportRouter(privateAssetStorage));
   if (process.env.NODE_ENV !== "production" && process.env.E2E_TEST_MODE === "1" && emailService instanceof SafeDevelopmentEmailService) {
     app.get("/api/v1/test/emails", (request, response) => {
       const to = String(request.query.to ?? "");
