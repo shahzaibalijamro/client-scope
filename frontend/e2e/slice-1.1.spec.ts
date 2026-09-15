@@ -38,7 +38,7 @@ async function createWorkspaceClientProject(page: Page, suffix: string) {
   await page.getByRole("button", { name: /New workspace/u }).click();
   await page.getByLabel("Workspace name").fill(`Studio ${suffix}`);
   await page.getByRole("button", { name: "Create workspace" }).click();
-  await page.getByRole("button", { name: `Studio ${suffix}` }).click();
+  await page.getByRole("button", { name: `Studio ${suffix}`, exact: true }).click();
   await expect(page.getByRole("heading", { name: `Studio ${suffix}` })).toBeVisible();
   await page.getByRole("button", { name: "Add client" }).click();
   await page.getByLabel("Client name").fill(`Client ${suffix}`);
@@ -56,7 +56,7 @@ async function createWorkspaceClientProject(page: Page, suffix: string) {
   await page.getByRole("dialog", { name: "Create a project" }).getByRole("button", { name: "Create project" }).click();
   await page.getByRole("button", { name: "My Work", exact: true }).click();
   await expect(page.getByRole("button", { name: new RegExp(`Project ${suffix}`) })).toBeVisible();
-  await page.getByRole("button", { name: `Studio ${suffix}` }).click();
+  await page.getByRole("button", { name: `Studio ${suffix}`, exact: true }).click();
 }
 
 async function createAdditionalClientProject(page: Page, suffix: string) {
@@ -72,7 +72,7 @@ async function createAdditionalClientProject(page: Page, suffix: string) {
   await page.getByRole("button", { name: "Create project" }).click();
   await page.getByRole("button", { name: "My Work", exact: true }).click();
   await expect(page.getByRole("button", { name: new RegExp(`Other Project ${suffix}`) })).toBeVisible();
-  await page.getByRole("button", { name: `Studio ${suffix}` }).click();
+  await page.getByRole("button", { name: `Studio ${suffix}`, exact: true }).click();
 }
 
 async function issueInvite(page: Page, email: string, kind: "workspace" | "project", projectName?: string, role: "client-participant" | "client-approver" = "client-participant") {

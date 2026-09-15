@@ -58,7 +58,7 @@ async function openProject(page: Page, name: string, section: "Scope" | "Changes
   await page.goto("/"); await expect(page.getByRole("button", { name: new RegExp(name) })).toBeVisible();
   await page.getByRole("button", { name: new RegExp(name) }).click();
   await page.getByRole("button", { name: section, exact: true }).click();
-  await expect(page.getByRole("heading", { name: section, exact: true })).toBeVisible();
+  await expect(page.locator("#section-heading")).toHaveText(section);
 }
 
 async function authorInitial(page: Page) {
@@ -103,7 +103,7 @@ test("initial requirements agreement preserves provider privacy and client autho
   await openProject(participant.page, setup.projectName); await expect(participant.page.getByRole("heading", { name: "Homepage" })).toBeVisible();
   await expect(participant.page.getByRole("button", { name: "Approve scope" })).not.toBeVisible();
   await participant.page.getByLabel("Comment").fill("The scope is clear."); await participant.page.getByRole("button", { name: "Post comment" }).click();
-  await approver.page.goto("/"); await expect(approver.page.getByText("decision required")).toBeVisible(); await openProject(approver.page, setup.projectName);
+  await approver.page.goto("/"); await expect(approver.page.locator("tbody").getByText("decision required")).toBeVisible(); await openProject(approver.page, setup.projectName);
   await approver.page.getByRole("button", { name: "Approve scope" }).click(); await approver.page.getByRole("dialog").getByRole("button", { name: "Approve scope" }).click();
   await expect(approver.page.getByText("Approved by Approver")).toBeVisible(); await expect(approver.page.getByLabel("Comment")).not.toBeVisible();
   await openProject(owner.page, setup.projectName); await expect(owner.page.getByText("Approved by Approver")).toBeVisible(); await expect(owner.page.getByRole("button", { name: "Submit for review" })).not.toBeVisible();
@@ -193,7 +193,7 @@ test("formal change approval preserves the original agreement and establishes it
   await expect(participant.page.getByRole("button", { name: "Approve proposal" })).not.toBeVisible();
   await participant.page.getByLabel("Comment on total effect against scope v1").fill("The change is clear."); await participant.page.getByRole("button", { name: "Post comment" }).click();
 
-  await approver.page.goto("/"); await expect(approver.page.getByText(/decision required/i)).toBeVisible(); await openProject(approver.page, setup.projectName, "Changes");
+  await approver.page.goto("/"); await expect(approver.page.locator("tbody").getByText(/decision required/i)).toBeVisible(); await openProject(approver.page, setup.projectName, "Changes");
   await approver.page.getByRole("button", { name: "Approve proposal" }).click(); const dialog = approver.page.getByRole("dialog");
   await expect(dialog).toContainText("supersedes scope v1"); await dialog.getByRole("button", { name: "Approve proposal" }).click();
   await expect(approver.page.getByText("Established from an approved change proposal", { exact: false })).toBeVisible();
