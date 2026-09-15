@@ -103,13 +103,13 @@ export function MilestonePanel({ projectId }: Readonly<{ projectId: string }>) {
     {message && <p role="status" className={message.includes("changed") ? "notice warning" : "notice success"}>{message}</p>}
     <ErrorNote error={create.error || edit.error || transition.error || reorder.error || archiveMutation.error} />
     {!data.available && <section className="panel compact-empty"><h3>Milestones are not available yet</h3><p>{data.permissions.canCreate ? "" : "An approved scope is required before the provider can start sharing delivery milestones."}</p></section>}
-    {data.available && data.permissions.canCreate && <form className="panel milestone-create" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
-      <div className="panel-heading"><div><h3>Add a client-facing milestone</h3><p className="fine">New milestones start as upcoming and appear at the end of the shared sequence.</p></div></div>
+    {data.available && data.permissions.canCreate && <details className="panel disclosure"><summary>Add a client-facing milestone</summary><form className="milestone-create disclosure-content" onSubmit={(event) => { event.preventDefault(); create.mutate(); }}>
+      <p className="fine">New milestones start as upcoming and appear at the end of the shared sequence.</p>
       <label>Title<input required maxLength={120} value={title} onChange={(event) => setTitle(event.target.value)} /></label>
       <label>Description (optional)<textarea rows={3} maxLength={2_000} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
       <label>Target date (optional)<input type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} /></label>
       <button className="primary" disabled={!title.trim() || create.isPending || data.activeCount >= data.limit}>{create.isPending ? "Creating…" : data.activeCount >= data.limit ? "Active milestone limit reached" : "Create milestone"}</button>
-    </form>}
+    </form></details>}
     {data.available && !data.milestones.length && <section className="panel compact-empty"><h3>No milestones shared yet</h3><p>{data.permissions.canCreate ? "Create the first delivery stage above." : "The provider has not shared any delivery milestones yet."}</p></section>}
     {!!data.milestones.length && <ol className="milestone-list">{data.milestones.map((milestone, index) => <li className="panel milestone-card" key={milestone.id}>
       {editing?.id === milestone.id ? <form onSubmit={(event) => { event.preventDefault(); edit.mutate(); }}>
@@ -129,12 +129,12 @@ export function MilestonePanel({ projectId }: Readonly<{ projectId: string }>) {
         </div>}
       </>}
     </li>)}</ol>}
-    <section className="panel milestone-archive" aria-labelledby="milestone-archive-heading"><div className="panel-heading"><div><p className="eyebrow">Preserved record</p><h3 id="milestone-archive-heading">Archived milestones</h3></div></div>
+    <details className="panel milestone-archive disclosure"><summary id="milestone-archive-heading">Archived milestones</summary><section className="disclosure-content" aria-labelledby="milestone-archive-heading">
       {archive.isPending && <p role="status">Loading archived milestones…</p>}<ErrorNote error={archive.error} />
       {archive.data?.pages.every((page) => !page.archive.milestones.length) && <p className="empty-copy">No milestones have been archived.</p>}
       <ol className="archived-list">{archive.data?.pages.flatMap((page) => page.archive.milestones).map((milestone) => <li key={milestone.id} className="archived-milestone"><h4>{milestone.title}</h4><MilestoneFacts milestone={milestone} />{milestone.archive && <div className="archive-context"><strong>Archived by {milestone.archive.actor.displayName}</strong><p><time dateTime={milestone.archive.archivedAt}>{new Date(milestone.archive.archivedAt).toLocaleString()}</time></p><p className="plain-text">Reason: {milestone.archive.reason}</p></div>}</li>)}</ol>
       {archive.hasNextPage && <button className="secondary" disabled={archive.isFetchingNextPage} onClick={() => void archive.fetchNextPage()}>{archive.isFetchingNextPage ? "Loading…" : "Load older milestones"}</button>}
-    </section>
+    </section></details>
     {statusTarget && <ConfirmDialog title={`Change status for ${statusTarget.title}?`} description="This creates a permanent status event. Previous status history remains preserved." confirmLabel="Save status" danger={false} busy={transition.isPending} confirmDisabled={nextStatus === statusTarget.status} onCancel={() => { setStatusTarget(undefined); setNote(""); }} onConfirm={() => transition.mutate()}>
       <label>New status<select value={nextStatus} onChange={(event) => setNextStatus(event.target.value as MilestoneStatus)}>{(["upcoming", "in-progress", "completed"] as const).filter((value) => value !== statusTarget.status).map((value) => <option key={value} value={value}>{statusLabel(value)}</option>)}</select></label>
       <label>Transition note (optional)<textarea rows={3} maxLength={2_000} value={note} onChange={(event) => setNote(event.target.value)} /></label>

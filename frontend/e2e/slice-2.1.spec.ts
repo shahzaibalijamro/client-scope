@@ -37,6 +37,7 @@ test("provider reviews and explicitly appends an AI-structured requirement", asy
   await mutate(page, `/workspaces/${workspace.workspace.id}/projects`, { clientId: client.client.id, name: "AI Project" });
   await page.goto("/");
   await page.getByRole("button", { name: /AI Project/u }).click();
+  await page.getByRole("button", { name: "Scope", exact: true }).click();
   await page.getByRole("button", { name: "Start scope draft" }).click();
   await page.setViewportSize({ width: 390, height: 844 });
 

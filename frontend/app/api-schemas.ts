@@ -49,6 +49,10 @@ export const projectSchema = z.object({
   lifecycle: lifecycleSummarySchema.optional(),
 }).strict();
 
+export const workProjectSchema = projectSchema.extend({
+  updatedAt: z.iso.datetime(),
+}).strict();
+
 export const invitationSchema = z.object({
   id: z.string(),
   kind: z.enum(["workspace", "project"]),
@@ -64,9 +68,9 @@ export const workspaceGroupSchema = z.object({
   id: z.string(),
   name: z.string(),
   relationship: z.enum(["owner", "service-team-member", "client"]),
-  projects: z.array(projectSchema),
-  completedProjects: z.array(projectSchema).default([]),
-  archivedProjects: z.array(projectSchema).default([]),
+  projects: z.array(workProjectSchema),
+  completedProjects: z.array(workProjectSchema).default([]),
+  archivedProjects: z.array(workProjectSchema).default([]),
 }).strict();
 
 export const workResponseSchema = z.object({
@@ -138,10 +142,11 @@ export const messageResponseSchema = z.object({
 }).passthrough();
 
 export type User = z.infer<typeof userSchema>;
-export type Project = z.infer<typeof projectSchema>;
+export type Project = z.infer<typeof workProjectSchema>;
 export type WorkspaceGroup = z.infer<typeof workspaceGroupSchema>;
 export type ClientRecord = z.infer<typeof clientSchema>;
 export type AccessData = z.infer<typeof accessResponseSchema>;
+export type WorkResponse = z.infer<typeof workResponseSchema>;
 
 const lifecycleActorSchema = z.object({ id: z.string(), displayName: z.string(), role: z.enum(["workspace-owner", "service-team-member", "client-participant", "client-approver"]) }).strict();
 const readinessBlockerSchema = z.object({

@@ -11,7 +11,7 @@ async function mutate<T>(page: Page, method: "POST" | "PUT", path: string, data:
   const csrf = await (await page.request.get("/api/v1/csrf")).json() as { csrfToken: string }; const response = await page.request.fetch(`/api/v1${path}`, { method, data, headers: { Origin: origin, "X-CSRF-Token": csrf.csrfToken } });
   if (!response.ok()) throw new Error(`${method} ${path} failed: ${response.status()} ${await response.text()}`); return response.json() as Promise<T>;
 }
-async function openProject(page: Page, name: string) { await page.goto("/"); await page.getByRole("button", { name: new RegExp(name) }).click(); await expect(page.getByRole("heading", { name: "Deliverables and review" })).toBeVisible(); }
+async function openProject(page: Page, name: string) { await page.goto("/"); await page.getByRole("button", { name: new RegExp(name) }).click(); await page.getByRole("button", { name: "Deliverables", exact: true }).click(); await expect(page.getByRole("heading", { name: "Deliverables and review" })).toBeVisible(); }
 
 test("provider generates a grounded private summary and sees deterministic outdatedness", async ({ browser }) => {
   test.slow(); const key = Date.now(); const owner = await account(browser, `summary-owner-${key}@example.com`, "Owner"); const participant = await account(browser, `summary-participant-${key}@example.com`, "Participant"); const approver = await account(browser, `summary-approver-${key}@example.com`, "Approver");

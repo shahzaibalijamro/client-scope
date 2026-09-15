@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ClientScopeApp } from "./client-scope-app";
 import { ConfirmDialog } from "./confirm-dialog";
+import { OwnerWorkspace } from "./owner-workspace";
+import { ProjectView } from "./project-view";
+import type { WorkspaceGroup } from "./api-schemas";
 
 function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -62,14 +65,15 @@ describe("Slice 1.1 UI workflows", () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path.endsWith("/auth/session")) return response({ user: { id: "client", email: "client@example.com", displayName: "Client Person", verified: true } });
-      if (path.endsWith("/work")) return response({ invitations: [], workspaces: [{ id: "workspace", name: "Provider Studio", relationship: "client", projects: [{ id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, targetDeadline: "2026-10-01", role: "client-approver" }] }] });
+      if (path.endsWith("/work")) return response({ invitations: [], workspaces: [{ id: "workspace", name: "Provider Studio", relationship: "client", projects: [{ id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, targetDeadline: "2026-10-01", updatedAt: "2026-09-14T00:00:00.000Z", role: "client-approver" }] }] });
       throw new Error(`Unexpected request: ${path}`);
     }));
     render(<ClientScopeApp />, { wrapper });
 
-    expect(await screen.findByRole("heading", { name: "Provider Studio" })).toBeVisible();
-    expect(screen.getByText(/Acme · 2026-10-01/u)).toBeVisible();
-    expect(screen.getByText("client approver")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "All accessible projects" })).toBeVisible();
+    expect(screen.getAllByText(/Acme · Provider Studio/u).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Client Approver/u).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Oct 1, 2026/u).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: "Manage workspace" })).not.toBeInTheDocument();
   });
 
@@ -78,18 +82,18 @@ describe("Slice 1.1 UI workflows", () => {
       void init;
       const path = String(input);
       if (path.endsWith("/auth/session")) return response({ user: { id: "client", email: "client@example.com", displayName: "Client", verified: true } });
-      if (path.endsWith("/work")) return response({ invitations: [], workspaces: [{ id: "workspace", name: "Studio", relationship: "client", projects: [{ id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, role: "client-participant" }] }] });
       if (path.endsWith("/projects/project")) return response({ project: { id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, role: "client-participant" } });
       if (path.endsWith("/projects/project/members")) return response({ members: [{ id: "owner", displayName: "Owner", role: "workspace-owner" }, { id: "client", displayName: "Client", role: "client-participant" }] });
+      if (path.endsWith("/projects/project/lifecycle")) return response({ lifecycle: { state: "active", readOnly: false, permissions: { canRequestCompletion: false, canWithdrawCompletion: false, canDecideCompletion: false, canArchive: false, canRestore: false }, revision: "revision", rounds: [], archiveHistory: [] } });
+      if (path.includes("/projects/project/activity")) return response({ activity: { items: [] } });
       throw new Error(`Unexpected request: ${path}`);
     });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<ClientScopeApp />, { wrapper });
-    await user.click(await screen.findByRole("button", { name: /Website/u }));
+    render(<ProjectView projectId="project" section="settings" />, { wrapper });
     await user.click(await screen.findByRole("button", { name: "Leave project" }));
     expect(screen.getByRole("dialog", { name: "Leave Website?" })).toBeVisible();
-    expect(screen.getByText(/requires a new invitation/u)).toBeVisible();
+    expect(screen.getByRole("dialog")).toHaveTextContent(/requires a new invitation/u);
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(fetchMock.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === "POST")).toHaveLength(0);
@@ -99,7 +103,7 @@ describe("Slice 1.1 UI workflows", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const path = String(input);
       if (path.endsWith("/auth/session")) return response({ user: { id: "owner", email: "owner@example.com", displayName: "Owner", verified: true } });
-      if (path.endsWith("/work")) return response({ invitations: [], workspaces: [{ id: "workspace", name: "Studio", relationship: "owner", projects: [{ id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, role: "workspace-owner" }] }] });
+      if (path.endsWith("/work")) return response({ invitations: [], workspaces: [{ id: "workspace", name: "Studio", relationship: "owner", projects: [{ id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, updatedAt: "2026-09-14T00:00:00.000Z", role: "workspace-owner" }] }] });
       if (path.endsWith("/workspaces/workspace/clients")) return response({ clients: [{ id: "client-record", name: "Acme", companyName: "Acme Ltd", primaryContactEmail: "contact@example.com", internalNotes: "Owner only" }] });
       if (path.endsWith("/workspaces/workspace/access")) return response({
         workspaceMemberships: [{ id: "wm", userId: "member", displayName: "Team Member", email: "member@example.com", role: "service-team-member", status: "active", startedAt: "2026-09-01T00:00:00.000Z" }],
@@ -110,18 +114,18 @@ describe("Slice 1.1 UI workflows", () => {
       throw new Error(`Unexpected request: ${path}`);
     });
     vi.stubGlobal("fetch", fetchMock);
-    const user = userEvent.setup();
-    render(<ClientScopeApp />, { wrapper });
-    await user.click(await screen.findByRole("button", { name: "Manage workspace" }));
+    const workspace = { id: "workspace", name: "Studio", relationship: "owner", projects: [{ id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, updatedAt: "2026-09-14T00:00:00.000Z", role: "workspace-owner" }], completedProjects: [], archivedProjects: [] } as WorkspaceGroup;
+    const view = render(<OwnerWorkspace workspace={workspace} section="clients" onBack={() => undefined} refreshWork={() => undefined} />, { wrapper });
     expect(await screen.findByText("Owner only")).toBeVisible();
     expect(screen.getByRole("button", { name: "Edit" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Delete" })).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Access" }));
+    view.rerender(<OwnerWorkspace workspace={workspace} section="access" onBack={() => undefined} refreshWork={() => undefined} />);
     expect(await screen.findByText(/member@example.com · active/u)).toBeVisible();
     expect(screen.getByRole("button", { name: "Unassign" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Change role" })).toBeVisible();
     expect(screen.getByText(/client participant · inactive · role-changed/u)).toBeVisible();
+    view.rerender(<OwnerWorkspace workspace={workspace} section="invitations" onBack={() => undefined} refreshWork={() => undefined} />);
     expect(screen.getByText(/pending · delivery failed/u)).toBeVisible();
     expect(screen.getByRole("button", { name: "Revoke" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Replace" })).toBeVisible();

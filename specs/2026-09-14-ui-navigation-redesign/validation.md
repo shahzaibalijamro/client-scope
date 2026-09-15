@@ -1,6 +1,18 @@
 # UI Navigation Redesign Validation
 
-**Status:** Pending implementation
+**Status:** Implemented; product-owner acceptance recorded, remaining automated merge gates pending
+
+## Implementation evidence (2026-09-15)
+
+- Source: branch `codex/ui-navigation-redesign`, base commit `cea9731`.
+- Environment: Windows, Node.js `v22.23.0`, npm `10.9.8`, Docker CLI `29.7.2`. The repository requests Node.js 24; this host-version difference remains a validation limitation even though local checks pass.
+- Backend: typecheck, lint, build, and the full Vitest suite pass (24 files, 134 tests). The `/work` contract test covers ISO `updatedAt`; the complete backend suite covers the existing authorization and workflow regressions.
+- Frontend: typecheck, lint, production build, and the full Vitest suite pass (14 files, 49 tests). The production build includes the canonical project, admin, My Work, invitation, verification, reset, and health routes.
+- Authentication visual follow-up: replaced the legacy green entry panel with the approved indigo/slate desktop treatment and a distinct form-first mobile composition. Responsive Chromium coverage passes at 320, 390, 768, 1024, and 1440 pixel widths and covers sign-up, forgot-password, reset, and verification surfaces (1 test, 16.5 seconds). Typecheck, lint, 49 unit tests, production build, and diff hygiene also pass after the change.
+- Diff hygiene: `git diff --check` passes (line-ending conversion warnings only).
+- Playwright: the Slice 3.2 critical Chromium journey passed before the final semantic-table refinement and exercised directory URL state, project/admin sections, keyboard switching, dirty-navigation confirmation, and mobile overflow. A post-refinement run completed its scenario but the Windows Playwright web-server teardown did not return a final process status. The wider Chromium regression run exposed only migrated-selector/test-navigation issues in Slice 1.1/1.2; these were updated, but the complete suite has not yet been rerun to a clean result.
+- Firefox: automated launch timed out on this Windows host after the software WebRender compositor failed to map its default framebuffer. WebKit did not produce a conclusive result before the same runner teardown issue. These remain open cross-browser gates, not approved exceptions.
+- Product-owner manual acceptance was recorded on 2026-09-15 after review of the navigation redesign and authentication visual follow-up. Docker image builds, backend-container health smoke, detailed keyboard/screen-reader/browser/role review, and the open cross-browser automation results remain pending. No roadmap completion is recorded until those remaining gates pass.
 
 ## Highest-risk behavior
 

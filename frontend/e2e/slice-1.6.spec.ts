@@ -12,7 +12,7 @@ async function mutate<T>(page: Page, method: "POST" | "PUT", path: string, data:
   const response = await page.request.fetch(`/api/v1${path}`, { method, data, headers: { Origin: origin, "X-CSRF-Token": csrf.csrfToken } });
   if (!response.ok()) throw new Error(`${method} ${path} failed: ${response.status()} ${await response.text()}`); return response.json() as Promise<T>;
 }
-async function openProject(page: Page, name: string) { await page.goto("/"); await page.getByRole("button", { name: new RegExp(name) }).click(); await expect(page.getByRole("heading", { name: "Completion and record" })).toBeVisible(); }
+async function openProject(page: Page, name: string) { await page.goto("/"); await page.getByRole("button", { name: new RegExp(name) }).click(); await page.getByRole("button", { name: "Settings", exact: true }).click(); await expect(page.getByRole("heading", { name: "Completion and record" })).toBeVisible(); }
 
 test("final review permanently completes, archives, and restores the project record", async ({ browser }) => {
   test.slow(); const key = Date.now(); const owner = await account(browser, `completion-owner-${key}@example.com`, "Owner"); const approver = await account(browser, `completion-approver-${key}@example.com`, "Approver");

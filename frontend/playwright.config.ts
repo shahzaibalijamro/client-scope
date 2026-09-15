@@ -8,14 +8,16 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 15_000 },
   use: {
-    baseURL: "http://127.0.0.1:4200",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4200",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox-navigation", grep: /critical navigation/u, use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit-navigation", grep: /critical navigation/u, use: { ...devices["Desktop Safari"] } },
   ],
-  webServer: [
+  webServer: process.env.PLAYWRIGHT_EXTERNAL_SERVER === "1" ? undefined : [
     {
       command: "npm --prefix ../backend exec -- tsx ../backend/test/e2e-server.ts",
       url: "http://127.0.0.1:4101/api/v1/health",
