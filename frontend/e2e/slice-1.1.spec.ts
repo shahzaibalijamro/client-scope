@@ -48,7 +48,7 @@ async function createWorkspaceClientProject(page: Page, suffix: string) {
   await page.getByRole("button", { name: "Save client" }).click();
   await expect(page.getByText(`Company ${suffix}`, { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Projects", exact: true }).click();
-  await page.getByRole("button", { name: "Create project" }).click();
+  await page.getByRole("button", { name: "Create project" }).first().click();
   await page.getByLabel("Project name").fill(`Project ${suffix}`);
   await page.locator('select[name="clientId"]').selectOption({ label: `Client ${suffix}` });
   await page.getByLabel("Description").fill(`Description ${suffix}`);
@@ -66,10 +66,10 @@ async function createAdditionalClientProject(page: Page, suffix: string) {
   await page.getByRole("button", { name: "Save client" }).click();
   await expect(page.locator(".client-record").getByText(`Other Client ${suffix}`, { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Projects", exact: true }).click();
-  await page.getByRole("button", { name: "Create project" }).click();
+  await page.getByRole("button", { name: "Create project" }).first().click();
   await page.getByLabel("Project name").fill(`Other Project ${suffix}`);
   await page.locator('select[name="clientId"]').selectOption({ label: `Other Client ${suffix}` });
-  await page.getByRole("button", { name: "Create project" }).click();
+  await page.getByRole("dialog", { name: "Create a project" }).getByRole("button", { name: "Create project" }).click();
   await page.getByRole("button", { name: "My Work", exact: true }).click();
   await expect(page.getByRole("button", { name: new RegExp(`Other Project ${suffix}`) })).toBeVisible();
   await page.getByRole("button", { name: `Studio ${suffix}`, exact: true }).click();
@@ -137,7 +137,7 @@ test("service assignment is project-scoped and revocation is immediate", async (
   await expect(member.page.getByText("Your client work will live here")).toBeVisible();
 
   await owner.page.reload();
-  await owner.page.getByRole("button", { name: new RegExp(`Studio S${key}`) }).click();
+  await owner.page.getByRole("button", { name: `Studio S${key}`, exact: true }).click();
   await owner.page.getByRole("button", { name: "People & Access" }).click();
   await owner.page.getByRole("button", { name: "Assign project" }).click();
   let assignmentPanel = owner.page.getByRole("dialog", { name: "Assign a service-team member" });
@@ -193,7 +193,7 @@ test("invitation privacy, role authority change, and voluntary leave", async ({ 
   const client = await acceptInvite(browser, owner.page, clientEmail, "Client Participant");
   await expect(client.page.getByText("Client Participant", { exact: true }).first()).toBeVisible();
   await owner.page.goto("/");
-  await owner.page.getByRole("button", { name: new RegExp(`Studio R${key}`) }).click();
+  await owner.page.getByRole("button", { name: `Studio R${key}`, exact: true }).click();
   await owner.page.getByRole("button", { name: "People & Access" }).click();
   await owner.page.getByRole("button", { name: "Change role" }).click();
   await owner.page.getByRole("button", { name: "Make approver" }).click();
