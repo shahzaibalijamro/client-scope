@@ -37,12 +37,13 @@ afterEach(() => vi.unstubAllGlobals());
 describe("Slice 1.4 milestone interface", () => {
   it("renders the server overdue value and shared history without client mutation controls", async () => {
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => String(input).includes("/archive") ? response({ archive: { milestones: [archived("old")] } }) : response(timeline(false))));
-    render(<MilestonePanel projectId="project" />, { wrapper });
+    const user = userEvent.setup(); render(<MilestonePanel projectId="project" />, { wrapper });
     expect(await screen.findByRole("heading", { name: "Design <script>alert(1)</script>" })).toBeVisible();
     expect(document.querySelector("script")).toBeNull();
     expect(screen.getByText("Overdue")).toBeVisible();
     expect(screen.getAllByText((_content, element) => element?.textContent === "Line one\nLine two")[0]).toHaveClass("plain-text");
     expect(screen.getAllByText("Ready for review.")[0]).toBeVisible();
+    await user.click(screen.getByText("Archived milestones"));
     expect(await screen.findByRole("heading", { name: "Archived old" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Edit details" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Change status" })).not.toBeInTheDocument();
@@ -77,6 +78,7 @@ describe("Slice 1.4 milestone interface", () => {
         : response({ archive: { milestones: [archived("newer")], nextCursor: "opaque.cursor" } });
     });
     vi.stubGlobal("fetch", fetch); const user = userEvent.setup(); render(<MilestonePanel projectId="project" />, { wrapper });
+    await user.click(await screen.findByText("Archived milestones"));
     expect(await screen.findByRole("heading", { name: "Archived newer" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Load older milestones" }));
     expect(await screen.findByRole("heading", { name: "Archived older" })).toBeVisible();

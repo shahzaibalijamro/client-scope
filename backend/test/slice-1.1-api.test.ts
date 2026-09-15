@@ -303,6 +303,7 @@ describe("Slice 1.1 API acceptance", () => {
     const work = await clientAccount.agent.get("/api/v1/work").expect(200);
     expect(work.body.workspaces).toHaveLength(1);
     expect(work.body.workspaces[0]).toMatchObject({ relationship: "client", projects: [{ id: setup.projectId, role: "client-approver", client: { name: "Client A" } }] });
+    expect(work.body.workspaces[0].projects[0].updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
     expect(JSON.stringify(work.body)).not.toContain("private A");
     expect(JSON.stringify(work.body)).not.toContain("Company A");
 

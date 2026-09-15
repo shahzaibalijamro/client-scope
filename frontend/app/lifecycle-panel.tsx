@@ -55,7 +55,7 @@ function actionDetails(action: Action) {
   }
 }
 
-export function LifecyclePanel({ projectId }: Readonly<{ projectId: string }>) {
+export function LifecyclePanel({ projectId, show = "both" }: Readonly<{ projectId: string; show?: "lifecycle" | "activity" | "both" }>) {
   const queryClient = useQueryClient();
   const [action, setAction] = useState<Action>();
   const [text, setText] = useState("");
@@ -96,7 +96,7 @@ export function LifecyclePanel({ projectId }: Readonly<{ projectId: string }>) {
   const stateLabel = current.state.replaceAll("-", " ");
 
   return <>
-    <section className="panel lifecycle-panel" aria-labelledby="completion-heading">
+    {show !== "activity" && <section className="panel lifecycle-panel" aria-labelledby="completion-heading">
       <div className="panel-heading"><div><p className="eyebrow">Project lifecycle</p><h2 id="completion-heading">Completion and record</h2></div><span className={`badge lifecycle-${current.state}`}>{stateLabel}</span></div>
       {current.readOnly && <p className="notice">{current.state === "completion-in-review" ? "Project work is locked while final review is pending." : "This project is permanently read-only."}</p>}
       {message && <p className="notice success" role="status">{message}</p>}
@@ -114,15 +114,15 @@ export function LifecyclePanel({ projectId }: Readonly<{ projectId: string }>) {
       </div>
       {current.rounds.length > 0 && <details><summary>Completion review history ({current.rounds.length})</summary><div className="version-stack">{current.rounds.map((round) => <article key={round.id}><strong>Round {round.number} · {round.status.replaceAll("-", " ")}</strong><p>Requested by {round.requester.displayName} · {new Date(round.requestedAt).toLocaleString()}</p>{round.terminal && <p className="plain-text">{round.terminal.actor.displayName} {round.terminal.outcome} this round{round.terminal.note ? `: ${round.terminal.note}` : "."}</p>}</article>)}</div></details>}
       {current.archiveHistory.length > 0 && <details><summary>Archive history ({current.archiveHistory.length})</summary>{current.archiveHistory.map((record) => <p className="plain-text" key={record.id}><strong>{record.action}</strong> by {record.actor.displayName}: {record.reason}</p>)}</details>}
-    </section>
-    <section className="panel" aria-labelledby="activity-heading">
+    </section>}
+    {show !== "lifecycle" && <section className="panel" aria-labelledby="activity-heading">
       <div className="panel-heading"><div><p className="eyebrow">Preserved history</p><h2 id="activity-heading">Project activity</h2></div></div>
       {activity.isPending && <p role="status">Loading project activity…</p>}
       <ErrorNote error={activity.error} />
       {!activity.isPending && activity.data?.pages.every((page) => page.activity.items.length === 0) && <p>No project activity yet.</p>}
       <ol className="activity-list">{activity.data?.pages.flatMap((page) => page.activity.items).map((item) => <li key={item.id}><span>{item.actor?.displayName ?? "ClientScope"} {eventCopy[item.type] ?? "updated the project"}.</span><time dateTime={item.occurredAt}>{new Date(item.occurredAt).toLocaleString()}</time></li>)}</ol>
       {activity.hasNextPage && <button className="secondary" disabled={activity.isFetchingNextPage} onClick={() => void activity.fetchNextPage()}>{activity.isFetchingNextPage ? "Loading…" : "Load older activity"}</button>}
-    </section>
+    </section>}
     {action && details && <ConfirmDialog title={details.title} description={details.description} confirmLabel={details.label} danger={action !== "request" && action !== "approve" && action !== "restore"} busy={mutation.isPending} confirmDisabled={!details.optional && !text.trim()} onCancel={() => { setAction(undefined); setText(""); }} onConfirm={() => mutation.mutate({ kind: action, current })}>
       <label>{details.field}<textarea maxLength={2_000} value={text} onChange={(event) => setText(event.target.value)} /></label>
     </ConfirmDialog>}

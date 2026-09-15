@@ -28,6 +28,7 @@ async function mutate<T>(page: Page, method: "POST" | "PUT", path: string, data:
 
 async function openProject(page: Page, name: string) {
   await page.goto("/"); await page.getByRole("button", { name: new RegExp(name) }).click();
+  await page.getByRole("button", { name: "Milestones", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Client-facing milestones" })).toBeVisible();
 }
 
@@ -52,6 +53,7 @@ test("providers share, reorder, reopen, and archive milestones while clients rem
   await mutate(approver.page, "POST", `/projects/${project.project.id}/scope/versions/${submitted.version.id}/decisions`, { outcome: "approved", confirmed: true });
 
   await openProject(owner.page, projectName);
+  await owner.page.getByText("Add a client-facing milestone", { exact: true }).click();
   const create = owner.page.locator(".milestone-create");
   await create.getByLabel("Title").fill("Design review"); await create.getByLabel("Description (optional)").fill("Review the responsive design.\nCapture client-facing outcomes.");
   await create.getByLabel("Target date (optional)").fill("2020-01-01"); await create.getByRole("button", { name: "Create milestone" }).click();
@@ -72,7 +74,7 @@ test("providers share, reorder, reopen, and archive milestones while clients rem
   expect(await participant.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await openProject(owner.page, projectName); const designAgain = owner.page.locator(".milestone-card", { has: owner.page.getByRole("heading", { name: "Design review" }) });
   await designAgain.getByRole("button", { name: "Archive" }).click(); await owner.page.getByLabel("Archive reason").fill("The stage is represented by launch.");
-  await owner.page.getByRole("button", { name: "Archive milestone" }).click(); await expect(owner.page.getByRole("heading", { name: "Archived milestones" })).toBeVisible();
+  await owner.page.getByRole("button", { name: "Archive milestone" }).click(); await owner.page.getByText("Archived milestones", { exact: true }).click();
   await expect(owner.page.locator(".archived-milestone", { hasText: "Design review" })).toContainText("Reopened for polish.");
   await Promise.all([owner.context.close(), participant.context.close(), approver.context.close()]);
 });

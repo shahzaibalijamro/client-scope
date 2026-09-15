@@ -115,7 +115,7 @@ function event(input: {
   return session ? record.save({ session }) : record.save();
 }
 
-function projectView(project: any, client: any, role: Role, scope?: Awaited<ReturnType<typeof projectScopeSummary>>, changeControl?: Awaited<ReturnType<typeof changeControlSummary>>, deliverables?: Awaited<ReturnType<typeof deliverableSummary>>, lifecycle?: Awaited<ReturnType<typeof lifecycleSummary>>) {
+function projectView(project: any, client: any, role: Role, scope?: Awaited<ReturnType<typeof projectScopeSummary>>, changeControl?: Awaited<ReturnType<typeof changeControlSummary>>, deliverables?: Awaited<ReturnType<typeof deliverableSummary>>, lifecycle?: Awaited<ReturnType<typeof lifecycleSummary>>, includeUpdatedAt = false) {
   return {
     id: String(project._id), workspaceId: String(project.workspaceId), name: project.name,
     client: {
@@ -126,7 +126,9 @@ function projectView(project: any, client: any, role: Role, scope?: Awaited<Retu
       } : {}),
     },
     description: project.description,
-    targetDeadline: project.targetDeadline, role, ...(scope ? { scope } : {}), ...(changeControl ? { changeControl } : {}), ...(deliverables ? { deliverables } : {}), ...(lifecycle ? { lifecycle } : {}),
+    targetDeadline: project.targetDeadline, role,
+    ...(includeUpdatedAt ? { updatedAt: project.updatedAt.toISOString() } : {}),
+    ...(scope ? { scope } : {}), ...(changeControl ? { changeControl } : {}), ...(deliverables ? { deliverables } : {}), ...(lifecycle ? { lifecycle } : {}),
   };
 }
 
@@ -163,7 +165,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         const membership = clientMemberships.find((item) => String(item.projectId) === String(project._id));
         const role: Role = String(workspace.ownerId) === String(user._id) ? "workspace-owner" : assignment ? "service-team-member" : membership!.role as Role;
         const [scope, changeControl, deliverables, lifecycle] = await Promise.all([projectScopeSummary(project._id, role), changeControlSummary(project._id, role), deliverableSummary(project._id, role), lifecycleSummary(project, role)]);
-        return projectView(project, clientById.get(String(project.clientId)), role, scope, changeControl, deliverables, lifecycle);
+        return projectView(project, clientById.get(String(project.clientId)), role, scope, changeControl, deliverables, lifecycle, true);
       }));
       return {
       id: String(workspace._id), name: workspace.name,

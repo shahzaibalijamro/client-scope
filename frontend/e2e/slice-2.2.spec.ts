@@ -37,6 +37,7 @@ test("provider reviews, curates, and atomically applies requirement quality sugg
   await mutate(page, `/workspaces/${workspace.workspace.id}/projects`, { clientId: client.client.id, name: "Quality Project" });
   await page.goto("/");
   await page.getByRole("button", { name: /Quality Project/u }).click();
+  await page.getByRole("button", { name: "Scope", exact: true }).click();
   await page.getByRole("button", { name: "Start scope draft" }).click();
   await page.getByRole("button", { name: "Add requirement" }).click();
   await page.getByRole("textbox", { name: "Title" }).fill("Homepage");

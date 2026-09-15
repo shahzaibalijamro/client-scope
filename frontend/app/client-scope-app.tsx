@@ -2,23 +2,21 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { CircleAlert, Plus } from "lucide-react";
 
 import { api, json } from "./api-client";
-import {
-  messageResponseSchema,
-  sessionResponseSchema,
-  userSchema,
-  workResponseSchema,
-  type Project,
-  type User,
-} from "./api-schemas";
+import { AppShell } from "./app-shell";
+import { messageResponseSchema, sessionResponseSchema, userSchema, workResponseSchema, type User } from "./api-schemas";
 import { ConfirmDialog } from "./confirm-dialog";
+import { MyWorkDirectory } from "./my-work-directory";
 import { OwnerWorkspace } from "./owner-workspace";
 import { ProjectView } from "./project-view";
+import { parseAppRoute } from "./route-model";
+import { DialogSurface, LoadingBlock, useSafeNavigation } from "./ui-foundation";
 
 type AuthMode = "signin" | "signup" | "forgot";
 type AuthValues = { email: string; password: string; displayName: string };
@@ -36,20 +34,14 @@ function AuthScreen() {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<AuthMode>("signin");
   const schema = useMemo(() => z.object({
-    email: z.string().trim().email("Enter a valid email.").max(254),
-    password: z.string().max(128),
-    displayName: z.string().max(80),
+    email: z.string().trim().email("Enter a valid email.").max(254), password: z.string().max(128), displayName: z.string().max(80),
   }).superRefine((value, context) => {
     if (mode !== "forgot" && value.password.length < 12) context.addIssue({ code: "custom", path: ["password"], message: "Use 12–128 characters." });
     if (mode === "signup" && !value.displayName.trim()) context.addIssue({ code: "custom", path: ["displayName"], message: "Enter your display name." });
   }), [mode]);
   const form = useForm<AuthValues>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "", displayName: "" } });
   const mutation = useMutation({
-    mutationFn: (values: AuthValues) => api(
-      mode === "signup" ? "/auth/signup" : mode === "forgot" ? "/auth/forgot-password" : "/auth/signin",
-      json("POST", mode === "signup" ? values : mode === "signin" ? { email: values.email, password: values.password } : { email: values.email }),
-      authResponseSchema,
-    ),
+    mutationFn: (values: AuthValues) => api(mode === "signup" ? "/auth/signup" : mode === "forgot" ? "/auth/forgot-password" : "/auth/signin", json("POST", mode === "signup" ? values : mode === "signin" ? { email: values.email, password: values.password } : { email: values.email }), authResponseSchema),
     onSuccess: async () => {
       if (mode === "forgot") return;
       const returnTo = new URLSearchParams(window.location.search).get("returnTo");
@@ -59,115 +51,61 @@ function AuthScreen() {
       if (returnTo && session?.user?.verified) window.location.assign(returnTo);
     },
   });
-  const switchMode = (next: AuthMode) => { setMode(next); mutation.reset(); form.clearErrors(); };
-
-  return (
-    <main className="auth-layout">
-      <section className="brand-panel">
-        <p className="eyebrow">ClientScope</p>
-        <h1>Keep the client agreement clear from kickoff to delivery.</h1>
-        <p>One calm, shared record for scope, decisions, access, and delivery history.</p>
-        <div className="promise"><span>01</span><p><strong>Private by default</strong><br />Every workspace and project boundary is enforced by the API.</p></div>
-        <div className="promise"><span>02</span><p><strong>Authority stays explicit</strong><br />Roles and access are contextual—not permanent labels on people.</p></div>
-      </section>
-      <section className="auth-card" aria-labelledby="auth-title">
-        <p className="eyebrow">{mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Password help"}</p>
-        <h2 id="auth-title">{mode === "signin" ? "Sign in to your work" : mode === "signup" ? "Start with a verified account" : "Request a reset link"}</h2>
-        <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>
-          {mode === "signup" && <label>Display name<input autoComplete="name" {...form.register("displayName")} />{form.formState.errors.displayName && <small role="alert">{form.formState.errors.displayName.message}</small>}</label>}
-          <label>Email address<input type="email" autoComplete="email" {...form.register("email")} />{form.formState.errors.email && <small role="alert">{form.formState.errors.email.message}</small>}</label>
-          {mode !== "forgot" && <label>Password<input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} {...form.register("password")} />{form.formState.errors.password && <small role="alert">{form.formState.errors.password.message}</small>}</label>}
-          <ErrorNote error={mutation.error} />
-          {mutation.isSuccess && mode === "forgot" && <p className="notice success" role="status">If the account can receive email, a reset link is on its way.</p>}
-          {mutation.isSuccess && mode === "signup" && <p className="notice success" role="status">Check your email for the next step.</p>}
-          <button className="primary" disabled={mutation.isPending}>{mutation.isPending ? "Working…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}</button>
-        </form>
-        <div className="auth-links">
-          {mode !== "signin" && <button className="link" onClick={() => switchMode("signin")}>Back to sign in</button>}
-          {mode === "signin" && <><button className="link" onClick={() => switchMode("signup")}>Create account</button><button className="link" onClick={() => switchMode("forgot")}>Forgot password?</button></>}
-        </div>
-      </section>
-    </main>
-  );
+  const switchMode = (next: AuthMode) => { setMode(next); mutation.reset(); form.reset({ email: form.getValues("email"), password: "", displayName: "" }); };
+  return <main className="auth-layout">
+    <section className="brand-panel" aria-label="About ClientScope">
+      <div className="auth-brand"><span className="brand-mark" aria-hidden="true">C</span><strong>Client<span>Scope</span></strong></div>
+      <div className="brand-message"><p className="eyebrow">Clear work. Clear decisions.</p><h1>Keep every client agreement clear.</h1><p>Scope, decisions, delivery, and history in one dependable shared record.</p></div>
+      <div className="brand-promises"><div className="promise"><span>01</span><p><strong>Private by default</strong><br />Every workspace and project boundary is enforced by the API.</p></div><div className="promise"><span>02</span><p><strong>Authority stays explicit</strong><br />Roles and access remain contextual.</p></div></div>
+    </section>
+    <section className="auth-form-panel">
+      <div className="auth-mobile-brand"><span className="brand-mark" aria-hidden="true">C</span><strong>Client<span>Scope</span></strong></div>
+      <section className="auth-card" aria-labelledby="auth-title"><p className="eyebrow">{mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Password help"}</p><h2 id="auth-title">{mode === "signin" ? "Sign in to your work" : mode === "signup" ? "Start with a verified account" : "Request a reset link"}</h2><form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>{mode === "signup" && <label>Display name<input autoComplete="name" {...form.register("displayName")} />{form.formState.errors.displayName && <small role="alert">{form.formState.errors.displayName.message}</small>}</label>}<label>Email address<input type="email" autoComplete="email" {...form.register("email")} />{form.formState.errors.email && <small role="alert">{form.formState.errors.email.message}</small>}</label>{mode !== "forgot" && <label>Password<input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} {...form.register("password")} />{form.formState.errors.password && <small role="alert">{form.formState.errors.password.message}</small>}</label>}<ErrorNote error={mutation.error} />{mutation.isSuccess && mode === "forgot" && <p className="notice success" role="status">If the account can receive email, a reset link is on its way.</p>}{mutation.isSuccess && mode === "signup" && <p className="notice success" role="status">Check your email for the next step.</p>}<button className="primary" disabled={mutation.isPending}>{mutation.isPending ? "Working…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}</button></form><div className="auth-links">{mode !== "signin" && <button className="link" onClick={() => switchMode("signin")}>Back to sign in</button>}{mode === "signin" && <><button className="link" onClick={() => switchMode("signup")}>Create account</button><button className="link" onClick={() => switchMode("forgot")}>Forgot password?</button></>}</div></section>
+      <p className="auth-mobile-trust">Private project access and decision authority stay tied to your verified account.</p>
+    </section>
+  </main>;
 }
 
-function VerificationGate({ user }: Readonly<{ user: User }>) {
-  const queryClient = useQueryClient();
-  const [message, setMessage] = useState<string>();
-  const mutation = useMutation({
-    mutationFn: () => api("/auth/verification/reissue", json("POST"), messageResponseSchema),
-    onSuccess: (body) => setMessage(body.warning ?? body.message),
-  });
-  const logout = useMutation({
-    mutationFn: () => api("/auth/logout", json("POST"), messageResponseSchema),
-    onSuccess: () => queryClient.setQueryData(["session"], { user: null }),
-  });
-  return <main className="center-layout"><section className="focus-card"><span className="mail-mark">✉</span><p className="eyebrow">One quick step</p><h1>Verify your email</h1><p>We sent a verification link to <strong>{user.email}</strong>. Until it’s verified, no workspace or invitation details are loaded.</p>{message && <p className="notice success" role="status">{message}</p>}<ErrorNote error={mutation.error || logout.error} /><button className="primary" onClick={() => mutation.mutate()} disabled={mutation.isPending}>Send a replacement link</button><button className="secondary" onClick={() => logout.mutate()} disabled={logout.isPending}>Sign out</button></section></main>;
+function VerificationGate({ user }: { user: User }) {
+  const queryClient = useQueryClient(); const [message, setMessage] = useState<string>();
+  const mutation = useMutation({ mutationFn: () => api("/auth/verification/reissue", json("POST"), messageResponseSchema), onSuccess: (body) => setMessage(body.warning ?? body.message) });
+  const logout = useMutation({ mutationFn: () => api("/auth/logout", json("POST"), messageResponseSchema), onSuccess: () => queryClient.setQueryData(["session"], { user: null }) });
+  return <main className="center-layout"><section className="focus-card"><span className="mail-mark">✉</span><p className="eyebrow">One quick step</p><h1>Verify your email</h1><p>We sent a verification link to <strong>{user.email}</strong>. No private work loads before verification.</p>{message && <p className="notice success" role="status">{message}</p>}<ErrorNote error={mutation.error || logout.error} /><button className="primary" onClick={() => mutation.mutate()} disabled={mutation.isPending}>Send a replacement link</button><button className="secondary" onClick={() => logout.mutate()} disabled={logout.isPending}>Sign out</button></section></main>;
 }
 
 const workspaceSchema = z.object({ name: z.string().trim().min(1, "Enter a workspace name.").max(120) });
-function CreateWorkspace({ onDone }: Readonly<{ onDone: () => void }>) {
+function CreateWorkspace({ onDone }: { onDone: () => void }) {
+  const { runAction } = useSafeNavigation();
   const form = useForm<z.infer<typeof workspaceSchema>>({ resolver: zodResolver(workspaceSchema), defaultValues: { name: "" } });
   const mutation = useMutation({ mutationFn: (values: z.infer<typeof workspaceSchema>) => api("/workspaces", json("POST", values), z.object({ workspace: z.unknown() })), onSuccess: () => { form.reset(); onDone(); } });
-  return <form className="inline-form" onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate><label><span>Workspace name</span><input placeholder="e.g. Northstar Studio" {...form.register("name")} />{form.formState.errors.name && <small role="alert">{form.formState.errors.name.message}</small>}</label><button className="primary" disabled={mutation.isPending}>Create workspace</button><ErrorNote error={mutation.error} /></form>;
+  return <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate><label>Workspace name<input autoFocus placeholder="e.g. Northstar Studio" {...form.register("name")} />{form.formState.errors.name && <small role="alert">{form.formState.errors.name.message}</small>}</label><ErrorNote error={mutation.error} /><div className="dialog-actions"><button type="button" className="secondary" onClick={() => runAction(onDone)}>Cancel</button><button className="primary" disabled={mutation.isPending}>Create workspace</button></div></form>;
 }
 
-function ProfileEditor({ user, onClose }: Readonly<{ user: User; onClose: () => void }>) {
-  const queryClient = useQueryClient();
-  const schema = z.object({ displayName: z.string().trim().min(1, "Enter a display name.").max(80) });
-  const form = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema), defaultValues: { displayName: user.displayName } });
-  const update = useMutation({
-    mutationFn: (values: z.infer<typeof schema>) => api("/account", json("PATCH", values), z.object({ user: userSchema }).strict()),
-    onSuccess: (body) => { queryClient.setQueryData(["session"], { user: body.user }); onClose(); },
-  });
-  return <div className="profile-popover"><form onSubmit={form.handleSubmit((values) => update.mutate(values))}><label>Display name<input {...form.register("displayName")} />{form.formState.errors.displayName && <small role="alert">{form.formState.errors.displayName.message}</small>}</label><ErrorNote error={update.error} /><div className="row-actions"><button type="button" className="secondary" onClick={onClose}>Cancel</button><button className="primary" disabled={update.isPending}>Save</button></div></form></div>;
-}
-
-function AppFrame({ user, onLogout, children }: Readonly<{ user: User; onLogout: () => void; children: React.ReactNode }>) {
-  const [editingProfile, setEditingProfile] = useState(false);
-  return <><header className="topbar"><Link className="logo" href="/">Client<span>Scope</span></Link><div className="account"><span className="avatar">{user.displayName.slice(0, 1).toUpperCase()}</span><div><strong>{user.displayName}</strong><small>{user.email}</small></div><button className="link" onClick={() => setEditingProfile((value) => !value)}>Edit profile</button><button className="link" onClick={onLogout}>Sign out</button>{editingProfile && <ProfileEditor user={user} onClose={() => setEditingProfile(false)} />}</div></header><main className="app-shell">{children}</main></>;
-}
-
-function ProjectCollection({ title, projects, onOpen }: Readonly<{ title: string; projects: Project[]; onOpen: (id: string) => void }>) {
-  if (!projects.length) return null;
-  return <section className="project-collection"><h4>{title}</h4><div className="project-list">{projects.map((project) => <button key={project.id} onClick={() => onOpen(project.id)}><span><strong>{project.name}</strong><small>{project.client.name}{project.targetDeadline ? ` · ${project.targetDeadline}` : ""}</small></span><span className="project-pending"><span>{project.lifecycle?.pendingAction && <small>{project.lifecycle.pendingAction.replaceAll("-", " ")}</small>}{project.scope?.pendingAction && <small>{project.scope.pendingAction.replaceAll("-", " ")}</small>}{project.changeControl?.pendingAction && <small>{project.changeControl.pendingAction.replaceAll("-", " ")}</small>}{project.deliverables?.pendingAction && <small>{project.deliverables.pendingAction.replaceAll("-", " ")} ({project.deliverables.pendingCount})</small>}{!project.lifecycle?.pendingAction && !project.scope?.pendingAction && !project.changeControl?.pendingAction && !project.deliverables?.pendingAction && <small>{project.lifecycle && project.lifecycle.state !== "active" ? project.lifecycle.state.replaceAll("-", " ") : project.role.replaceAll("-", " ")}</small>}</span><b>→</b></span></button>)}</div></section>;
-}
-
-function Home({ user }: Readonly<{ user: User }>) {
-  const queryClient = useQueryClient();
+function RoutedHome({ user }: { user: User }) {
+  const queryClient = useQueryClient(); const pathname = usePathname(); const search = useSearchParams() ?? new URLSearchParams(); const route = parseAppRoute(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)); const { navigate } = useSafeNavigation();
   const work = useQuery({ queryKey: ["work"], queryFn: () => api("/work", {}, workResponseSchema) });
-  const [createOpen, setCreateOpen] = useState(false);
-  const [projectId, setProjectId] = useState<string>();
-  const [workspaceId, setWorkspaceId] = useState<string>();
-  const [leaveWorkspace, setLeaveWorkspace] = useState<{ id: string; name: string }>();
+  const [createOpen, setCreateOpen] = useState(false); const [leaveWorkspace, setLeaveWorkspace] = useState<{ id: string; name: string }>();
   const logout = useMutation({ mutationFn: () => api("/auth/logout", json("POST"), messageResponseSchema), onSuccess: () => queryClient.setQueryData(["session"], { user: null }) });
   const accept = useMutation({ mutationFn: (id: string) => api(`/invitations/${id}/accept`, json("POST"), messageResponseSchema), onSuccess: () => void work.refetch(), onError: () => void work.refetch() });
-  const leave = useMutation({
-    mutationFn: (workspace: { id: string }) => api(`/workspaces/${workspace.id}/leave`, json("POST", { confirmed: true }), messageResponseSchema),
-    onSuccess: async () => { setLeaveWorkspace(undefined); await work.refetch(); },
-    onError: () => { void work.refetch(); },
-  });
-  if (projectId) return <AppFrame user={user} onLogout={() => logout.mutate()}><ProjectView projectId={projectId} onBack={() => { setProjectId(undefined); void work.refetch(); }} /></AppFrame>;
-  const selected = work.data?.workspaces.find((item) => item.id === workspaceId);
-  if (selected?.relationship === "owner") return <AppFrame user={user} onLogout={() => logout.mutate()}><OwnerWorkspace workspace={selected} onBack={() => setWorkspaceId(undefined)} refreshWork={() => void work.refetch()} /></AppFrame>;
+  const leave = useMutation({ mutationFn: (workspace: { id: string }) => api(`/workspaces/${workspace.id}/leave`, json("POST", { confirmed: true }), messageResponseSchema), onSuccess: async () => { setLeaveWorkspace(undefined); await work.refetch(); }, onError: () => void work.refetch() });
+  const selected = route.kind === "admin" ? work.data?.workspaces.find((workspace) => workspace.id === route.workspaceId && workspace.relationship === "owner") : undefined;
 
-  return (
-    <AppFrame user={user} onLogout={() => logout.mutate()}>
-      <header className="home-heading"><div><p className="eyebrow">Your work</p><h1>Good to see you, {user.displayName.split(" ")[0]}.</h1><p>Everything you can currently access, grouped by workspace.</p></div><button className="primary" onClick={() => setCreateOpen((value) => !value)}>＋ New workspace</button></header>
-      {createOpen && <section className="panel create-panel"><h2>Create a workspace</h2><CreateWorkspace onDone={() => { setCreateOpen(false); void work.refetch(); }} /></section>}
-      <ErrorNote error={work.error || accept.error || leave.error} />
-      {work.data?.invitations.length ? <section className="section-block"><div className="section-title"><h2>Waiting for you</h2><span>{work.data.invitations.length} invitation{work.data.invitations.length === 1 ? "" : "s"}</span></div><div className="card-grid">{work.data.invitations.map((item) => <article className="invitation-card" key={item.id}><p className="eyebrow">Invitation · {item.role.replaceAll("-", " ")}</p><h3>{item.projectName || item.workspaceName}</h3><p>{item.projectName ? `${item.clientName} · ${item.workspaceName}` : `Join ${item.workspaceName}`}</p><p className="fine">Invited by {item.inviterName}</p><button className="primary" onClick={() => accept.mutate(item.id)} disabled={accept.isPending}>Accept invitation</button></article>)}</div></section> : null}
-      <section className="section-block"><div className="section-title"><h2>Workspaces</h2><span>{work.data?.workspaces.length ?? 0} total</span></div>{work.isPending ? <p role="status">Loading your work…</p> : work.data?.workspaces.length ? work.data.workspaces.map((workspace) => <article className="workspace-card" key={workspace.id}><div className="workspace-card-head"><div><p className="eyebrow">{workspace.relationship.replaceAll("-", " ")}</p><h3>{workspace.name}</h3></div><div className="row-actions">{workspace.relationship === "owner" && <button className="secondary" onClick={() => setWorkspaceId(workspace.id)}>Manage workspace</button>}{workspace.relationship === "service-team-member" && <button className="danger compact" onClick={() => setLeaveWorkspace({ id: workspace.id, name: workspace.name })}>Leave workspace</button>}</div></div><ProjectCollection title="Active and in review" projects={workspace.projects} onOpen={setProjectId} /><ProjectCollection title="Completed" projects={workspace.completedProjects} onOpen={setProjectId} /><ProjectCollection title="Archived" projects={workspace.archivedProjects} onOpen={setProjectId} />{!workspace.projects.length && !workspace.completedProjects.length && !workspace.archivedProjects.length && <p className="empty-copy">No accessible projects yet.</p>}</article>) : <section className="empty-state"><span>◎</span><h2>Your client work will live here</h2><p>Create a workspace or accept an invitation to get started.</p><button className="primary" onClick={() => setCreateOpen(true)}>Create your first workspace</button></section>}</section>
-      {leaveWorkspace && <ConfirmDialog title={`Leave ${leaveWorkspace.name}?`} description="Workspace membership and every active project assignment end immediately. Returning requires a new invitation." confirmLabel="Leave workspace" busy={leave.isPending} onCancel={() => setLeaveWorkspace(undefined)} onConfirm={() => leave.mutate(leaveWorkspace)} />}
-    </AppFrame>
-  );
+  let content: React.ReactNode;
+  if (work.isPending) content = <LoadingBlock label="Loading your work" />;
+  else if (work.error) content = <section className="route-error"><CircleAlert /><h1>ClientScope is unavailable</h1><ErrorNote error={work.error} /><button className="secondary" onClick={() => void work.refetch()}>Try again</button></section>;
+  else if (route.kind === "invalid") content = <section className="route-error"><CircleAlert /><h1>Page not found</h1><p>This address does not identify an available ClientScope section.</p><button className="secondary" onClick={() => navigate("/")}>Back to My Work</button></section>;
+  else if (route.kind === "project") content = <ProjectView projectId={route.projectId} section={route.section} onBack={() => navigate("/")} />;
+  else if (route.kind === "admin") content = selected ? <OwnerWorkspace workspace={selected} section={route.section} onBack={() => navigate("/")} refreshWork={() => void work.refetch()} /> : <section className="route-error"><CircleAlert /><h1>Workspace unavailable</h1><p>The requested resource was not found or is no longer available to your account.</p><button className="secondary" onClick={() => navigate("/")}>Back to My Work</button></section>;
+  else content = <><header className="home-heading"><div><p className="eyebrow">My Work</p><h1>Good to see you, {user.displayName.split(" ")[0]}.</h1><p>Find the work that needs attention and move directly to the right project section.</p></div><button className="primary" onClick={() => setCreateOpen(true)}><Plus size={18} /> New workspace</button></header><ErrorNote error={accept.error || leave.error} />{search.get("view") === "invitations" ? <section className="section-block"><div className="section-title"><div><p className="eyebrow">Invitations</p><h2>Waiting for you</h2></div><span>{work.data!.invitations.length}</span></div>{work.data!.invitations.length ? <div className="card-grid">{work.data!.invitations.map((item) => <article className="invitation-card" key={item.id}><p className="eyebrow">{item.role.replaceAll("-", " ")}</p><h3>{item.projectName || item.workspaceName}</h3><p>{item.projectName ? `${item.clientName} · ${item.workspaceName}` : `Join ${item.workspaceName}`}</p><p className="fine">Invited by {item.inviterName}</p><button className="primary" onClick={() => accept.mutate(item.id)} disabled={accept.isPending}>Accept invitation</button></article>)}</div> : <p className="empty-copy">No invitations are waiting for you.</p>}</section> : <MyWorkDirectory work={work.data!} />}{work.data!.workspaces.filter((workspace) => workspace.relationship === "service-team-member").map((workspace) => <button className="sr-only" key={workspace.id} onClick={() => setLeaveWorkspace({ id: workspace.id, name: workspace.name })}>Leave {workspace.name}</button>)}{createOpen && <DialogSurface title="Create a workspace" onClose={() => setCreateOpen(false)}><CreateWorkspace onDone={() => { setCreateOpen(false); void work.refetch(); }} /></DialogSurface>}</>;
+
+  return <AppShell user={user} work={work.data} onLogout={() => logout.mutate()}>{content}{leaveWorkspace && <ConfirmDialog title={`Leave ${leaveWorkspace.name}?`} description="Workspace membership and every active project assignment end immediately. Returning requires a new invitation." confirmLabel="Leave workspace" busy={leave.isPending} onCancel={() => setLeaveWorkspace(undefined)} onConfirm={() => leave.mutate(leaveWorkspace)} />}</AppShell>;
 }
 
 export function ClientScopeApp() {
   const session = useQuery({ queryKey: ["session"], queryFn: () => api("/auth/session", {}, sessionResponseSchema) });
-  if (session.isPending) return <main className="center-layout"><p role="status">Opening ClientScope…</p></main>;
+  if (session.isPending) return <main className="center-layout"><LoadingBlock label="Opening ClientScope" /></main>;
   if (session.error) return <main className="center-layout"><section className="focus-card"><h1>ClientScope is unavailable</h1><ErrorNote error={session.error} /></section></main>;
   if (!session.data.user) return <AuthScreen />;
   if (!session.data.user.verified) return <VerificationGate user={session.data.user} />;
-  return <Home user={session.data.user} />;
+  return <RoutedHome user={session.data.user} />;
 }

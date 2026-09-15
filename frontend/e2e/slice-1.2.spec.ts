@@ -54,10 +54,11 @@ async function grantService(owner: Awaited<ReturnType<typeof account>>, target: 
   await mutate(owner.page, "POST", `/projects/${setup.projectId}/assignments`, { userId: target.id });
 }
 
-async function openProject(page: Page, name: string) {
+async function openProject(page: Page, name: string, section: "Scope" | "Changes" = "Scope") {
   await page.goto("/"); await expect(page.getByRole("button", { name: new RegExp(name) })).toBeVisible();
   await page.getByRole("button", { name: new RegExp(name) }).click();
-  await expect(page.getByRole("heading", { name: /Scope ·/u })).toBeVisible();
+  await page.getByRole("button", { name: section, exact: true }).click();
+  await expect(page.locator("#section-heading")).toHaveText(section);
 }
 
 async function authorInitial(page: Page) {
@@ -91,7 +92,7 @@ test("initial requirements agreement preserves provider privacy and client autho
   await openProject(owner.page, setup.projectName); await owner.page.getByRole("button", { name: "Start scope draft" }).click();
   await openProject(participant.page, setup.projectName); await expect(participant.page.getByRole("heading", { name: "No proposed scope yet" })).toBeVisible();
   await openProject(approver.page, setup.projectName); await expect(approver.page.getByRole("heading", { name: "No proposed scope yet" })).toBeVisible();
-  await openProject(member.page, setup.projectName);
+  await openProject(member.page, setup.projectName, "Scope");
   await member.page.getByRole("button", { name: "Add group" }).click(); await member.page.getByLabel("Group 1").fill("Core");
   await member.page.getByRole("button", { name: "Save draft" }).click(); await expect(member.page.getByText("Draft saved.")).toBeVisible();
   await member.page.getByRole("button", { name: "Add requirement" }).click(); const card = member.page.locator(".requirement-editor");
@@ -102,7 +103,7 @@ test("initial requirements agreement preserves provider privacy and client autho
   await openProject(participant.page, setup.projectName); await expect(participant.page.getByRole("heading", { name: "Homepage" })).toBeVisible();
   await expect(participant.page.getByRole("button", { name: "Approve scope" })).not.toBeVisible();
   await participant.page.getByLabel("Comment").fill("The scope is clear."); await participant.page.getByRole("button", { name: "Post comment" }).click();
-  await approver.page.goto("/"); await expect(approver.page.getByText("decision required")).toBeVisible(); await openProject(approver.page, setup.projectName);
+  await approver.page.goto("/"); await expect(approver.page.locator(".attention-copy:visible", { hasText: "decision required" })).toBeVisible(); await openProject(approver.page, setup.projectName);
   await approver.page.getByRole("button", { name: "Approve scope" }).click(); await approver.page.getByRole("dialog").getByRole("button", { name: "Approve scope" }).click();
   await expect(approver.page.getByText("Approved by Approver")).toBeVisible(); await expect(approver.page.getByLabel("Comment")).not.toBeVisible();
   await openProject(owner.page, setup.projectName); await expect(owner.page.getByText("Approved by Approver")).toBeVisible(); await expect(owner.page.getByRole("button", { name: "Submit for review" })).not.toBeVisible();
@@ -174,7 +175,8 @@ test("formal change approval preserves the original agreement and establishes it
   const submittedScope = await mutate<{ version: { id: string } }>(owner.page, "POST", `/projects/${setup.projectId}/scope/submissions`, { revisionToken: filled.draft.revisionToken, confirmed: true });
   await mutate(approver.page, "POST", `/projects/${setup.projectId}/scope/versions/${submittedScope.version.id}/decisions`, { outcome: "approved", confirmed: true });
 
-  await openProject(member.page, setup.projectName);
+  await openProject(member.page, setup.projectName, "Changes");
+  await member.page.getByText("Propose a material scope change").click();
   await member.page.getByLabel("Change request title").fill("Add contact workflow"); await member.page.getByRole("button", { name: "Start change request" }).click();
   const editor = member.page.locator(".scope-editor").last(); await expect(editor.getByRole("heading", { name: "Draft a scope change" })).toBeVisible();
   await editor.getByLabel("Rationale").fill("Clients need a direct contact path."); await editor.getByLabel("Impact summary (optional)").fill("Adds one client-facing capability.");
@@ -184,16 +186,19 @@ test("formal change approval preserves the original agreement and establishes it
   await editor.getByRole("button", { name: "Save proposal" }).click(); await expect(editor.getByText("Change proposal draft saved.")).toBeVisible();
   await expect(editor.getByRole("button", { name: "Submit for client review" })).not.toBeVisible();
 
-  await openProject(owner.page, setup.projectName); await owner.page.getByRole("button", { name: "Submit for client review" }).click();
+  await openProject(owner.page, setup.projectName, "Changes"); await owner.page.getByRole("button", { name: "Submit for client review" }).click();
   await owner.page.getByRole("dialog").getByRole("button", { name: "Submit proposal" }).click(); await expect(owner.page.getByRole("heading", { name: "Total effect against scope v1" })).toBeVisible();
-  await participant.page.setViewportSize({ width: 390, height: 844 }); await openProject(participant.page, setup.projectName); await expect(participant.page.getByRole("heading", { name: "Contact form" })).toBeVisible();
+  await participant.page.setViewportSize({ width: 390, height: 844 }); await openProject(participant.page, setup.projectName, "Changes"); await expect(participant.page.getByRole("heading", { name: "Contact form" })).toBeVisible();
   expect(await participant.page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   await expect(participant.page.getByRole("button", { name: "Approve proposal" })).not.toBeVisible();
   await participant.page.getByLabel("Comment on total effect against scope v1").fill("The change is clear."); await participant.page.getByRole("button", { name: "Post comment" }).click();
 
-  await approver.page.goto("/"); await expect(approver.page.getByText("decision required")).toBeVisible(); await openProject(approver.page, setup.projectName);
+  await approver.page.goto("/"); await expect(approver.page.locator(".attention-copy:visible", { hasText: /decision required/i })).toBeVisible(); await openProject(approver.page, setup.projectName, "Changes");
   await approver.page.getByRole("button", { name: "Approve proposal" }).click(); const dialog = approver.page.getByRole("dialog");
   await expect(dialog).toContainText("supersedes scope v1"); await dialog.getByRole("button", { name: "Approve proposal" }).click();
+  await expect(approver.page.getByText("approved by Approver", { exact: true })).toBeVisible();
+  if (await dialog.isVisible()) await dialog.getByRole("button", { name: "Cancel" }).click();
+  await approver.page.getByRole("button", { name: "Scope", exact: true }).click();
   await expect(approver.page.getByText("Established from an approved change proposal", { exact: false })).toBeVisible();
   await expect(approver.page.getByText("Superseded through formal change control", { exact: false })).toBeVisible();
   await expect(approver.page.getByLabel("Scope · approved").getByRole("heading", { name: "Contact form" })).toBeVisible();
