@@ -114,7 +114,7 @@ test("provider setup and client approver acceptance", async ({ browser }) => {
   const client = await acceptInvite(browser, owner.page, clientEmail, "Client Approver", true);
 
   await expect(client.page.getByRole("heading", { name: "All accessible projects" })).toBeVisible();
-  await expect(client.page.getByText("Client Approver", { exact: true }).first()).toBeVisible();
+  await expect(client.page.locator(".directory-cards").getByText("Client Approver", { exact: true })).toBeVisible();
   await expect(client.page.getByText(`private A${key}`)).not.toBeVisible();
   await expect(client.page.getByText(`Company A${key}`)).not.toBeVisible();
   await expect(client.page.getByText(`Other Project A${key}`)).not.toBeVisible();
@@ -141,7 +141,7 @@ test("service assignment is project-scoped and revocation is immediate", async (
   await owner.page.getByRole("button", { name: "People & Access" }).click();
   await owner.page.getByRole("button", { name: "Assign project" }).click();
   let assignmentPanel = owner.page.getByRole("dialog", { name: "Assign a service-team member" });
-  await assignmentPanel.getByLabel("Member").selectOption({ label: "Team Member" });
+  await assignmentPanel.getByLabel("Member", { exact: true }).selectOption({ label: "Team Member" });
   await assignmentPanel.locator('select[name="projectId"]').selectOption({ label: `Project S${key}` });
   await assignmentPanel.getByRole("button", { name: "Assign project" }).click();
   await member.page.reload();
@@ -158,7 +158,7 @@ test("service assignment is project-scoped and revocation is immediate", async (
   await expect(member.page.getByText("Your client work will live here")).toBeVisible();
 
   await owner.page.getByRole("button", { name: "Assign project" }).click(); assignmentPanel = owner.page.getByRole("dialog", { name: "Assign a service-team member" });
-  await assignmentPanel.getByLabel("Member").selectOption({ label: "Team Member" });
+  await assignmentPanel.getByLabel("Member", { exact: true }).selectOption({ label: "Team Member" });
   await assignmentPanel.locator('select[name="projectId"]').selectOption({ label: `Project S${key}` });
   await assignmentPanel.getByRole("button", { name: "Assign project" }).click();
   await owner.page.getByRole("button", { name: "Remove", exact: true }).click();
@@ -200,7 +200,7 @@ test("invitation privacy, role authority change, and voluntary leave", async ({ 
   await expect(owner.page.getByText(/client participant · inactive · role-changed/u)).toBeVisible();
 
   await client.page.reload();
-  await expect(client.page.getByText("Client Approver", { exact: true }).first()).toBeVisible();
+  await expect(client.page.locator(".directory-cards").getByText("Client Approver", { exact: true })).toBeVisible();
   await client.page.getByRole("button", { name: new RegExp(`Project R${key}`) }).click();
   await client.page.getByRole("button", { name: "Settings", exact: true }).click();
   await client.page.getByRole("button", { name: "Leave project" }).click();
