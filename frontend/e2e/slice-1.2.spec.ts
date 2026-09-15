@@ -196,6 +196,8 @@ test("formal change approval preserves the original agreement and establishes it
   await approver.page.goto("/"); await expect(approver.page.locator(".attention-copy:visible", { hasText: /decision required/i })).toBeVisible(); await openProject(approver.page, setup.projectName, "Changes");
   await approver.page.getByRole("button", { name: "Approve proposal" }).click(); const dialog = approver.page.getByRole("dialog");
   await expect(dialog).toContainText("supersedes scope v1"); await dialog.getByRole("button", { name: "Approve proposal" }).click();
+  await expect(approver.page.getByText("approved by Approver", { exact: true })).toBeVisible();
+  if (await dialog.isVisible()) await dialog.getByRole("button", { name: "Cancel" }).click();
   await approver.page.getByRole("button", { name: "Scope", exact: true }).click();
   await expect(approver.page.getByText("Established from an approved change proposal", { exact: false })).toBeVisible();
   await expect(approver.page.getByText("Superseded through formal change control", { exact: false })).toBeVisible();
