@@ -10,6 +10,7 @@ import { DisabledRequirementQualityReviewProvider, type RequirementQualityReview
 import { AiRequirementReviewService, type AiReviewClock } from "./ai-requirement-review-service.js";
 import { assertBrowserMutation } from "./security.js";
 import { objectId } from "./validation.js";
+import type { DemoService } from "./demo-service.js";
 
 const projectParams = z.object({ projectId: objectId }).strict();
 const reviewParams = z.object({ projectId: objectId, reviewId: objectId }).strict();
@@ -17,9 +18,10 @@ const reviewParams = z.object({ projectId: objectId, reviewId: objectId }).stric
 export function createAiRequirementReviewRouter(
   provider: RequirementQualityReviewProvider = new DisabledRequirementQualityReviewProvider(),
   clock?: AiReviewClock,
+  demoService?: DemoService,
 ): Router {
   const router = Router();
-  const service = new AiRequirementReviewService(provider, clock);
+  const service = new AiRequirementReviewService(provider, clock, demoService);
   const base = "/projects/:projectId/ai/requirement-reviews";
 
   router.get(base, validateRequest("params", projectParams), asyncRoute(async (request, response) => {

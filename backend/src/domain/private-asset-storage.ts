@@ -26,6 +26,7 @@ export interface PrivateAssetStorage {
   authorizeDelivery(input: { providerIdentifier: string; filename: string; preview: boolean; expiresAt: Date }): Promise<DeliveryAuthorization>;
   read(input: { providerIdentifier: string; byteSize: number; signal?: AbortSignal }): Promise<Buffer>;
   delete(input: { providerIdentifier: string; idempotencyKey: string }): Promise<{ absent: boolean }>;
+  belongsToFolder?(providerIdentifier: string, folder: string): boolean;
 }
 
 const dependency = () => new ApiError(503, "STORAGE_UNAVAILABLE", "Private file storage is temporarily unavailable. Try again shortly.");
@@ -143,6 +144,13 @@ export class CloudinaryPrivateAssetStorage implements PrivateAssetStorage {
       throw dependency();
     }
   }
+
+  belongsToFolder(providerIdentifier: string, folder: string): boolean {
+    try {
+      const identity = decodeIdentity(providerIdentifier);
+      return identity.publicId.startsWith(`${folder.replace(/\/$/u, "")}/`);
+    } catch { return false; }
+  }
 }
 
 export class DeterministicPrivateAssetStorage implements PrivateAssetStorage {
@@ -175,6 +183,10 @@ export class DeterministicPrivateAssetStorage implements PrivateAssetStorage {
 
   async delete(input: { providerIdentifier: string }): Promise<{ absent: boolean }> {
     const absent = this.deleted.has(input.providerIdentifier); this.deleted.add(input.providerIdentifier); return { absent };
+  }
+
+  belongsToFolder(providerIdentifier: string, folder: string): boolean {
+    return providerIdentifier.replace(/^fake:/u, "").startsWith(`${folder.replace(/\/$/u, "")}/`);
   }
 }
 

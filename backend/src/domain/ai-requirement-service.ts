@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- private persistence records are exposed only through explicit allow-list projections. */
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import mongoose, { type ClientSession } from "mongoose";
 
@@ -18,6 +18,7 @@ import { ScopeDraft } from "./scope-models.js";
 import {
   assertProjectContentMutable, assertProvider, projectContext, type Actor,
 } from "./scope-service.js";
+import type { DemoService } from "./demo-service.js";
 
 export type AiClock = () => Date;
 const systemClock: AiClock = () => new Date();
@@ -143,7 +144,7 @@ function providerFailure(error: unknown): ApiError {
 }
 
 export class AiRequirementService {
-  constructor(private readonly provider: RequirementStructuringProvider, private readonly clock: AiClock = systemClock) {}
+  constructor(private readonly provider: RequirementStructuringProvider, private readonly clock: AiClock = systemClock, private readonly demoService?: DemoService) {}
 
   async list(projectId: string, actor: Actor) {
     const now = this.clock();
@@ -161,6 +162,7 @@ export class AiRequirementService {
     const capacity = { groups: Math.min(10, Math.max(0, 50 - draft.groups.length)), requirements: Math.min(25, Math.max(0, 200 - draft.requirements.length)) };
     if (capacity.requirements === 0) throw new ApiError(409, "AI_DRAFT_CAPACITY", "The requirement draft has no remaining requirement capacity.");
     if (!this.provider.available) throw providerFailure(new AiProviderError("disabled"));
+    await this.demoService?.reserveQuota(project.workspaceId, actor._id, "ai", 1, randomUUID());
     const admissionId = await admitAiRequirementRequest(actor._id, now);
     try {
       const result = await this.provider.generate(source, capacity);

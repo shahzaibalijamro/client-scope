@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ConfigurationError, loadConfig } from "../src/config.js";
+import { ConfigurationError, loadConfig, loadDemoConfig } from "../src/config.js";
 
 const validEnvironment = {
   NODE_ENV: "test",
@@ -64,5 +64,23 @@ describe("loadConfig", () => {
     expect(loadConfig({ ...validEnvironment, AI_ENABLED: "true", GEMINI_API_KEY: "secret", GEMINI_MODEL: "configured-model" })).toMatchObject({
       AI_ENABLED: true, GEMINI_API_KEY: "secret", GEMINI_MODEL: "configured-model", AI_TIMEOUT_MS: 30_000,
     });
+  });
+});
+
+describe("loadDemoConfig", () => {
+  it("is disabled by default and fails closed without exposing values", () => {
+    expect(loadDemoConfig(validEnvironment)).toEqual({ state: "disabled" });
+    const invalid = loadDemoConfig({ ...validEnvironment, DEMO_MODE_ENABLED: "true", DEMO_OWNER_PASSWORD: "leaked-password" });
+    expect(invalid.state).toBe("invalid");
+    expect(JSON.stringify(invalid)).not.toContain("leaked-password");
+  });
+
+  it("accepts distinct server-only identities and positive coherent quotas", () => {
+    expect(loadDemoConfig({
+      ...validEnvironment, DEMO_MODE_ENABLED: "true", DEMO_TENANT_ID: "64b000000000000000000333",
+      DEMO_OWNER_EMAIL: "owner@demo.invalid", DEMO_OWNER_PASSWORD: "owner-unique-demo-secret",
+      DEMO_APPROVER_EMAIL: "approver@demo.invalid", DEMO_APPROVER_PASSWORD: "approver-unique-demo-secret",
+      DEMO_RESET_SECRET: "reset-secret-with-at-least-thirty-two-characters", DEMO_CLOUDINARY_FOLDER: "clientscope-demo/test",
+    })).toMatchObject({ state: "enabled", tenantId: "64b000000000000000000333", quotas: { emailsPerUserHour: 3, emailsPerDay: 30 } });
   });
 });

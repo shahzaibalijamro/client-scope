@@ -7,9 +7,11 @@ import { syncDomainIndexes } from "../src/domain/models.js";
 import type { RequirementStructuringProvider } from "../src/domain/ai-requirement-provider.js";
 import type { RequirementQualityReviewProvider } from "../src/domain/ai-requirement-review-provider.js";
 import type { FeedbackSummarizationProvider } from "../src/domain/ai-feedback-summary-provider.js";
+import { DemoService } from "../src/domain/demo-service.js";
+import type { DemoConfig } from "../src/config.js";
 
 process.env.NODE_ENV = "test";
-process.env.FRONTEND_ORIGIN = "http://127.0.0.1:4200";
+process.env.FRONTEND_ORIGIN = process.env.E2E_FRONTEND_ORIGIN ?? "http://127.0.0.1:4200";
 process.env.SESSION_SECRET = "playwright-session-secret-with-at-least-32-characters";
 process.env.AUTH_THROTTLE_LIMIT = "1000";
 process.env.E2E_TEST_MODE = "1";
@@ -18,6 +20,19 @@ process.env.MONGOMS_DOWNLOAD_DIR = fileURLToPath(new URL("../node_modules/.cache
 const database = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
 await mongoose.connect(database.getUri());
 await syncDomainIndexes();
+
+let demoService: DemoService | undefined;
+if (process.env.E2E_DEMO_MODE === "1") {
+  const demoConfig = {
+    state: "enabled", tenantId: "64b000000000000000000333",
+    owner: { label: "Workspace Owner", email: "owner@demo.invalid", password: "owner-unique-demo-secret" },
+    approver: { label: "Client Approver", email: "approver@demo.invalid", password: "approver-unique-demo-secret" },
+    resetSecret: "playwright-reset-secret-with-thirty-two-characters", cloudinaryFolder: "clientscope-demo/playwright",
+    quotas: { emailsPerUserHour: 3, aiRequestsPerUserHour: 10, uploadMibPerUserHour: 20, emailsPerDay: 30, aiRequestsPerDay: 100, uploadMibPerDay: 250 },
+  } satisfies DemoConfig;
+  demoService = new DemoService(demoConfig, () => new Date("2026-09-16T08:00:00.000Z"), "playwright-demo-revision");
+  await demoService.initialize();
+}
 
 const deterministicAi: RequirementStructuringProvider = {
   available: true,
@@ -67,7 +82,8 @@ const deterministicFeedbackSummary: FeedbackSummarizationProvider = {
   },
 };
 
-const server = createApp({ requirementStructuringProvider: deterministicAi, requirementQualityReviewProvider: deterministicQualityReview, feedbackSummarizationProvider: deterministicFeedbackSummary }).listen(4101, "127.0.0.1", () => {
+const backendPort = Number(process.env.E2E_BACKEND_PORT ?? 4101);
+const server = createApp({ requirementStructuringProvider: deterministicAi, requirementQualityReviewProvider: deterministicQualityReview, feedbackSummarizationProvider: deterministicFeedbackSummary, ...(demoService ? { demoService } : {}) }).listen(backendPort, "127.0.0.1", () => {
   process.stdout.write("ClientScope E2E backend ready\n");
 });
 

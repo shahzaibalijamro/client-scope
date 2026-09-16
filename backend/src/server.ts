@@ -1,7 +1,7 @@
 import type { Server } from "node:http";
 
 import { createApp } from "./app.js";
-import { ConfigurationError, loadConfig } from "./config.js";
+import { ConfigurationError, loadConfig, loadDemoConfig } from "./config.js";
 import { databaseConnection } from "./database.js";
 import { logDiagnostic } from "./logger.js";
 import { configuredEmailService } from "./domain/email.js";
@@ -9,6 +9,7 @@ import { configuredPrivateAssetStorage } from "./domain/private-asset-storage.js
 import { configuredRequirementStructuringProvider } from "./domain/ai-requirement-provider.js";
 import { configuredRequirementQualityReviewProvider } from "./domain/ai-requirement-review-provider.js";
 import { configuredFeedbackSummarizationProvider } from "./domain/ai-feedback-summary-provider.js";
+import { DemoService } from "./domain/demo-service.js";
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -38,11 +39,16 @@ async function startServer(): Promise<void> {
     return;
   }
 
+  const demoConfig = loadDemoConfig(process.env);
+  if (demoConfig.state === "invalid") logDiagnostic("warn", "demo.configuration_invalid", { fields: demoConfig.problems.map((problem) => problem.split(":", 1)[0]).filter(Boolean).join(",") });
+  const privateAssetStorage = configuredPrivateAssetStorage();
+  const demoService = new DemoService(demoConfig, undefined, process.env.SOURCE_COMMIT ?? "local", privateAssetStorage);
   const app = createApp({
-    emailService: configuredEmailService(), privateAssetStorage: configuredPrivateAssetStorage(),
+    emailService: configuredEmailService(), privateAssetStorage,
     requirementStructuringProvider: configuredRequirementStructuringProvider(config),
     requirementQualityReviewProvider: configuredRequirementQualityReviewProvider(config),
     feedbackSummarizationProvider: configuredFeedbackSummarizationProvider(config),
+    demoService,
   });
   const server = app.listen(config.PORT, () => {
     logDiagnostic("info", "server.started", {
@@ -51,7 +57,7 @@ async function startServer(): Promise<void> {
     });
   });
 
-  databaseConnection.start(config.MONGODB_URI);
+  databaseConnection.start(config.MONGODB_URI, () => demoService.initialize());
 
   let shuttingDown = false;
   const shutdown = async (signal: NodeJS.Signals): Promise<void> => {

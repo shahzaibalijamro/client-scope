@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- private persistence records are reduced through explicit provider-only projections. */
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import mongoose, { type ClientSession } from "mongoose";
 
@@ -17,6 +17,7 @@ import { AiProviderError } from "./ai-requirement-provider.js";
 import { draftContentInput } from "./scope-contracts.js";
 import { ScopeDraft } from "./scope-models.js";
 import { assertProjectContentMutable, assertProvider, projectContext, type Actor } from "./scope-service.js";
+import type { DemoService } from "./demo-service.js";
 
 export type AiReviewClock = () => Date;
 const systemClock: AiReviewClock = () => new Date();
@@ -123,7 +124,7 @@ function providerFailure(error: unknown): ApiError {
 function activeKey(projectId: string, draftId: unknown, revision: string) { return `${projectId}:${String(draftId)}:${revision}`; }
 
 export class AiRequirementReviewService {
-  constructor(private readonly provider: RequirementQualityReviewProvider, private readonly clock: AiReviewClock = systemClock) {}
+  constructor(private readonly provider: RequirementQualityReviewProvider, private readonly clock: AiReviewClock = systemClock, private readonly demoService?: DemoService) {}
 
   async list(projectId: string, actor: Actor) {
     const now = this.clock();
@@ -146,6 +147,7 @@ export class AiRequirementReviewService {
     const initialCanonical = canonicalizeRequirementDraft(draft);
     if (initialCanonical.byteLength > AI_REVIEW_INPUT_MAX_BYTES) throw new ApiError(413, "AI_REVIEW_INPUT_TOO_LARGE", "This draft is too large for AI quality review. Manual editing remains available.", { maximumBytes: AI_REVIEW_INPUT_MAX_BYTES, actualBytes: initialCanonical.byteLength });
     if (!this.provider.available) throw providerFailure(new AiProviderError("disabled"));
+    await this.demoService?.reserveQuota(project.workspaceId, actor._id, "ai", 1, randomUUID());
     await cleanup(projectId, now);
     const bindingKey = activeKey(projectId, draft._id, draft.revisionToken);
     let reservation: InstanceType<typeof AiRequirementReview>;

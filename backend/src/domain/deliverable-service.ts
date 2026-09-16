@@ -19,6 +19,7 @@ import { Activity, ClientMembership, ProjectAssignment, User, Workspace, Workspa
 import type { PrivateAssetStorage } from "./private-asset-storage.js";
 import { ScopeVersion } from "./scope-models.js";
 import { assertProjectContentMutable, assertProvider, projectContext, type Actor, type ProjectRecord } from "./scope-service.js";
+import type { DemoService } from "./demo-service.js";
 
 const notFound = () => new ApiError(404, "NOT_FOUND", "The requested resource was not found.");
 const stale = () => new ApiError(409, "STALE_STATE", "The deliverable changed. Refresh and try again.");
@@ -245,20 +246,21 @@ export async function discardDeliverable(projectId: string, deliverableId: strin
   await processAssetCleanup(storage); return { message: "Draft discarded.", cleanupScheduled: assetIds.length > 0 };
 }
 
-export async function authorizeDeliverableUpload(projectId: string, deliverableId: string, actor: Actor, input: AuthorizeUploadInput, storage: PrivateAssetStorage) {
+export async function authorizeDeliverableUpload(projectId: string, deliverableId: string, actor: Actor, input: AuthorizeUploadInput, storage: PrivateAssetStorage, demoService?: DemoService) {
   if (!filenameMatchesType(input.filename, input.mediaType)) throw new ApiError(422, "FILE_TYPE_MISMATCH", "The filename extension does not match the selected file type.");
   const initialContext = await projectContext(projectId, actor._id); assertProvider(initialContext.role);
   assertProjectContentMutable(initialContext.project);
-  const providerIdentifier = `clientscope/${randomBytes(24).toString("base64url")}${input.mediaType === "application/zip" ? ".zip" : ""}`; const expiresAt = new Date(Date.now() + UPLOAD_LIFETIME_MS);
-  const authorization = await storage.authorizeUpload({ providerIdentifier, mediaType: input.mediaType, byteSize: input.byteSize, expiresAt });
+  const providerIdentifier = `${demoService?.assetPrefix(initialContext.project.workspaceId) ?? "clientscope"}/${randomBytes(24).toString("base64url")}${input.mediaType === "application/zip" ? ".zip" : ""}`; const expiresAt = new Date(Date.now() + UPLOAD_LIFETIME_MS);
   const reservation = await transact(async (session) => {
     const { project } = await providerContext(projectId, actor, session);
     const deliverable = await Deliverable.findOne({ _id: deliverableId, projectId: project._id, state: { $in: ["draft", "revision-draft"] } }).session(session); if (!deliverable) throw notFound();
     const draft = await DeliverableDraft.findOne({ _id: deliverable.currentDraftId, revisionToken: input.revisionToken }).session(session); if (!draft) throw stale();
     if (draft.attachments.length >= 10) throw new ApiError(409, "ATTACHMENT_LIMIT_REACHED", "A deliverable draft can contain at most 10 attachments.");
+    await demoService?.reserveQuota(project.workspaceId, actor._id, "upload", input.byteSize, providerIdentifier, session);
     const record = new UploadReservation({ workspaceId: project.workspaceId, projectId: project._id, deliverableId: deliverable._id, draftId: draft._id, providerIdentifier, filename: input.filename, mediaType: input.mediaType, byteSize: input.byteSize, expiresAt });
     await record.save({ session }); return record;
   });
+  const authorization = await storage.authorizeUpload({ providerIdentifier, mediaType: input.mediaType, byteSize: input.byteSize, expiresAt });
   return { reservationId: String(reservation._id), uploadUrl: authorization.uploadUrl, fields: authorization.fields, expiresAt: expiresAt.toISOString() };
 }
 

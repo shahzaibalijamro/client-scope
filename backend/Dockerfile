@@ -23,6 +23,9 @@ RUN npm ci --omit=dev && npm cache clean --force
 FROM node:24.20.0-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
+ARG SOURCE_COMMIT=local
+ENV SOURCE_COMMIT=$SOURCE_COMMIT
+LABEL org.opencontainers.image.revision=$SOURCE_COMMIT
 WORKDIR /app
 
 COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
