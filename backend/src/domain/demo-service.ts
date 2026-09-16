@@ -303,7 +303,11 @@ export class DemoService {
       requirements: [{ snapshotId: id(`snapshot:${index}`), logicalId: requirementIds[index], groupId: group, title: index === 0 ? "Responsive marketing site" : "Secure client experience", description: "Deliver a polished, accessible experience across current desktop and mobile browsers.", acceptanceCriteria: ["The primary journey works at 390px and 1440px.", "Keyboard focus remains visible throughout."], order: 0 }],
       submitterId: ownerId, submitterName: "Avery Morgan", submitterRole: "workspace-owner", submittedAt: at(now, -45 - index * 10),
       terminalActorId: approverId, terminalActorName: "Jordan Lee", terminalRole: role, terminalAt: at(now, -43 - index * 10), terminalNote: "Approved for delivery.", commentSequence: 0,
-      ...(index < 2 ? { basedOnScopeVersionId: baseScopeIds[index], approvedFromChangeRequestId: id(`change-request:${index}`), approvedFromProposalId: id(`change-proposal:${index}`), approvingClientId: approverId, approvingClientName: "Jordan Lee" } : {}),
+      ...(index < 2 ? {
+        basedOnScopeVersionId: baseScopeIds[index], approvedFromChangeRequestId: id(`change-request:${index}`),
+        approvedFromProposalId: id(`change-proposal:${index}`), proposalSubmitterId: ownerId,
+        proposalSubmitterName: "Avery Morgan", approvingClientId: approverId, approvingClientName: "Jordan Lee",
+      } : {}),
     }));
     const baseScopeDocs = [0, 1].map((index) => ({
       _id: baseScopeIds[index], workspaceId: tenantId, projectId: projects[index], number: 1, status: "superseded",

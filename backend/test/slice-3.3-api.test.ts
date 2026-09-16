@@ -63,6 +63,13 @@ describe("Slice 3.3 public demo", () => {
       ...work.body.workspaces[0].completedProjects,
       ...work.body.workspaces[0].archivedProjects,
     ]).toHaveLength(3);
+    const activeProjectId = work.body.workspaces[0].projects[0].id as string;
+    const scope = await agent.get(`/api/v1/projects/${activeProjectId}/scope`).expect(200);
+    expect(scope.body.scope.versions[0].provenance).toMatchObject({
+      proposalSubmitter: { displayName: "Avery Morgan" },
+      approvingClient: { displayName: "Jordan Lee" },
+    });
+    expect(scope.body.scope.versions[0].provenance.proposalSubmitter.id).toMatch(/^[a-f\d]{24}$/u);
   });
 
   it("keeps ordinary signup available while protecting canonical identity and workspace boundaries", async () => {

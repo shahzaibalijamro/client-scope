@@ -15,7 +15,12 @@ test("canonical demo entry exposes both roles and all three project stories", as
   await expect(page.getByRole("button", { name: /Atlas Client Portal/u })).toBeVisible();
   await expect(page.getByRole("button", { name: /Cedar Brand Archive/u })).toBeVisible();
   await expect(page.getByRole("button", { name: "New workspace" })).not.toBeVisible();
+  await page.getByRole("button", { name: /Harbor Website Launch/u }).click();
+  await page.getByRole("button", { name: "Scope", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /Scope · approved/u })).toBeVisible();
+  await expect(page.getByText(/submitted by Avery Morgan and approved by Jordan Lee/u)).toBeVisible();
 
+  await page.getByRole("button", { name: "← My Work" }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.getByRole("button", { name: "Use Client Approver" }).click();
   await page.getByRole("button", { name: "Sign in" }).click();
