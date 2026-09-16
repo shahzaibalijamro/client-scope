@@ -158,7 +158,7 @@ test("withdrawal consumes a version number and concurrent review actions have on
   ]);
   expect([firstDecision.status(), secondDecision.status()].sort()).toEqual([200, 409]);
   await Promise.all([openProject(first.page, setup.projectName), openProject(second.page, setup.projectName)]);
-  const terminalCount = await first.page.getByText(/Approved by|Changes requested by/u).count(); expect(terminalCount).toBeGreaterThan(0);
+  await expect(first.page.getByText(/Approved by|Changes requested by/u).first()).toBeVisible();
   await expect(first.page.getByText("Scope v2").first()).toBeVisible(); await expect(first.page.getByText("withdrawn", { exact: true }).first()).toBeVisible();
   const other = await baseProject(owner, `Other${key}`); const denied = await first.page.request.get(`/api/v1/projects/${other.projectId}/scope`); expect(denied.status()).toBe(404);
   await Promise.all([owner.context.close(), first.context.close(), second.context.close()]);
