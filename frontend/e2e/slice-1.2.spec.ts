@@ -145,14 +145,18 @@ test("withdrawal consumes a version number and concurrent review actions have on
   const v2 = await mutate<{ version: { id: string } }>(owner.page, "POST", `/projects/${setup.projectId}/scope/submissions`, { revisionToken: scope.scope.draft.revisionToken, revisionSummary: "First revision.", confirmed: true });
   await mutate(owner.page, "POST", `/projects/${setup.projectId}/scope/versions/${v2.version.id}/withdrawal`, { confirmed: true, reason: "Provider review found an issue." });
   scope = await (await owner.page.request.get(`/api/v1/projects/${setup.projectId}/scope`)).json() as { scope: { draft: { revisionToken: string } } };
-  await mutate(owner.page, "POST", `/projects/${setup.projectId}/scope/submissions`, { revisionToken: scope.scope.draft.revisionToken, revisionSummary: "Provider review complete.", confirmed: true });
+  const v3 = await mutate<{ version: { id: string } }>(owner.page, "POST", `/projects/${setup.projectId}/scope/submissions`, { revisionToken: scope.scope.draft.revisionToken, revisionSummary: "Provider review complete.", confirmed: true });
 
   await openProject(first.page, setup.projectName); await openProject(second.page, setup.projectName); await expect(first.page.getByText("Scope v3").first()).toBeVisible();
   await first.page.getByRole("button", { name: "Approve scope" }).click(); await second.page.getByLabel("Decision note (optional for approval)").fill("One more change."); await second.page.getByRole("button", { name: "Request changes" }).click();
-  await Promise.all([
+  const decisionPath = `/api/v1/projects/${setup.projectId}/scope/versions/${v3.version.id}/decisions`;
+  const [firstDecision, secondDecision] = await Promise.all([
+    first.page.waitForResponse((response) => response.url().endsWith(decisionPath) && response.request().method() === "POST"),
+    second.page.waitForResponse((response) => response.url().endsWith(decisionPath) && response.request().method() === "POST"),
     first.page.getByRole("dialog").getByRole("button", { name: "Approve scope" }).click(),
     second.page.getByRole("dialog").getByRole("button", { name: "Request changes" }).click(),
   ]);
+  expect([firstDecision.status(), secondDecision.status()].sort()).toEqual([200, 409]);
   await Promise.all([openProject(first.page, setup.projectName), openProject(second.page, setup.projectName)]);
   const terminalCount = await first.page.getByText(/Approved by|Changes requested by/u).count(); expect(terminalCount).toBeGreaterThan(0);
   await expect(first.page.getByText("Scope v2").first()).toBeVisible(); await expect(first.page.getByText("withdrawn", { exact: true }).first()).toBeVisible();
