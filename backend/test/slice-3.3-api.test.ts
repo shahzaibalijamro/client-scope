@@ -65,12 +65,22 @@ describe("Slice 3.3 public demo", () => {
     ]).toHaveLength(3);
   });
 
-  it("protects signup, canonical profile, workspace creation, and password recovery", async () => {
+  it("keeps ordinary signup available while protecting canonical identity and workspace boundaries", async () => {
     const app = createApp({ demoService: demo });
     const anonymous = request.agent(app); const anonymousCsrf = (await anonymous.get("/api/v1/csrf")).body.csrfToken;
     await anonymous.post("/api/v1/auth/signup").set("Origin", "http://localhost:3000").set("X-CSRF-Token", anonymousCsrf)
       .send({ email: "visitor@example.com", password: "correct horse battery staple", displayName: "Visitor" })
-      .expect(409).expect(({ body }) => expect(body.error.code).toBe("DEMO_PROTECTED"));
+      .expect(202);
+    await User.updateOne({ normalizedEmail: "visitor@example.com" }, { $set: { verifiedAt: now } });
+    const visitor = request.agent(app); let visitorCsrf = (await visitor.get("/api/v1/csrf")).body.csrfToken;
+    const visitorSignin = await visitor.post("/api/v1/auth/signin").set("Origin", "http://localhost:3000").set("X-CSRF-Token", visitorCsrf)
+      .send({ email: "visitor@example.com", password: "correct horse battery staple" }).expect(200);
+    visitorCsrf = visitorSignin.body.csrfToken;
+    const visitorWorkspace = await visitor.post("/api/v1/workspaces").set("Origin", "http://localhost:3000").set("X-CSRF-Token", visitorCsrf)
+      .send({ name: "Visitor workspace" }).expect(201);
+    await demo.reset("manual");
+    expect(await Workspace.findById(visitorWorkspace.body.workspace.id).lean()).toMatchObject({ name: "Visitor workspace" });
+    expect(await User.findOne({ normalizedEmail: "visitor@example.com" }).lean()).not.toBeNull();
     await anonymous.post("/api/v1/auth/forgot-password").set("Origin", "http://localhost:3000").set("X-CSRF-Token", anonymousCsrf)
       .send({ email: config.owner.email }).expect(409);
     const { agent, csrf } = await signedIn();

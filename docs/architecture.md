@@ -30,7 +30,7 @@ Gmail SMTP and Gemini sit behind small service interfaces so tests use determini
 
 ## Demo and reset trust boundary
 
-`DEMO_MODE_ENABLED` is false by default. Valid demo configuration names one immutable marked workspace, two dedicated identities, isolated asset storage, quotas, and a reset secret. Invalid enabled configuration fails closed: the ordinary app starts, but no credentials, seed, reset behavior, or demo restrictions are exposed.
+`DEMO_MODE_ENABLED` is false by default. Valid demo configuration names one immutable marked workspace, two dedicated identities, isolated asset storage, quotas, and a reset secret. The shared entry coexists with ordinary signup and private workspaces; demo reset, quota, and protection decisions are scoped to the marked tenant and canonical identities. Invalid enabled configuration fails closed: the ordinary app starts, but no credentials, seed, reset behavior, or demo restrictions are exposed.
 
 The reset endpoint accepts only a constant-time-checked bearer secret and no tenant parameter. A MongoDB lease provides single flight. The service prepares deterministic data, verifies the immutable tenant marker, and replaces tenant-owned collections plus the generation counter in one transaction. Existing user and session records sit outside that transaction. Authenticated demo responses carry the generation so clients invalidate cached data after cutover. Asset cleanup occurs afterward and is retryable; deletion candidates remain bound to the configured demo folder.
 

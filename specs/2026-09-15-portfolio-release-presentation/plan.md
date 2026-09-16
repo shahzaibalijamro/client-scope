@@ -1,6 +1,6 @@
 # Portfolio Release and Presentation Implementation Plan
 
-**Status:** Approved — 2026-09-15
+**Status:** Approved — 2026-09-15; hybrid-entry amendment approved — 2026-09-16
 
 ## 1. Correct governance and lock configuration contracts
 
@@ -25,6 +25,7 @@
 3. Reserve/consume quota at the approved provider boundaries and return capability-specific retry guidance without exposing shared usage or provider details.
 4. Present published Owner and Approver credentials, shared-demo/reset messaging, maintenance feedback, and quota feedback only when the backend reports valid demo mode.
 5. Invalidate/refetch demo data after reset generation changes while keeping existing sessions authenticated.
+6. Keep ordinary signup, password recovery, and private workspace creation available in valid demo mode while retaining canonical-identity workspace restrictions and tenant-exact reset/quota boundaries.
 
 ## 4. Automate resets and operational diagnostics
 
