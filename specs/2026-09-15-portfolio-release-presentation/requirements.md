@@ -1,10 +1,10 @@
 # Portfolio Release and Presentation Requirements
 
-**Status:** Approved — 2026-09-15
+**Status:** Approved — 2026-09-15; hybrid-entry amendment approved — 2026-09-16
 
 ## Outcome and scope
 
-Slice 3.3 turns the complete ClientScope product into a safe, reliable, and understandable portfolio artifact for engineering hiring teams. A visitor can enter a realistic public demo as either side of the provider/client relationship, exercise the actual application and managed-service boundaries, and understand the product, architecture, engineering tradeoffs, and delivery quality without creating a workspace from scratch.
+Slice 3.3 turns the complete ClientScope product into a safe, reliable, and understandable portfolio artifact for engineering hiring teams. A visitor can enter a realistic public demo as either side of the provider/client relationship without setup, while a visitor who wants to use ClientScope personally can create a verified account and private workspace on the same deployment. Both paths exercise the actual application and managed-service boundaries without allowing shared-demo reset or quota behavior to cross tenant boundaries.
 
 The slice includes:
 
@@ -22,6 +22,7 @@ The slice excludes:
 - Demo accounts or data in ordinary production, preview, development, or self-hosted deployments unless demo mode is intentionally enabled.
 - Storing portfolio image or video binaries in Git. Public portfolio media is hosted in a dedicated Cloudinary folder.
 - Treating the demo as a general-purpose free service or preserving visitor changes beyond the next reset.
+- Applying demo reset, quota, identity, or tenant protections to ordinary users or their private workspaces.
 
 ## Decisions and business rules
 
@@ -33,6 +34,7 @@ The slice excludes:
 4. Demo mode must fail closed. Missing, inconsistent, or unsafe demo configuration prevents demo initialization and leaves the ordinary application operational without exposing credentials or partial demo state.
 5. The canonical identities are global users dedicated to the demo deployment. Their stable user IDs and sessions survive workspace resets.
 6. The configuration contract uses `DEMO_MODE_ENABLED`, `DEMO_TENANT_ID`, `DEMO_OWNER_EMAIL`, `DEMO_OWNER_PASSWORD`, `DEMO_APPROVER_EMAIL`, `DEMO_APPROVER_PASSWORD`, `DEMO_RESET_SECRET`, `DEMO_CLOUDINARY_FOLDER`, `DEMO_EMAILS_PER_USER_HOUR`, `DEMO_AI_REQUESTS_PER_USER_HOUR`, `DEMO_UPLOAD_MIB_PER_USER_HOUR`, `DEMO_EMAILS_PER_DAY`, `DEMO_AI_REQUESTS_PER_DAY`, and `DEMO_UPLOAD_MIB_PER_DAY`. Existing Gmail, Gemini, and Cloudinary provider variables remain unchanged. Exact deployment URLs and public portfolio asset URLs belong in deployment settings and the media manifest rather than backend secrets.
+7. Valid demo mode is a hybrid public entry, not an exclusive demo-only deployment. The sign-in screen retains ordinary signup and password-recovery entry points alongside the shared identities. Newly verified ordinary users may create and retain private workspaces under the existing authorization and provider rules.
 
 ### Canonical demo story
 
@@ -61,6 +63,7 @@ The slice excludes:
 2. The backend enforces these invariants regardless of hidden controls, direct requests, stale UI state, role, or current project state. Attempts return a stable demo-protection error without partial mutation or history corruption.
 3. Other existing workspace, invitation, assignment, project, workflow, export, and profile capabilities remain available when authorized, subject to normal rules and demo quotas.
 4. Demo-specific rules apply only to records explicitly marked as belonging to the configured demo tenant. They must never weaken or alter authorization for another workspace.
+5. Canonical demo identities cannot create additional workspaces. Ordinary authenticated users may create workspaces normally; those workspaces are never seeded, reset, quota-limited, or protected merely because demo mode is enabled.
 
 ### Reset lifecycle
 
@@ -91,6 +94,7 @@ The slice excludes:
 ## Roles and permissions
 
 - **Public visitor:** may read demo availability and intentionally published credential guidance only; receives no project data without authentication.
+- **Ordinary visitor:** may choose ordinary signup or password recovery while demo mode is enabled, then use a verified private account under the existing product rules.
 - **Demo Workspace Owner:** has the existing Owner capabilities within the demo workspace except for canonical identity, ownership, and membership protections; external actions are quota-limited.
 - **Demo Client Approver:** has existing participant and binding-approval capabilities on the three canonical projects, except for canonical identity and membership protections; external actions are quota-limited where applicable.
 - **Ordinary authenticated user:** retains all existing contextual permissions. Demo-only visibility, quotas, protections, and reset behavior do not apply outside the marked demo tenant.
@@ -123,16 +127,17 @@ The slice excludes:
 
 1. With demo mode disabled, no demo account, credential hint, reset endpoint behavior, seed data, quota rule, or demo-specific protection is exposed or applied.
 2. With valid demo mode enabled, a new visitor can use the published Owner and Approver credentials and reach the canonical workspace without setup.
-3. The three projects visibly demonstrate the approved active, completed, and archived stories with internally consistent requirements, decisions, milestones, deliverables, feedback, approvals, and history.
-4. Repeated initialization and reset runs are idempotent and preserve canonical user IDs and active sessions.
-5. A reset never mutates another tenant and never exposes a partially rebuilt demo; mutation attempts during reset receive the approved recoverable response.
-6. Reset removes noncanonical demo records and unreferenced demo assets, restores relative dates and deterministic relationships, and safely retries asset-cleanup failures.
-7. Canonical credentials, identities, ownership, and required memberships cannot be altered through the UI or direct API requests.
-8. Below quota, real Gmail invitation, Gemini assistance, and Cloudinary upload flows work end to end. Per-identity hourly and deployment daily ceilings are atomically enforced with safe retry guidance.
-9. Existing authorization, tenant isolation, workflow transitions, history, versioning, concurrency, attachment privacy, AI human-confirmation, email, export, completion, and archival guarantees do not regress.
-10. The scheduled and manually dispatched GitHub reset workflow succeeds against the acceptance deployment and records privacy-safe evidence.
-11. The live frontend is traceable to the validated source revision and the live backend serves the exact private GHCR image tagged with that full commit SHA through the existing Northflank path.
-12. README and architecture documentation are accurate, complete, reproducible, and oriented to engineering hiring teams.
-13. Six privacy-reviewed screenshots and one three-to-five-minute walkthrough load publicly from the dedicated Cloudinary portfolio folder and match the validated release.
-14. The walkthrough demonstrates the approved provider/client story and the portfolio narrative accurately describes product value, architecture, challenges, testing, delivery, and limitations.
-15. All automated repository checks, critical cross-browser journeys, Docker builds, backend smoke validation, live-provider checks, responsive/accessibility review, privacy review, and product-owner acceptance pass before Slice 3.3 is marked complete.
+3. With valid demo mode enabled, a visitor can instead create and verify an ordinary account, create a private workspace, and retain that workspace unchanged across canonical demo resets.
+4. The three projects visibly demonstrate the approved active, completed, and archived stories with internally consistent requirements, decisions, milestones, deliverables, feedback, approvals, and history.
+5. Repeated initialization and reset runs are idempotent and preserve canonical user IDs and active sessions.
+6. A reset never mutates another tenant and never exposes a partially rebuilt demo; mutation attempts during reset receive the approved recoverable response.
+7. Reset removes noncanonical demo records and unreferenced demo assets, restores relative dates and deterministic relationships, and safely retries asset-cleanup failures.
+8. Canonical credentials, identities, ownership, and required memberships cannot be altered through the UI or direct API requests.
+9. Below quota, real Gmail invitation, Gemini assistance, and Cloudinary upload flows work end to end. Per-identity hourly and deployment daily ceilings are atomically enforced with safe retry guidance.
+10. Existing authorization, tenant isolation, workflow transitions, history, versioning, concurrency, attachment privacy, AI human-confirmation, email, export, completion, and archival guarantees do not regress.
+11. The scheduled and manually dispatched GitHub reset workflow succeeds against the acceptance deployment and records privacy-safe evidence.
+12. The live frontend is traceable to the validated source revision and the live backend serves the exact private GHCR image tagged with that full commit SHA through the existing Northflank path.
+13. README and architecture documentation are accurate, complete, reproducible, and oriented to engineering hiring teams.
+14. Six privacy-reviewed screenshots and one three-to-five-minute walkthrough load publicly from the dedicated Cloudinary portfolio folder and match the validated release.
+15. The walkthrough demonstrates the approved provider/client story and the portfolio narrative accurately describes product value, architecture, challenges, testing, delivery, and limitations.
+16. All automated repository checks, critical cross-browser journeys, Docker builds, backend smoke validation, live-provider checks, responsive/accessibility review, privacy review, and product-owner acceptance pass before Slice 3.3 is marked complete.

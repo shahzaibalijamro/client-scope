@@ -4,7 +4,8 @@ test("canonical demo entry exposes both roles and all three project stories", as
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Sign in to your work" })).toBeVisible();
   await expect(page.getByText("Explore the shared demo")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create account" })).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "Create account" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Forgot password?" })).toBeVisible();
 
   await page.getByRole("button", { name: "Use Workspace Owner" }).click();
   await page.getByRole("button", { name: "Sign in" }).click();

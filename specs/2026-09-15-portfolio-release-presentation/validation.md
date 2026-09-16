@@ -5,6 +5,7 @@
 ## Highest-risk behavior
 
 - Demo activation must fail closed and must not expose shared credentials, demo data, endpoints, or restrictions in ordinary deployments.
+- Hybrid entry must preserve ordinary signup, password recovery, and private workspace creation while keeping every demo reset, quota, and protection tenant-exact.
 - Reset must be tenant-exact, single-flight, idempotent, session-preserving, and incapable of leaving mixed data or deleting another tenant's records/assets.
 - Shared visitors must not alter canonical credentials, identities, ownership, or required memberships through any direct or stale request path.
 - Concurrent quota enforcement must prevent overspend across API instances while keeping normal workflows coherent when a limit or provider fails.
@@ -34,6 +35,7 @@
 
 - As anonymous, ordinary user, Member, Participant, Approver, Owner, stale session, and direct API caller, attempt credential changes, account deletion, ownership transfer, canonical membership removal, and cross-tenant access.
 - Verify only the approved Owner and Approver capabilities remain available and every protected attempt returns the stable safe error with no partial mutation or misleading history.
+- With valid demo mode enabled, verify an ordinary visitor can sign up, verify, recover a password, create a private workspace, and retain it unchanged through a canonical reset; verify canonical identities still cannot create additional workspaces.
 - Re-run the complete tenant-isolation, role-projection, workflow-transition, concurrency, history, versioning, attachment, AI-confirmation, email, export, completion, and archival suites.
 
 ### Quotas and real-provider boundaries
@@ -112,6 +114,13 @@
 - Complete Chromium/Firefox/WebKit CI result and the manual responsive, accessibility, browser, link, and privacy reviews.
 - Six public screenshots and the three-to-five-minute public walkthrough in the separate Cloudinary portfolio folder; manifest URLs, dimensions/duration, and capture commit remain intentionally null.
 - Product-owner acceptance against that same live revision. Slice 3.3 and the roadmap therefore remain incomplete.
+
+### Hybrid-entry amendment evidence — 2026-09-16
+
+- Product-owner approval changed valid demo mode from an exclusive demo deployment to a hybrid entry: shared canonical identities coexist with ordinary signup, password recovery, and persistent private workspaces.
+- Focused backend integration passed with 5 tests, including ordinary signup and private workspace creation while demo mode is enabled, private workspace/user survival across canonical reset, and continued canonical profile/workspace protection.
+- Focused frontend demo-entry tests passed with 2 tests; backend and frontend type checks and lint passed.
+- The amended canonical journey passed locally in Chromium and WebKit. Local Firefox failed to launch a test worker and stalled during Windows runner cleanup without executing the test body; the amended three-browser CI result remains required before release acceptance.
 
 Record for the controlled acceptance release:
 

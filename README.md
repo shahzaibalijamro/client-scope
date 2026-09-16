@@ -16,9 +16,9 @@ See [Architecture](docs/architecture.md), [Portfolio narrative](docs/portfolio-n
 
 ## Public portfolio demo
 
-Demo behavior is off by default. A dedicated deployment enables it with server-only configuration and publishes exactly two resettable identities on the sign-in screen: Workspace Owner and Client Approver. The canonical workspace contains active, completed, and archived project stories. Visitor changes are temporary, provider-backed actions have server-enforced quotas, and GitHub Actions restores the canonical data every six hours without invalidating the two users' sessions.
+Demo behavior is off by default. An enabled deployment publishes exactly two resettable identities on the sign-in screen: Workspace Owner and Client Approver. The canonical workspace contains active, completed, and archived project stories. Visitor changes are temporary, provider-backed demo actions have server-enforced quotas, and GitHub Actions restores only the canonical demo tenant every six hours without invalidating the two users' sessions. Ordinary visitors may still create verified accounts and private workspaces on the same deployment.
 
-Demo mode rejects new signup, additional workspace creation, canonical credential/profile changes, ownership or required-membership removal, unsafe reset targets, and mutations during the transactional replacement window. These restrictions never apply when demo mode is disabled.
+Demo mode rejects additional workspace creation by the canonical identities, canonical credential/profile changes, ownership or required-membership removal, unsafe reset targets, and demo-tenant mutations during the transactional replacement window. Signup, password recovery, and private workspace creation remain available to ordinary users; demo quotas, reset, and protections never apply outside the marked canonical tenant.
 
 ## Prerequisites
 

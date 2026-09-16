@@ -13,7 +13,7 @@ function renderApp() {
 }
 
 describe("public demo entry", () => {
-  it("offers only the two published identities and fills the selected sign-in credentials", async () => {
+  it("offers the two published identities alongside ordinary account access", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
       const url = String(input);
       if (url.endsWith("/api/v1/auth/session")) return new Response(JSON.stringify({ user: null }), { status: 200 });
@@ -31,7 +31,8 @@ describe("public demo entry", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Use Client Approver" }, { timeout: 5_000 }));
     expect(screen.getByLabelText("Email address")).toHaveValue("approver@demo.invalid");
     expect(screen.getByLabelText("Password")).toHaveValue("approver-unique-demo-secret");
-    expect(screen.queryByRole("button", { name: "Create account" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create account" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Forgot password?" })).toBeVisible();
     expect(screen.getByText(/changes are temporary/i)).toBeInTheDocument();
   });
 

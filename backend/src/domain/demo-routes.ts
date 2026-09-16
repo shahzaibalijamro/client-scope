@@ -48,7 +48,6 @@ export function demoBoundary(demo: DemoService): RequestHandler {
     const method = request.method.toUpperCase();
     if (["GET", "HEAD", "OPTIONS"].includes(method)) { next(); return; }
 
-    if (request.path === "/auth/signup") throw demo.protectedError();
     if (request.path === "/workspaces" && request.auth && await demo.isCanonicalUser(request.auth.user._id)) throw demo.protectedError();
     if (request.path === "/account" && request.auth && await demo.isCanonicalUser(request.auth.user._id)) throw demo.protectedError();
     if (request.path === "/auth/forgot-password" && demo.isCanonicalEmail(String((request.body as { email?: unknown } | undefined)?.email ?? ""))) throw demo.protectedError();
