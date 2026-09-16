@@ -92,7 +92,28 @@
 
 ## Evidence
 
-Record after implementation:
+### Local implementation evidence — 2026-09-16
+
+- Working branch: `codex/portfolio-release-presentation`; implementation started from commit `2cac9bb411a6361a4aabd9fb3deaa801e2d9fe9e`. The working tree is intentionally uncommitted, so no deployed source revision is claimed.
+- Local environment: Windows 10.0.19045, Node.js 22.23.0, npm 10.9.8, Playwright 1.62.1. Production container builds used the pinned Node.js 24.20.0 base image.
+- Backend verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed. The full suite reported 25 files and 141 tests passing, including Slice 3.3 configuration, fail-closed initialization, deterministic reset/session continuity, protected mutations, public/internal contracts, and quota coverage.
+- Frontend verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed. The full suite reported 15 files and 51 tests passing, including demo entry, ordinary-mode isolation, generation invalidation, and retained prior UI coverage.
+- Container verification: final backend and frontend images built as `clientscope-backend:slice-3.3` and `clientscope-frontend:slice-3.3`. The local backend image embeds `SOURCE_COMMIT=local-validation`; its final manifest-list digest was `sha256:588974ccf10e3307012d79ffd4da031055051164ecf3d1f2ddebb3615bf31c70`. The final frontend manifest-list digest was `sha256:0a45ccd2e368ff44dfe2366d6d28fdff29724fc032d1ee329bc680f4486623de`.
+- Backend-container smoke: the rebuilt backend image returned exactly `{ "status": "ok", "database": "connected" }` against an isolated MongoDB 8 container. Temporary containers and networks were removed afterward.
+- Secret-pattern scan: no Gemini API key, Cloudinary URL credential, GitHub personal token, private-key header, or MongoDB SRV credential pattern was found in committed/untracked project files outside generated/dependency directories.
+- Browser automation: the canonical Chromium journey passed in the initial local matrix attempt; the WebKit test body subsequently passed in 27.7 seconds. Windows process teardown did not return cleanly, and the Firefox attempt stalled, so the three-engine browser gate remains pending for CI/acceptance rather than being recorded as passed.
+- Documentation artifacts added locally: hiring-oriented README, architecture notes, portfolio narrative, demo operations runbook, versioned planned media manifest, privacy/capture checklist, and timed walkthrough script.
+
+### Required release evidence still pending
+
+- Controlled acceptance deployment and immutable source/image revision matching.
+- Real Gmail invitation, all three Gemini workflows, and private Cloudinary upload/access plus quota/provider-failure exercises.
+- Scheduled and manual reset evidence, cleanup retry, session continuity, tenant isolation, Vercel promotion, and exact GHCR-to-Northflank traceability.
+- Complete Chromium/Firefox/WebKit CI result and the manual responsive, accessibility, browser, link, and privacy reviews.
+- Six public screenshots and the three-to-five-minute public walkthrough in the separate Cloudinary portfolio folder; manifest URLs, dimensions/duration, and capture commit remain intentionally null.
+- Product-owner acceptance against that same live revision. Slice 3.3 and the roadmap therefore remain incomplete.
+
+Record for the controlled acceptance release:
 
 - Source commit, branch, deployed frontend revision, full GHCR image tag/digest, and Northflank-selected image.
 - Node.js, npm, operating system, browser engines, container engine, and acceptance-environment category.

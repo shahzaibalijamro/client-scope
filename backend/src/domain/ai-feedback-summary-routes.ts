@@ -8,12 +8,13 @@ import { AiFeedbackSummaryService, type AiFeedbackClock } from "./ai-feedback-su
 import { asyncRoute, requireVerified } from "./auth.js";
 import { assertBrowserMutation } from "./security.js";
 import { objectId } from "./validation.js";
+import type { DemoService } from "./demo-service.js";
 
 const params = z.object({ projectId: objectId, deliverableId: objectId }).strict();
 const path = "/projects/:projectId/deliverables/:deliverableId/feedback-summary";
 
-export function createAiFeedbackSummaryRouter(provider: FeedbackSummarizationProvider = new DisabledFeedbackSummarizationProvider(), clock?: AiFeedbackClock): Router {
-  const router = Router(); const service = new AiFeedbackSummaryService(provider, clock);
+export function createAiFeedbackSummaryRouter(provider: FeedbackSummarizationProvider = new DisabledFeedbackSummarizationProvider(), clock?: AiFeedbackClock, demoService?: DemoService): Router {
+  const router = Router(); const service = new AiFeedbackSummaryService(provider, clock, demoService);
   router.get(path, validateRequest("params", params), asyncRoute(async (request, response) => {
     const { user } = requireVerified(request);
     response.json(await service.read(String(request.params.projectId), String(request.params.deliverableId), user));

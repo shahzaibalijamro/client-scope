@@ -1,7 +1,7 @@
 "use client";
 
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { announceToast, DirtyNavigationProvider, ToastRegion } from "./ui-foundation";
 
@@ -26,6 +26,15 @@ export function QueryProvider({ children }: Readonly<{ children: ReactNode }>) {
         },
       }),
   );
+
+  useEffect(() => {
+    const refresh = () => {
+      announceToast("The shared demo was refreshed. Canonical project data has been reloaded.", "warning");
+      void queryClient.invalidateQueries();
+    };
+    window.addEventListener("clientscope:demo-generation", refresh);
+    return () => window.removeEventListener("clientscope:demo-generation", refresh);
+  }, [queryClient]);
 
   return <QueryClientProvider client={queryClient}><DirtyNavigationProvider>{children}<ToastRegion /></DirtyNavigationProvider></QueryClientProvider>;
 }

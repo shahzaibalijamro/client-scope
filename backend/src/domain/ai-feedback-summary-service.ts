@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- private records are reduced through explicit provider-only projections. */
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 
 import mongoose, { type ClientSession } from "mongoose";
 
@@ -15,6 +15,7 @@ import { admitAiRequirementRequest, releaseAiRequirementRequest } from "./ai-req
 import { AiProviderError } from "./ai-requirement-provider.js";
 import { Deliverable, DeliverableComment, DeliverableOutcome, DeliverableVersion } from "./deliverable-models.js";
 import { assertProjectContentMutable, assertProvider, projectContext, type Actor } from "./scope-service.js";
+import type { DemoService } from "./demo-service.js";
 
 export type AiFeedbackClock = () => Date;
 const systemClock: AiFeedbackClock = () => new Date();
@@ -113,7 +114,7 @@ function providerFailure(error: unknown): ApiError {
 function lifecycleActive(project: { lifecycleState?: string }) { return !project.lifecycleState || project.lifecycleState === "active"; }
 
 export class AiFeedbackSummaryService {
-  constructor(private readonly provider: FeedbackSummarizationProvider, private readonly clock: AiFeedbackClock = systemClock) {}
+  constructor(private readonly provider: FeedbackSummarizationProvider, private readonly clock: AiFeedbackClock = systemClock, private readonly demoService?: DemoService) {}
 
   async read(projectId: string, deliverableId: string, actor: Actor) {
     const { project, role } = await projectContext(projectId, actor._id); assertProvider(role);
@@ -137,6 +138,7 @@ export class AiFeedbackSummaryService {
     if (sources.value.records.length < 2) throw new ApiError(409, "AI_FEEDBACK_INSUFFICIENT", "At least two distinct eligible client feedback records are required before generating a summary.", { eligibleCount: sources.value.records.length, minimumRequired: 2 });
     if (sources.byteLength > AI_FEEDBACK_INPUT_MAX_BYTES) throw new ApiError(413, "AI_FEEDBACK_INPUT_TOO_LARGE", "This deliverable has too much eligible feedback to summarize safely. Original feedback remains available.", { maximumBytes: AI_FEEDBACK_INPUT_MAX_BYTES, actualBytes: sources.byteLength });
     if (!this.provider.available) throw providerFailure(new AiProviderError("disabled"));
+    await this.demoService?.reserveQuota(initial.project.workspaceId, actor._id, "ai", 1, randomUUID());
     const baseline = await AiFeedbackSummary.findOne({ projectId, deliverableId }).select("_id runRevision").lean();
     let admissionId: string | undefined;
     try {

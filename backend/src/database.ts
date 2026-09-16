@@ -24,8 +24,9 @@ export class DatabaseConnection {
     });
   }
 
-  start(uri: string): void {
+  start(uri: string, afterReady?: () => Promise<void>): void {
     this.uri = uri;
+    this.afterReady = afterReady;
     this.stopping = false;
     void this.connect();
   }
@@ -46,10 +47,19 @@ export class DatabaseConnection {
         state: "disconnected",
       });
       this.scheduleRetry();
+      this.connecting = false;
+      return;
+    }
+    try {
+      await this.afterReady?.();
+    } catch {
+      logDiagnostic("error", "database.after_ready_failed", { state: "connected" });
     } finally {
       this.connecting = false;
     }
   }
+
+  private afterReady: (() => Promise<void>) | undefined;
 
   private scheduleRetry(): void {
     if (this.stopping || this.retryTimer !== undefined) {

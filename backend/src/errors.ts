@@ -66,5 +66,10 @@ export const errorHandler: ErrorRequestHandler = (error, request, response, _nex
     body.error.details = apiError.details;
   }
 
+  if ((apiError.code === "DEMO_RESET_IN_PROGRESS" || apiError.code === "DEMO_QUOTA_EXCEEDED") && typeof apiError.details?.retryAt === "string") {
+    const seconds = Math.max(1, Math.ceil((Date.parse(apiError.details.retryAt) - Date.now()) / 1_000));
+    response.setHeader("Retry-After", String(Math.min(seconds, 86_400)));
+  }
+
   response.status(apiError.status).json(body);
 };

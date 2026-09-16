@@ -21,6 +21,9 @@ import { DisabledRequirementQualityReviewProvider, type RequirementQualityReview
 import { createAiFeedbackSummaryRouter } from "./domain/ai-feedback-summary-routes.js";
 import { DisabledFeedbackSummarizationProvider, type FeedbackSummarizationProvider } from "./domain/ai-feedback-summary-provider.js";
 import { createProjectExportRouter } from "./domain/project-export-routes.js";
+import { DemoService } from "./domain/demo-service.js";
+import { createDemoRouter, demoBoundary } from "./domain/demo-routes.js";
+import { loadDemoConfig } from "./config.js";
 
 export function safeDiagnosticPath(path: string): string {
   return path.replace(/(\/invitation-links\/)[^/]+/u, "$1:token");
@@ -57,6 +60,7 @@ export type AppOptions = Readonly<{
   requirementQualityReviewProvider?: RequirementQualityReviewProvider;
   feedbackSummarizationProvider?: FeedbackSummarizationProvider;
   aiClock?: Clock;
+  demoService?: DemoService;
 }>;
 
 export function createApp(options: AppOptions = {}): Express {
@@ -66,21 +70,24 @@ export function createApp(options: AppOptions = {}): Express {
   const requirementStructuringProvider = options.requirementStructuringProvider ?? new DisabledRequirementStructuringProvider();
   const requirementQualityReviewProvider = options.requirementQualityReviewProvider ?? new DisabledRequirementQualityReviewProvider();
   const feedbackSummarizationProvider = options.feedbackSummarizationProvider ?? new DisabledFeedbackSummarizationProvider();
+  const demoService = options.demoService ?? new DemoService(loadDemoConfig(process.env));
 
   app.disable("x-powered-by");
   app.use(requestDiagnostics());
   app.use(express.json({ limit: "520kb" }));
   app.use(resolveSession);
+  app.use("/api/v1", demoBoundary(demoService));
+  app.use("/api/v1", createDemoRouter(demoService));
   app.use("/api/v1", createHealthRouter(options.readDatabaseState));
   app.use("/api/v1", createIdentityRouter(emailService));
-  app.use("/api/v1", createWorkspaceRouter(emailService));
+  app.use("/api/v1", createWorkspaceRouter(emailService, demoService));
   app.use("/api/v1", createScopeRouter(emailService));
-  app.use("/api/v1", createAiRequirementRouter(requirementStructuringProvider, options.aiClock));
-  app.use("/api/v1", createAiRequirementReviewRouter(requirementQualityReviewProvider, options.aiClock));
-  app.use("/api/v1", createAiFeedbackSummaryRouter(feedbackSummarizationProvider, options.aiClock));
+  app.use("/api/v1", createAiRequirementRouter(requirementStructuringProvider, options.aiClock, demoService));
+  app.use("/api/v1", createAiRequirementReviewRouter(requirementQualityReviewProvider, options.aiClock, demoService));
+  app.use("/api/v1", createAiFeedbackSummaryRouter(feedbackSummarizationProvider, options.aiClock, demoService));
   app.use("/api/v1", createChangeControlRouter(emailService));
   app.use("/api/v1", createMilestoneRouter(options.clock));
-  app.use("/api/v1", createDeliverableRouter(emailService, privateAssetStorage));
+  app.use("/api/v1", createDeliverableRouter(emailService, privateAssetStorage, demoService));
   app.use("/api/v1", createLifecycleRouter(emailService));
   app.use("/api/v1", createProjectExportRouter(privateAssetStorage));
   if (process.env.NODE_ENV !== "production" && process.env.E2E_TEST_MODE === "1" && emailService instanceof SafeDevelopmentEmailService) {

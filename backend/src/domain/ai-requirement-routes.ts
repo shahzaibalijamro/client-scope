@@ -12,6 +12,7 @@ import {
 } from "./ai-requirement-provider.js";
 import { assertBrowserMutation } from "./security.js";
 import { objectId } from "./validation.js";
+import type { DemoService } from "./demo-service.js";
 
 const projectParams = z.object({ projectId: objectId }).strict();
 const proposalParams = z.object({ projectId: objectId, proposalId: objectId }).strict();
@@ -19,9 +20,10 @@ const proposalParams = z.object({ projectId: objectId, proposalId: objectId }).s
 export function createAiRequirementRouter(
   provider: RequirementStructuringProvider = new DisabledRequirementStructuringProvider(),
   clock?: AiClock,
+  demoService?: DemoService,
 ): Router {
   const router = Router();
-  const service = new AiRequirementService(provider, clock);
+  const service = new AiRequirementService(provider, clock, demoService);
   const base = "/projects/:projectId/ai/requirement-proposals";
 
   router.get(base, validateRequest("params", projectParams), asyncRoute(async (request, response) => {

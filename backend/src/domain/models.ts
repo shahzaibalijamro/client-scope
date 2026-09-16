@@ -9,6 +9,7 @@ import { syncLifecycleIndexes } from "./lifecycle-models.js";
 import { syncAiRequirementIndexes } from "./ai-requirement-models.js";
 import { syncAiRequirementReviewIndexes } from "./ai-requirement-review-models.js";
 import { syncAiFeedbackSummaryIndexes } from "./ai-feedback-summary-models.js";
+import { syncDemoIndexes } from "./demo-models.js";
 
 const timestamps = { timestamps: true, autoCreate: false, autoIndex: false } as const;
 
@@ -54,6 +55,8 @@ const workspaceSchema = new Schema(
   {
     name: { type: String, required: true },
     ownerId: { type: Schema.Types.ObjectId, required: true, index: true },
+    demoTenantId: { type: Schema.Types.ObjectId, unique: true, sparse: true, index: true },
+    demoGeneration: { type: Number, min: 0 },
   },
   timestamps,
 );
@@ -252,5 +255,6 @@ export async function syncDomainIndexes(): Promise<void> {
     syncAiRequirementIndexes(),
     syncAiRequirementReviewIndexes(),
     syncAiFeedbackSummaryIndexes(),
+    syncDemoIndexes(),
   ]);
 }

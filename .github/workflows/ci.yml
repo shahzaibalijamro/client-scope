@@ -109,6 +109,10 @@ jobs:
         working-directory: frontend
         run: npm run test:e2e
 
+      - name: Run canonical demo journey
+        working-directory: frontend
+        run: npm run test:e2e:demo
+
   containers:
     name: Container checks
     needs:
@@ -122,7 +126,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build backend image
-        run: docker build --tag "clientscope-backend:ci-${GITHUB_SHA}" ./backend
+        run: docker build --build-arg "SOURCE_COMMIT=${GITHUB_SHA}" --tag "clientscope-backend:ci-${GITHUB_SHA}" ./backend
 
       - name: Build frontend image
         run: >-

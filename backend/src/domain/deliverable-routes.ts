@@ -16,6 +16,7 @@ import type { EmailService } from "./email.js";
 import { assertBrowserMutation } from "./security.js";
 import type { PrivateAssetStorage } from "./private-asset-storage.js";
 import { objectId } from "./validation.js";
+import type { DemoService } from "./demo-service.js";
 
 const projectParams = z.object({ projectId: objectId }).strict();
 const deliverableParams = z.object({ projectId: objectId, deliverableId: objectId }).strict();
@@ -23,7 +24,7 @@ const versionParams = z.object({ projectId: objectId, deliverableId: objectId, v
 const attachmentParams = z.object({ projectId: objectId, deliverableId: objectId, versionId: objectId, attachmentId: objectId }).strict();
 const draftAttachmentParams = z.object({ projectId: objectId, deliverableId: objectId, attachmentId: objectId }).strict();
 
-export function createDeliverableRouter(email: EmailService, storage: PrivateAssetStorage): Router {
+export function createDeliverableRouter(email: EmailService, storage: PrivateAssetStorage, demoService?: DemoService): Router {
   const router = Router();
   router.get("/projects/:projectId/deliverables", validateRequest("params", projectParams), asyncRoute(async (request, response) => {
     const { user } = requireVerified(request); response.json({ deliverables: await readDeliverables(String(request.params.projectId), user._id) });
@@ -41,7 +42,7 @@ export function createDeliverableRouter(email: EmailService, storage: PrivateAss
     assertBrowserMutation(request); const { user } = requireVerified(request); response.json(await discardDeliverable(String(request.params.projectId), String(request.params.deliverableId), user, request.body.revisionToken, storage));
   }));
   router.post("/projects/:projectId/deliverables/:deliverableId/uploads/authorization", validateRequest("params", deliverableParams), validateRequest("body", authorizeUploadInput), asyncRoute(async (request, response) => {
-    assertBrowserMutation(request); const { user } = requireVerified(request); response.status(201).json(await authorizeDeliverableUpload(String(request.params.projectId), String(request.params.deliverableId), user, request.body, storage));
+    assertBrowserMutation(request); const { user } = requireVerified(request); response.status(201).json(await authorizeDeliverableUpload(String(request.params.projectId), String(request.params.deliverableId), user, request.body, storage, demoService));
   }));
   router.post("/projects/:projectId/deliverables/:deliverableId/uploads/finalization", validateRequest("params", deliverableParams), validateRequest("body", finalizeUploadInput), asyncRoute(async (request, response) => {
     assertBrowserMutation(request); const { user } = requireVerified(request); response.status(201).json(await finalizeDeliverableUpload(String(request.params.projectId), String(request.params.deliverableId), user, request.body, storage));

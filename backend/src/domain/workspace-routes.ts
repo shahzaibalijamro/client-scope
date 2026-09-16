@@ -19,6 +19,7 @@ import { lifecycleSummary } from "./lifecycle-service.js";
 import {
   dateOnly, email, name, objectId, optionalEmail, optionalName, optionalText,
 } from "./validation.js";
+import type { DemoService } from "./demo-service.js";
 
 type Role = "workspace-owner" | "service-team-member" | "client-participant" | "client-approver";
 const idParams = z.object({ workspaceId: objectId });
@@ -132,7 +133,7 @@ function projectView(project: any, client: any, role: Role, scope?: Awaited<Retu
   };
 }
 
-export function createWorkspaceRouter(emailService: EmailService = developmentEmail): Router {
+export function createWorkspaceRouter(emailService: EmailService = developmentEmail, demoService?: DemoService): Router {
   const router = Router();
   const sendEmail = (command: Parameters<EmailService["send"]>[0]) => sendEmailSafely(emailService, command);
 
@@ -375,6 +376,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         if (recipient) await noEffectiveRole(project._id, recipient._id);
       }
       const rawToken = randomToken();
+      const quotaOperationId = randomToken();
       const now = new Date();
       const invitation = await transaction(async (session) => {
         if (body.kind === "project") await lockAccessExpansion(body.projectId, session);
@@ -394,6 +396,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
           status: "pending", expiresAt: new Date(now.valueOf() + 3 * 24 * 60 * 60 * 1_000), deliveryStatus: "pending",
         });
         await created.save({ session });
+        await demoService?.reserveQuota(workspaceId, user._id, "email", 1, quotaOperationId, session);
         if (previous) {
           previous.replacedBy = created._id;
           await previous.save({ session });

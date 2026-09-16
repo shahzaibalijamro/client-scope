@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "status": "planned",
+  "captureSourceCommit": null,
+  "assets": [
+    { "id": "my-work", "kind": "screenshot", "purpose": "Attention-first My Work directory", "alt": "ClientScope My Work directory showing active, completed, and archived client projects", "viewport": "desktop", "width": null, "height": null, "url": null },
+    { "id": "project-overview", "kind": "screenshot", "purpose": "Action-first project overview", "alt": "Active ClientScope project overview with a client decision waiting", "viewport": "mobile", "width": null, "height": null, "url": null },
+    { "id": "agreed-scope", "kind": "screenshot", "purpose": "Preserved agreed requirements", "alt": "Approved ClientScope scope version with grouped requirements and decision history", "viewport": "desktop", "width": null, "height": null, "url": null },
+    { "id": "formal-changes", "kind": "screenshot", "purpose": "Accepted formal change", "alt": "ClientScope change request comparing and recording an accepted scope revision", "viewport": "desktop", "width": null, "height": null, "url": null },
+    { "id": "deliverable-review", "kind": "screenshot", "purpose": "Versioned delivery review", "alt": "ClientScope deliverable review showing revision feedback and the current submitted version", "viewport": "mobile", "width": null, "height": null, "url": null },
+    { "id": "activity-history", "kind": "screenshot", "purpose": "Chronological significant history", "alt": "ClientScope activity history showing scope, delivery, and completion decisions", "viewport": "desktop", "width": null, "height": null, "url": null },
+    { "id": "walkthrough", "kind": "video", "purpose": "Provider and client product story", "alt": "Three-to-five-minute ClientScope portfolio walkthrough", "durationSeconds": null, "url": null }
+  ]
+}

@@ -1,6 +1,24 @@
 # ClientScope
 
-ClientScope is a spec-driven application for keeping client scope, reviews, decisions, and delivery history clear. The current vertical slices implement global accounts, verification and recovery, workspaces, clients, projects, contextual access, invitations, requirements agreement, formal change control, shared client-facing delivery milestones, immutable versioned deliverable review with feedback, revision, approval, and private attachments, final completion review, preserved project activity, completed-project archival, and optional human-governed AI requirement structuring.
+ClientScope gives freelancers and small service teams one shared, auditable record of what a client requested, approved, changed, reviewed, and accepted. It is deliberately not a task tracker: its center of gravity is the client agreement and the decisions that change it.
+
+The complete product journey covers project access, requirements agreement, formal change control, client-facing milestones, immutable deliverable versions, feedback and revision, final completion, archival, project-record export, and three human-governed Gemini workflows. Backend authorization remains workspace/project contextual, significant decisions remain historical, and the manual lifecycle continues to work when AI is unavailable.
+
+```text
+Browser → Next.js same-origin /api proxy → Express domain services → MongoDB Atlas
+                                                ├─ Cloudinary private files
+                                                ├─ Gmail SMTP notifications
+                                                └─ Gemini advisory assistance
+GitHub Actions → CI gate → private GHCR image → Northflank exact-image deployment
+```
+
+See [Architecture](docs/architecture.md), [Portfolio narrative](docs/portfolio-narrative.md), and the [public media manifest](portfolio/media-manifest.json). Live application and walkthrough links remain intentionally unlisted until the matching acceptance deployment and privacy-reviewed media are approved.
+
+## Public portfolio demo
+
+Demo behavior is off by default. A dedicated deployment enables it with server-only configuration and publishes exactly two resettable identities on the sign-in screen: Workspace Owner and Client Approver. The canonical workspace contains active, completed, and archived project stories. Visitor changes are temporary, provider-backed actions have server-enforced quotas, and GitHub Actions restores the canonical data every six hours without invalidating the two users' sessions.
+
+Demo mode rejects new signup, additional workspace creation, canonical credential/profile changes, ownership or required-membership removal, unsafe reset targets, and mutations during the transactional replacement window. These restrictions never apply when demo mode is disabled.
 
 ## Prerequisites
 

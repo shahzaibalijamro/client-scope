@@ -3123,3 +3123,38 @@ label {
     transition-duration: .01ms !important;
   }
 }
+
+.demo-entry {
+  margin: 0 0 1.25rem;
+  padding: 1rem;
+  border: 1px solid #c7d2fe;
+  border-radius: .75rem;
+  background: #eef2ff;
+}
+
+.demo-entry p,
+.demo-entry small {
+  display: block;
+  margin: .35rem 0;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.demo-entry>div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: .75rem 0;
+}
+
+.demo-shell-notice {
+  padding: .55rem 1rem;
+  background: #312e81;
+  color: #fff;
+  font-size: .8rem;
+  text-align: center;
+}
+
+body[data-demo-mode="true"] .home-heading>.primary {
+  display: none;
+}

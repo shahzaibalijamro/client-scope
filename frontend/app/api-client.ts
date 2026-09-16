@@ -3,6 +3,7 @@ import { z, type ZodType } from "zod";
 export type ApiFailure = Error & { code?: string; status?: number; details?: unknown };
 
 let csrfToken: string | undefined;
+let demoGeneration: string | undefined;
 
 export function rememberCsrf(value: string | undefined): void {
   if (value) csrfToken = value;
@@ -41,6 +42,13 @@ export async function api<T>(path: string, init: RequestInit = {}, schema?: ZodT
     response = await fetch(`/api/v1${path}`, { ...init, headers, credentials: "same-origin" });
   } catch {
     throw new Error("ClientScope is unavailable. Try again shortly.");
+  }
+  const responseGeneration = response.headers.get("X-ClientScope-Demo-Generation") ?? undefined;
+  if (responseGeneration) {
+    if (demoGeneration && demoGeneration !== responseGeneration && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("clientscope:demo-generation", { detail: responseGeneration }));
+    }
+    demoGeneration = responseGeneration;
   }
   let body: unknown;
   try {

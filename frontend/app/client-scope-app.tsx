@@ -10,7 +10,7 @@ import { CircleAlert, Plus } from "lucide-react";
 
 import { api, json } from "./api-client";
 import { AppShell } from "./app-shell";
-import { messageResponseSchema, sessionResponseSchema, userSchema, workResponseSchema, type User } from "./api-schemas";
+import { demoResponseSchema, messageResponseSchema, sessionResponseSchema, userSchema, workResponseSchema, type User } from "./api-schemas";
 import { ConfirmDialog } from "./confirm-dialog";
 import { MyWorkDirectory } from "./my-work-directory";
 import { OwnerWorkspace } from "./owner-workspace";
@@ -32,6 +32,7 @@ function ErrorNote({ error }: { error: unknown }) {
 
 function AuthScreen() {
   const queryClient = useQueryClient();
+  const demo = useQuery({ queryKey: ["demo"], queryFn: () => api("/demo", {}, demoResponseSchema) });
   const [mode, setMode] = useState<AuthMode>("signin");
   const schema = useMemo(() => z.object({
     email: z.string().trim().email("Enter a valid email.").max(254), password: z.string().max(128), displayName: z.string().max(80),
@@ -52,6 +53,9 @@ function AuthScreen() {
     },
   });
   const switchMode = (next: AuthMode) => { setMode(next); mutation.reset(); form.reset({ email: form.getValues("email"), password: "", displayName: "" }); };
+  const chooseDemoIdentity = (identity: { email: string; password: string }) => {
+    setMode("signin"); mutation.reset(); form.reset({ email: identity.email, password: identity.password, displayName: "" });
+  };
   return <main className="auth-layout">
     <section className="brand-panel" aria-label="About ClientScope">
       <div className="auth-brand"><span className="brand-mark" aria-hidden="true">C</span><strong>Client<span>Scope</span></strong></div>
@@ -60,7 +64,7 @@ function AuthScreen() {
     </section>
     <section className="auth-form-panel">
       <div className="auth-mobile-brand"><span className="brand-mark" aria-hidden="true">C</span><strong>Client<span>Scope</span></strong></div>
-      <section className="auth-card" aria-labelledby="auth-title"><p className="eyebrow">{mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Password help"}</p><h2 id="auth-title">{mode === "signin" ? "Sign in to your work" : mode === "signup" ? "Start with a verified account" : "Request a reset link"}</h2><form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>{mode === "signup" && <label>Display name<input autoComplete="name" {...form.register("displayName")} />{form.formState.errors.displayName && <small role="alert">{form.formState.errors.displayName.message}</small>}</label>}<label>Email address<input type="email" autoComplete="email" {...form.register("email")} />{form.formState.errors.email && <small role="alert">{form.formState.errors.email.message}</small>}</label>{mode !== "forgot" && <label>Password<input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} {...form.register("password")} />{form.formState.errors.password && <small role="alert">{form.formState.errors.password.message}</small>}</label>}<ErrorNote error={mutation.error} />{mutation.isSuccess && mode === "forgot" && <p className="notice success" role="status">If the account can receive email, a reset link is on its way.</p>}{mutation.isSuccess && mode === "signup" && <p className="notice success" role="status">Check your email for the next step.</p>}<button className="primary" disabled={mutation.isPending}>{mutation.isPending ? "Working…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}</button></form><div className="auth-links">{mode !== "signin" && <button className="link" onClick={() => switchMode("signin")}>Back to sign in</button>}{mode === "signin" && <><button className="link" onClick={() => switchMode("signup")}>Create account</button><button className="link" onClick={() => switchMode("forgot")}>Forgot password?</button></>}</div></section>
+      <section className="auth-card" aria-labelledby="auth-title"><p className="eyebrow">{mode === "signin" ? "Welcome back" : mode === "signup" ? "Create your account" : "Password help"}</p><h2 id="auth-title">{mode === "signin" ? "Sign in to your work" : mode === "signup" ? "Start with a verified account" : "Request a reset link"}</h2>{demo.data?.enabled && <section className="demo-entry" aria-labelledby="demo-entry-title"><strong id="demo-entry-title">Explore the shared demo</strong><p>Choose either side of the client relationship. Changes are temporary; the workspace resets every six hours.</p><div>{demo.data.identities.map((identity) => <button type="button" className="secondary" key={identity.label} onClick={() => chooseDemoIdentity(identity)}>Use {identity.label}</button>)}</div>{demo.data.status !== "ready" && <small role="status">Demo status: {demo.data.status.replaceAll("-", " ")}.</small>}<small>Next reset: {new Date(demo.data.reset.nextScheduledAt).toLocaleString()}.</small></section>}<form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} noValidate>{mode === "signup" && <label>Display name<input autoComplete="name" {...form.register("displayName")} />{form.formState.errors.displayName && <small role="alert">{form.formState.errors.displayName.message}</small>}</label>}<label>Email address<input type="email" autoComplete="email" {...form.register("email")} />{form.formState.errors.email && <small role="alert">{form.formState.errors.email.message}</small>}</label>{mode !== "forgot" && <label>Password<input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} {...form.register("password")} />{form.formState.errors.password && <small role="alert">{form.formState.errors.password.message}</small>}</label>}<ErrorNote error={mutation.error} />{mutation.isSuccess && mode === "forgot" && <p className="notice success" role="status">If the account can receive email, a reset link is on its way.</p>}{mutation.isSuccess && mode === "signup" && <p className="notice success" role="status">Check your email for the next step.</p>}<button className="primary" disabled={mutation.isPending}>{mutation.isPending ? "Working…" : mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Send reset link"}</button></form><div className="auth-links">{mode !== "signin" && <button className="link" onClick={() => switchMode("signin")}>Back to sign in</button>}{mode === "signin" && !demo.data?.enabled && <><button className="link" onClick={() => switchMode("signup")}>Create account</button><button className="link" onClick={() => switchMode("forgot")}>Forgot password?</button></>}</div></section>
       <p className="auth-mobile-trust">Private project access and decision authority stay tied to your verified account.</p>
     </section>
   </main>;

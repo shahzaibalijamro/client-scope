@@ -1,0 +1,11 @@
+# ClientScope Portfolio Narrative
+
+Client projects often fail at the boundary between conversation and agreement. Requirements live in messages, revisions are discussed informally, and the final answer to “what did we approve?” is hard to reconstruct. ClientScope turns that boundary into a visible workflow for small service teams and their clients.
+
+The main engineering decision was to preserve decisions as records rather than treat the latest screen state as history. Requirements and deliverables become immutable numbered review versions; change requests point from the prior agreement to an approved successor; completion snapshots the exact scope, milestones, and delivery versions being accepted. Contextual backend authorization keeps a global account useful across workspaces without turning one global role into excessive authority.
+
+Several features test the same principle under failure. Email can fail after authoritative state commits without losing the pending decision. Private upload finalization distrusts browser claims and verifies provider identity, bytes, type, and signature. Gemini suggestions stay private and advisory until a provider explicitly applies them. The public demo adds a tenant-exact transactional reset, stable sessions, immutable canonical identities, and concurrent provider quotas without weakening ordinary deployments.
+
+Testing follows business risk. Unit tests cover validation and transition rules; replica-set integration tests cover transactions, authorization, concurrency, versions, history, reset, and quota behavior; React tests cover visible behavior; and a small Playwright suite exercises the critical provider/client journeys across Chromium, Firefox, and WebKit. CI builds both applications and containers, smoke-tests the backend image, and deploys the exact validated SHA through private GHCR to Northflank while Vercel promotion waits on the same gate.
+
+The project reinforced a practical lesson: reliability comes from explicit boundaries more than from infrastructure volume. A modular monolith, transactions, narrow provider adapters, strict response projections, and living specifications are enough to make a small application explainable and trustworthy without pretending it is an enterprise platform.

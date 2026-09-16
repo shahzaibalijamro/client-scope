@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Bell, BriefcaseBusiness, Building2, ChevronLeft, ChevronRight, LogOut, Menu, Search, UserRound, X } from "lucide-react";
 
 import { api, json } from "./api-client";
-import { userSchema, type User, type WorkResponse } from "./api-schemas";
+import { demoResponseSchema, userSchema, type User, type WorkResponse } from "./api-schemas";
 import { adminHref, parseAppRoute, projectHref } from "./route-model";
 import { flattenWorkspaces } from "./work-directory";
 import { useSafeNavigation } from "./ui-foundation";
@@ -62,13 +62,20 @@ function ProjectSwitcher({ work }: { work?: WorkResponse }) {
   }}><header><div><p className="eyebrow">Quick navigation</p><h2 id="switcher-title">Switch project</h2></div><button className="icon-button" aria-label="Close project switcher" onClick={close}><X size={18} /></button></header><label className="search-field"><Search size={18} /><span className="sr-only">Search accessible projects</span><input ref={inputRef} value={query} maxLength={120} onChange={(event) => { setQuery(event.target.value); setActiveIndex(0); }} placeholder="Search projects, clients, or workspaces" /></label><div className="switcher-results" role="listbox" aria-label="Accessible projects">{results.map((project, index) => <button role="option" aria-selected={index === activeIndex} className={index === activeIndex ? "active" : ""} key={project.id} onMouseEnter={() => setActiveIndex(index)} onClick={() => select(project.id)}><span><strong>{project.name}</strong><small>{project.client.name} · {project.workspaceName}</small></span><span className="badge">{project.role.replaceAll("-", " ")}</span></button>)}{!results.length && <p className="empty-copy">No accessible projects match that search.</p>}</div></section></div>}</>;
 }
 
-export function AppShell({ user, work, onLogout, children }: { user: User; work?: WorkResponse; onLogout: () => void; children: ReactNode }) {
+export function AppShell({ user, work, onLogout, children, demoMode: requestedDemoMode = false }: { user: User; work?: WorkResponse; onLogout: () => void; children: ReactNode; demoMode?: boolean }) {
+  const demo = useQuery({ queryKey: ["demo"], queryFn: () => api("/demo", {}, demoResponseSchema) });
+  const demoMode = requestedDemoMode || Boolean(demo.data?.enabled);
   const pathname = usePathname() ?? (typeof window === "undefined" ? "/" : window.location.pathname);
   const route = parseAppRoute(pathname);
   const { runAction } = useSafeNavigation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  useEffect(() => {
+    if (demoMode) document.body.dataset.demoMode = "true";
+    else delete document.body.dataset.demoMode;
+    return () => { delete document.body.dataset.demoMode; };
+  }, [demoMode]);
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try { setCollapsed(localStorage.getItem("clientscope:sidebar-collapsed") === "true"); } catch { setCollapsed(false); }
@@ -90,5 +97,5 @@ export function AppShell({ user, work, onLogout, children }: { user: User; work?
 
   const navigation = <><div className="shell-brand"><span className="brand-mark">C</span><strong>Client<span>Scope</span></strong></div><ProjectSwitcher work={work} /><nav aria-label="Primary navigation"><p className="nav-label">Navigate</p><NavButton href="/" active={route.kind === "work"} icon={<BriefcaseBusiness size={19} />} onNavigate={() => setMobileOpen(false)}>My Work</NavButton>{Boolean(work?.invitations.length) && <NavButton href="/?view=invitations" active={false} icon={<Bell size={19} />} onNavigate={() => setMobileOpen(false)}>Invitations <span className="nav-count">{work!.invitations.length}</span></NavButton>}<p className="nav-label">Workspace Admin</p>{ownerWorkspaces.map((workspace) => <NavButton key={workspace.id} href={adminHref(workspace.id)} active={route.kind === "admin" && route.workspaceId === workspace.id} icon={<Building2 size={19} />} onNavigate={() => setMobileOpen(false)}>{workspace.name}</NavButton>)}</nav><button className="collapse-button" onClick={toggleCollapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>{collapsed ? <ChevronRight size={18} /> : <><ChevronLeft size={18} /><span>Collapse sidebar</span></>}</button></>;
 
-  return <div className={`authenticated-layout${collapsed ? " sidebar-collapsed" : ""}`}><a className="skip-link" href="#main-content">Skip to content</a><aside className="desktop-sidebar">{navigation}</aside>{mobileOpen && <div className="mobile-drawer-backdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) setMobileOpen(false); }}><aside className="mobile-drawer" aria-label="Mobile navigation"><button className="icon-button drawer-close" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button>{navigation}</aside></div>}<header className="mobile-topbar"><button className="icon-button" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></button><strong>ClientScope</strong></header><div className="shell-main"><header className="shell-topbar"><div className="account"><span className="avatar">{user.displayName.slice(0, 1).toUpperCase()}</span><div><strong>{user.displayName}</strong><small>{user.email}</small></div><button className="icon-button" aria-label="Edit profile" onClick={() => setProfileOpen((value) => !value)}><UserRound size={18} /></button><button className="icon-button" aria-label="Sign out" onClick={() => runAction(onLogout)}><LogOut size={18} /></button>{profileOpen && <ProfileEditor user={user} onClose={() => setProfileOpen(false)} />}</div></header><main id="main-content" className="app-shell">{children}</main></div></div>;
+  return <div className={`authenticated-layout${collapsed ? " sidebar-collapsed" : ""}`}><a className="skip-link" href="#main-content">Skip to content</a><aside className="desktop-sidebar">{navigation}</aside>{mobileOpen && <div className="mobile-drawer-backdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) setMobileOpen(false); }}><aside className="mobile-drawer" aria-label="Mobile navigation"><button className="icon-button drawer-close" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button>{navigation}</aside></div>}<header className="mobile-topbar"><button className="icon-button" aria-label="Open navigation" onClick={() => setMobileOpen(true)}><Menu /></button><strong>ClientScope</strong></header><div className="shell-main">{demoMode && <div className="demo-shell-notice" role="status">Shared portfolio demo · changes are temporary and reset every six hours.</div>}<header className="shell-topbar"><div className="account"><span className="avatar">{user.displayName.slice(0, 1).toUpperCase()}</span><div><strong>{user.displayName}</strong><small>{user.email}</small></div>{!demoMode && <button className="icon-button" aria-label="Edit profile" onClick={() => setProfileOpen((value) => !value)}><UserRound size={18} /></button>}<button className="icon-button" aria-label="Sign out" onClick={() => runAction(onLogout)}><LogOut size={18} /></button>{profileOpen && !demoMode && <ProfileEditor user={user} onClose={() => setProfileOpen(false)} />}</div></header><main id="main-content" className="app-shell">{children}</main></div></div>;
 }

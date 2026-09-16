@@ -176,6 +176,8 @@ Outcome: every current project member can download a point-in-time copy of the c
 
 ### Slice 3.2 — UI navigation redesign
 
+**Status:** Complete — validated 2026-09-15
+
 Outcome: users can move directly among their work, understand what needs attention, and operate each project through a focused, responsive, accessible interface rather than long stacks of unrelated sections.
 
 Required outcomes:

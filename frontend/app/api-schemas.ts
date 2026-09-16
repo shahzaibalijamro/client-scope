@@ -9,6 +9,19 @@ export const userSchema = z.object({
 
 export const sessionResponseSchema = z.object({ user: userSchema.nullable() }).strict();
 
+export const demoResponseSchema = z.discriminatedUnion("enabled", [
+  z.object({ enabled: z.literal(false) }).strict(),
+  z.object({
+    enabled: z.literal(true),
+    status: z.enum(["initializing", "ready", "resetting", "degraded-provider"]),
+    identities: z.array(z.object({
+      label: z.enum(["Workspace Owner", "Client Approver"]), email: z.string().email(), password: z.string().min(12),
+    }).strict()).length(2),
+    reset: z.object({ cadenceHours: z.literal(6), nextScheduledAt: z.iso.datetime() }).strict(),
+  }).strict(),
+]);
+export type DemoResponse = z.infer<typeof demoResponseSchema>;
+
 const lifecyclePermissionsSchema = z.object({
   canRequestCompletion: z.boolean(), canWithdrawCompletion: z.boolean(), canDecideCompletion: z.boolean(),
   canArchive: z.boolean(), canRestore: z.boolean(),

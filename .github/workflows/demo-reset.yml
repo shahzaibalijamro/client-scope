@@ -1,0 +1,49 @@
+name: Reset public demo
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clientscope-public-demo-reset
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    name: Restore canonical demo data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DEMO_RESET_URL: ${{ vars.DEMO_RESET_URL }}
+    steps:
+      - name: Require reset configuration
+        shell: bash
+        env:
+          DEMO_RESET_SECRET: ${{ secrets.DEMO_RESET_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "$DEMO_RESET_URL"
+          test -n "$DEMO_RESET_SECRET"
+          case "$DEMO_RESET_URL" in https://*/api/v1/internal/demo/reset) ;; *) exit 1 ;; esac
+
+      - name: Reset canonical demo tenant
+        id: reset
+        shell: bash
+        env:
+          DEMO_RESET_SECRET: ${{ secrets.DEMO_RESET_SECRET }}
+        run: |
+          set -euo pipefail
+          response_file="${RUNNER_TEMP}/demo-reset.json"
+          status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --connect-timeout 10 --max-time 420 --retry 2 --retry-all-errors \
+            --request POST \
+            --header "Authorization: Bearer ${DEMO_RESET_SECRET}" \
+            --header "X-Demo-Reset-Source: scheduled" \
+            "$DEMO_RESET_URL")"
+          test "$status" = 200
+          jq --exit-status '.state == "completed" and (.runId | type == "string") and (.sourceCommit | type == "string")' "$response_file" >/dev/null
+          jq '{runId,state,generation,counts,cleanup,startedAt,completedAt,sourceCommit}' "$response_file" >> "$GITHUB_STEP_SUMMARY"
