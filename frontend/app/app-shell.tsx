@@ -64,7 +64,11 @@ function ProjectSwitcher({ work }: { work?: WorkResponse }) {
 
 export function AppShell({ user, work, onLogout, children, demoMode: requestedDemoMode = false }: { user: User; work?: WorkResponse; onLogout: () => void; children: ReactNode; demoMode?: boolean }) {
   const demo = useQuery({ queryKey: ["demo"], queryFn: () => api("/demo", {}, demoResponseSchema) });
-  const demoMode = requestedDemoMode || Boolean(demo.data?.enabled);
+  const canonicalDemoIdentity = Boolean(
+    demo.data?.enabled
+    && demo.data.identities.some((identity) => identity.email.toLowerCase() === user.email.toLowerCase()),
+  );
+  const demoMode = requestedDemoMode || canonicalDemoIdentity;
   const pathname = usePathname() ?? (typeof window === "undefined" ? "/" : window.location.pathname);
   const route = parseAppRoute(pathname);
   const { runAction } = useSafeNavigation();
