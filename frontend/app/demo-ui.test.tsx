@@ -69,5 +69,8 @@ describe("public demo entry", () => {
     expect(await screen.findByRole("heading", { name: /Good to see you, Personal/u })).toBeVisible();
     expect(screen.queryByText(/Shared portfolio demo/u)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Edit profile" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "My Work" })).toHaveAttribute("title", "My Work");
+    expect(screen.getByTitle("Switch project")).toHaveAttribute("title", "Switch project");
+    expect(screen.getByRole("button", { name: "Collapse sidebar" })).toHaveAttribute("title", "Collapse sidebar");
   });
 });

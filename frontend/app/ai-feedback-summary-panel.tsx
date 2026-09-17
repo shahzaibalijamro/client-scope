@@ -29,6 +29,7 @@ export function AiFeedbackSummaryPanel({ projectId, deliverableId }: Readonly<{ 
       queryClient.setQueryData(["feedback-summary", projectId, deliverableId], { availability: status.data!.availability, summary });
       await queryClient.invalidateQueries({ queryKey: ["feedback-summary", projectId, deliverableId] });
     },
+    onError: () => setConfirming(false),
   });
   const summary = status.data?.summary;
   const summaryGeneratedAt = summary?.generatedAt;
