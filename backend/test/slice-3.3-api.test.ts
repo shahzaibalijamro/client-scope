@@ -70,6 +70,10 @@ describe("Slice 3.3 public demo", () => {
       approvingClient: { displayName: "Jordan Lee" },
     });
     expect(scope.body.scope.versions[0].provenance.proposalSubmitter.id).toMatch(/^[a-f\d]{24}$/u);
+    const activity = await agent.get(`/api/v1/projects/${activeProjectId}/activity`).expect(200);
+    expect(activity.body.activity.items.map((item: { type: string }) => item.type)).toEqual([
+      "deliverable.submitted", "change-request.approved", "scope.version-approved",
+    ]);
   });
 
   it("keeps ordinary signup available while protecting canonical identity and workspace boundaries", async () => {
