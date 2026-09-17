@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ClientScopeApp } from "./client-scope-app";
+import { clearAuthenticatedQueryState, ClientScopeApp } from "./client-scope-app";
 
 function renderApp(body: unknown) {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } })));
@@ -13,6 +13,21 @@ function renderApp(body: unknown) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ClientScope application gate", () => {
+  it("removes every authenticated query before another account session is loaded", async () => {
+    const client = new QueryClient();
+    client.setQueryData(["session"], { user: { id: "personal" } });
+    client.setQueryData(["demo"], { enabled: true });
+    client.setQueryData(["work"], { workspaces: [{ id: "private-workspace" }] });
+    client.setQueryData(["scope", "private-project"], { versions: [] });
+
+    await clearAuthenticatedQueryState(client);
+
+    expect(client.getQueryData(["session"])).toEqual({ user: { id: "personal" } });
+    expect(client.getQueryData(["demo"])).toEqual({ enabled: true });
+    expect(client.getQueryData(["work"])).toBeUndefined();
+    expect(client.getQueryData(["scope", "private-project"])).toBeUndefined();
+  });
+
   it("shows account entry when there is no session", async () => {
     renderApp({ user: null });
     expect(await screen.findByRole("heading", { name: "Sign in to your work" })).toBeInTheDocument();

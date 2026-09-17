@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -20,6 +20,14 @@ import { DialogSurface, LoadingBlock, useSafeNavigation } from "./ui-foundation"
 
 type AuthMode = "signin" | "signup" | "forgot";
 type AuthValues = { email: string; password: string; displayName: string };
+const publicQueryKeys = new Set(["demo", "session"]);
+
+export async function clearAuthenticatedQueryState(queryClient: QueryClient): Promise<void> {
+  const authenticatedQuery = (query: { queryKey: readonly unknown[] }) => !publicQueryKeys.has(String(query.queryKey[0]));
+  await queryClient.cancelQueries({ predicate: authenticatedQuery });
+  queryClient.removeQueries({ predicate: authenticatedQuery });
+}
+
 const authResponseSchema = z.union([
   z.object({ user: userSchema, csrfToken: z.string(), warning: z.string().optional() }).strict(),
   z.object({ message: z.string(), csrfToken: z.string().optional(), warning: z.string().optional() }).strict(),
@@ -47,6 +55,7 @@ function AuthScreen() {
       if (mode === "forgot") return;
       const returnTo = new URLSearchParams(window.location.search).get("returnTo");
       if (returnTo?.startsWith("/invite/")) sessionStorage.setItem("clientscope:returnTo", returnTo);
+      await clearAuthenticatedQueryState(queryClient);
       await queryClient.invalidateQueries({ queryKey: ["session"] });
       const session = queryClient.getQueryData<z.infer<typeof sessionResponseSchema>>(["session"]);
       if (returnTo && session?.user?.verified) window.location.assign(returnTo);
@@ -73,7 +82,7 @@ function AuthScreen() {
 function VerificationGate({ user }: { user: User }) {
   const queryClient = useQueryClient(); const [message, setMessage] = useState<string>();
   const mutation = useMutation({ mutationFn: () => api("/auth/verification/reissue", json("POST"), messageResponseSchema), onSuccess: (body) => setMessage(body.warning ?? body.message) });
-  const logout = useMutation({ mutationFn: () => api("/auth/logout", json("POST"), messageResponseSchema), onSuccess: () => queryClient.setQueryData(["session"], { user: null }) });
+  const logout = useMutation({ mutationFn: () => api("/auth/logout", json("POST"), messageResponseSchema), onSuccess: async () => { queryClient.setQueryData(["session"], { user: null }); await clearAuthenticatedQueryState(queryClient); } });
   return <main className="center-layout"><section className="focus-card"><span className="mail-mark">✉</span><p className="eyebrow">One quick step</p><h1>Verify your email</h1><p>We sent a verification link to <strong>{user.email}</strong>. No private work loads before verification.</p>{message && <p className="notice success" role="status">{message}</p>}<ErrorNote error={mutation.error || logout.error} /><button className="primary" onClick={() => mutation.mutate()} disabled={mutation.isPending}>Send a replacement link</button><button className="secondary" onClick={() => logout.mutate()} disabled={logout.isPending}>Sign out</button></section></main>;
 }
 
@@ -89,7 +98,7 @@ function RoutedHome({ user }: { user: User }) {
   const queryClient = useQueryClient(); const pathname = usePathname(); const search = useSearchParams() ?? new URLSearchParams(); const route = parseAppRoute(pathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)); const { navigate } = useSafeNavigation();
   const work = useQuery({ queryKey: ["work"], queryFn: () => api("/work", {}, workResponseSchema) });
   const [createOpen, setCreateOpen] = useState(false); const [leaveWorkspace, setLeaveWorkspace] = useState<{ id: string; name: string }>();
-  const logout = useMutation({ mutationFn: () => api("/auth/logout", json("POST"), messageResponseSchema), onSuccess: () => queryClient.setQueryData(["session"], { user: null }) });
+  const logout = useMutation({ mutationFn: () => api("/auth/logout", json("POST"), messageResponseSchema), onSuccess: async () => { queryClient.setQueryData(["session"], { user: null }); await clearAuthenticatedQueryState(queryClient); } });
   const accept = useMutation({ mutationFn: (id: string) => api(`/invitations/${id}/accept`, json("POST"), messageResponseSchema), onSuccess: () => void work.refetch(), onError: () => void work.refetch() });
   const leave = useMutation({ mutationFn: (workspace: { id: string }) => api(`/workspaces/${workspace.id}/leave`, json("POST", { confirmed: true }), messageResponseSchema), onSuccess: async () => { setLeaveWorkspace(undefined); await work.refetch(); }, onError: () => void work.refetch() });
   const selected = route.kind === "admin" ? work.data?.workspaces.find((workspace) => workspace.id === route.workspaceId && workspace.relationship === "owner") : undefined;
