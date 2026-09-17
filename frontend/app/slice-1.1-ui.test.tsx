@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -97,6 +97,27 @@ describe("Slice 1.1 UI workflows", () => {
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(fetchMock.mock.calls.filter(([, init]) => (init as RequestInit | undefined)?.method === "POST")).toHaveLength(0);
+  });
+
+  it("closes project-leave confirmation and exposes a protected-demo error", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.endsWith("/csrf")) return response({ csrfToken: "csrf-token" });
+      if (path.endsWith("/projects/project/leave") && init?.method === "POST") return response({ error: { code: "DEMO_PROTECTED", message: "This shared demo record is protected and will be restored by the scheduled reset." } }, 403);
+      if (path.endsWith("/projects/project")) return response({ project: { id: "project", workspaceId: "workspace", name: "Website", client: { id: "client-record", name: "Acme" }, role: "client-participant" } });
+      if (path.endsWith("/projects/project/members")) return response({ members: [{ id: "client", displayName: "Client", role: "client-participant" }] });
+      if (path.endsWith("/projects/project/lifecycle")) return response({ lifecycle: { state: "active", readOnly: false, permissions: { canRequestCompletion: false, canWithdrawCompletion: false, canDecideCompletion: false, canArchive: false, canRestore: false }, revision: "revision", rounds: [], archiveHistory: [] } });
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<ProjectView projectId="project" section="settings" />, { wrapper });
+
+    await user.click(await screen.findByRole("button", { name: "Leave project" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Leave project" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("alert")).toHaveTextContent("This shared demo record is protected and will be restored by the scheduled reset.");
   });
 
   it("renders owner client editing and complete active/inactive access administration", async () => {

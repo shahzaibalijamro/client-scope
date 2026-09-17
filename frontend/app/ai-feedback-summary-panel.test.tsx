@@ -50,4 +50,22 @@ describe("Slice 2.3 feedback-summary interface", () => {
     expect(await screen.findByText(/Eligible client feedback changed after this run/)).toBeVisible(); expect(screen.getByText("Layout is the repeated theme.")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Regenerate summary" })); expect(screen.getByRole("dialog", { name: "Regenerate the private feedback summary?" })).toBeVisible();
   });
+
+  it("closes the confirmation and exposes the API error when generation fails", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.endsWith("/csrf")) return response({ csrfToken: "token" });
+      if (init?.method === "POST") return response({ error: { code: "DEMO_QUOTA_EXCEEDED", message: "The shared demo ai allowance is temporarily exhausted." } }, 429);
+      return response({ availability: { enabled: true, eligibleCount: 2, minimumRequired: 2, canGenerate: true } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<AiFeedbackSummaryPanel projectId="project" deliverableId="deliverable" />, { wrapper });
+
+    await user.click(await screen.findByRole("button", { name: "Generate summary" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Generate summary" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("alert")).toHaveTextContent("The shared demo ai allowance is temporarily exhausted.");
+  });
 });

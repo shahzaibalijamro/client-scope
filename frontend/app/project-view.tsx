@@ -65,7 +65,10 @@ function SettingsSection({ project, onBack }: { project: Project; onBack?: () =>
   const leave = useMutation({
     mutationFn: () => api(`/projects/${project.id}/leave`, json("POST", { confirmed: true }), messageResponseSchema),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ["work"] }); setConfirmLeave(false); onBack?.(); },
-    onError: async () => { await Promise.all([queryClient.invalidateQueries({ queryKey: ["work"] }), members.refetch()]); },
+    onError: async () => {
+      setConfirmLeave(false);
+      await Promise.all([queryClient.invalidateQueries({ queryKey: ["work"] }), members.refetch()]);
+    },
   });
   return <div className="settings-stack"><LifecyclePanel projectId={project.id} show="lifecycle" /><section className="panel"><div className="panel-heading"><div><p className="eyebrow">Shared access</p><h2>Project members</h2></div></div>{members.isPending && <LoadingBlock label="Loading members" />}<ErrorNote error={members.error} />{members.data?.members.map((member) => <div className="member" key={`${member.id}-${member.role}`}><span className="avatar">{member.displayName.slice(0, 1).toUpperCase()}</span><div><strong>{member.displayName}</strong><p>{member.role.replaceAll("-", " ")}</p></div></div>)}</section><section className="panel"><div className="panel-heading"><div><p className="eyebrow">Portable record</p><h2>Project record export</h2></div></div><p className="fine">Download the complete shared record available to your current membership.</p><ProjectExportButton projectId={project.id} /></section>{project.role.startsWith("client-") && <section className="panel danger-zone"><div><p className="eyebrow">Access</p><h2>Leave this project</h2><p>Your access ends immediately and returning requires a new invitation.</p></div><button className="danger" onClick={() => setConfirmLeave(true)}>Leave project</button></section>}<ErrorNote error={leave.error} />{confirmLeave && <ConfirmDialog title={`Leave ${project.name}?`} description="Your access ends immediately. Returning later requires a new invitation from the workspace owner." confirmLabel="Leave project" busy={leave.isPending} onCancel={() => setConfirmLeave(false)} onConfirm={() => leave.mutate()} />}</div>;
 }
