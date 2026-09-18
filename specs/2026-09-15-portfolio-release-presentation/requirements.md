@@ -1,6 +1,6 @@
 # Portfolio Release and Presentation Requirements
 
-**Status:** Approved — 2026-09-15; hybrid-entry amendment approved — 2026-09-16
+**Status:** Approved — 2026-09-15; hybrid-entry amendment approved — 2026-09-16; public-launch sequencing amendment approved — 2026-09-18
 
 ## Outcome and scope
 
@@ -23,6 +23,7 @@ The slice excludes:
 - Storing portfolio image or video binaries in Git. Public portfolio media is hosted in a dedicated Cloudinary folder.
 - Treating the demo as a general-purpose free service or preserving visitor changes beyond the next reset.
 - Applying demo reset, quota, identity, or tenant protections to ordinary users or their private workspaces.
+- A public marketing homepage, authentication-route reorganization, SEO/social presentation, or branded transactional-email templates. Those presentation changes belong to Slice 3.4.
 
 ## Decisions and business rules
 
@@ -84,12 +85,14 @@ The slice excludes:
 5. The walkthrough is three to five minutes and follows the provider/client story: enter as Owner, inspect agreement and change control, show revision/delivery context, switch to Approver, make or inspect a binding decision, and show preserved history. It briefly explains architecture and CI/deployment quality without exposing secrets or administrative consoles.
 6. Screenshots and video are public assets under a dedicated Cloudinary portfolio folder separate from private application uploads and the resettable demo folder. The repository stores a versioned manifest of stable HTTPS URLs, media purpose, alt text, capture version/source commit, and dimensions/duration, plus the screenshot checklist and walkthrough script/shot list.
 7. Broken, access-controlled, expiring, or transformation-only URLs do not satisfy the portfolio gate. Public media must load without a Cloudinary account or signed request.
+8. The six screenshots may be captured and published against the validated Slice 3.3 deployment. The final walkthrough and final media revision are recorded only after Slice 3.4 is accepted and deployed, so they include the durable public entry and transactional-email presentation rather than documenting an immediately superseded experience.
 
 ### Roadmap and completion governance
 
 1. Implementation first corrects Slice 3.2 to `Complete — validated 2026-09-15`, referencing the merged UI redesign evidence. This documentation correction does not retroactively change its approved scope.
 2. Slice 3.3 remains without a completion status until every acceptance criterion and validation gate below passes and product-owner manual acceptance is recorded.
 3. Completion evidence records the exact source commit and deployed backend image SHA. The roadmap is marked complete only after the live demo and public portfolio artifacts correspond to that validated revision.
+4. Deferring the walkthrough to Slice 3.4 does not mark Slice 3.3 complete or waive any Slice 3.3 media, validation, privacy, or product-owner acceptance requirement.
 
 ## Roles and permissions
 

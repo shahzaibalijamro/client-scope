@@ -1,6 +1,6 @@
 # Portfolio Release and Presentation Implementation Plan
 
-**Status:** Approved — 2026-09-15; hybrid-entry amendment approved — 2026-09-16
+**Status:** Approved — 2026-09-15; hybrid-entry amendment approved — 2026-09-16; public-launch sequencing amendment approved — 2026-09-18
 
 ## 1. Correct governance and lock configuration contracts
 
@@ -46,8 +46,8 @@
 1. Rewrite the README landing experience for engineering hiring teams with product narrative, demo access, feature journey, architecture summary/diagram, stack, setup, verification, deployment, and artifact links.
 2. Add the detailed architecture document and concise portfolio narrative, including trust boundaries, data flow, key decisions, challenges, tradeoffs, limitations, and learning.
 3. Create a versioned public-media manifest plus capture checklist, alt text, and privacy review for the six approved screenshots.
-4. Create the three-to-five-minute walkthrough script, shot list, timing, recording checklist, and privacy review; record against the validated canonical demo.
-5. Upload screenshots and video to the dedicated public Cloudinary portfolio folder and verify stable unauthenticated HTTPS delivery before inserting their URLs.
+4. Create the three-to-five-minute walkthrough script, shot list, timing, recording checklist, and privacy review. Defer recording until the accepted Slice 3.4 public launch experience is deployed.
+5. Upload the six approved screenshots to the dedicated public Cloudinary portfolio folder and verify stable unauthenticated HTTPS delivery before inserting their URLs. Upload and verify the walkthrough after Slice 3.4.
 
 ## 7. Record acceptance and complete the roadmap
 
@@ -55,3 +55,5 @@
 2. Review the final diff and live deployment against every requirement, prior specification, constitution constraint, privacy rule, and portfolio claim.
 3. Obtain product-owner manual acceptance and record any explicit exception with rationale, owner, risk, and follow-up condition.
 4. Mark Slice 3.3 complete only after the live demo, documentation, public media, walkthrough, deployment traceability, and complete validation gate all correspond to the accepted revision.
+
+Slice 3.4 is allowed to begin while this final group remains open. Its roadmap entry does not authorize implementation; create and approve its feature requirements, plan, and validation documents before writing Slice 3.4 product code.

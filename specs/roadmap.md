@@ -212,6 +212,25 @@ Required outcomes:
 - Final responsive, accessibility, browser, privacy, and error-handling review at the project's stated quality level.
 - Demo behavior is explicitly deployment-configurable. Ordinary and self-hosted deployments do not create or expose dummy accounts unless demo mode is intentionally enabled.
 
+Slice 3.3 may remain open while Slice 3.4 is implemented. Its six approved screenshots may be published against the validated Slice 3.3 release, but the final walkthrough, final media revision, and product-owner acceptance are intentionally deferred until the public launch experience is deployed so portfolio evidence does not immediately become obsolete.
+
+### Slice 3.4 — Public launch experience
+
+Outcome: a prospective user or hiring evaluator can understand ClientScope before authentication, choose an appropriate entry path, and receive professional transactional email that is consistent with the public product experience.
+
+Required outcomes:
+
+- A responsive, accessible public product homepage at `/` that explains the problem, audience, workflow, trust model, representative product media, engineering quality, and portfolio-scale limitations.
+- Dedicated sign-in routing plus clear calls to action for the shared demo, personal registration, and returning-user sign-in, with coherent authenticated navigation and redirects.
+- Public navigation, SEO metadata, social-sharing metadata, link behavior, and error states suitable for sharing the application outside the repository.
+- A reusable ClientScope transactional-email presentation with responsive multipart HTML and equivalent plain-text output for every existing verification, recovery, invitation, review, delivery, and lifecycle notification.
+- Accessible email actions, visible raw-link fallbacks, appropriate expiry or ignore guidance, strict escaping of user-controlled content, and no tracking pixels, secrets, private workflow content, signed asset URLs, or raw provider diagnostics.
+- Preservation of every existing authorization, workflow, transaction, provider-failure, quota, demo-reset, and post-commit email-delivery guarantee; this slice changes public and email presentation, not domain authority.
+- Updated route, email-rendering, accessibility, responsive, browser, security, and regression coverage plus live Gmail rendering checks in the controlled acceptance environment.
+- Final refresh of affected portfolio media and the three-to-five-minute walkthrough against the accepted Slice 3.4 deployment, followed by completion of the shared media manifest and remaining Slice 3.3 acceptance evidence.
+
+Detailed Slice 3.4 behavior remains unapproved until its normal feature requirements, plan, and validation documents are created and explicitly accepted. This roadmap entry alone does not authorize implementation.
+
 ## Portfolio-Ready Completion Gate
 
 ClientScope is complete only when all of the following are true:
