@@ -1,19 +1,20 @@
 # Public Launch Experience Validation
 
-**Status:** Implementation validation in progress — automated implementation checks recorded 2026-09-18
+**Status:** Complete — validated and accepted 2026-09-19
 
 ## Implementation evidence
 
 The public entry, durable authentication routes, trusted-origin policy, approved media projection, social card, pending invitation destination handling, and multipart transactional email renderer are implemented. The existing workflow and notification timing remain unchanged.
 
-Automated checks completed locally:
+Automated checks completed locally and in GitHub Actions:
 
 - Backend type check, lint, build, and full test suite: passed (26 files, 199 tests).
 - Frontend type check, lint, production build, and full unit suite: passed (16 files, 94 tests).
 - Focused email-renderer suite: passed (62 tests, including all 13 categories, escaping, unsafe URL rejection, private-content rejection, origin validation, Gmail HTML/text dispatch, and failure handling).
-- Focused public browser navigation checks: responsive homepage metadata/media behavior, auth-entry history, and safe not-found recovery passed in Chromium. Firefox/WebKit coverage and the complete cross-browser suite remain release-gate work.
+- Focused public browser navigation checks: responsive homepage metadata/media behavior, auth-entry history, and safe not-found recovery passed in Chromium. The post-merge critical browser workflow passed Chromium, Firefox, and WebKit navigation coverage.
+- Post-merge container verification passed for both production images and the backend health smoke test. The exact validated backend image was published privately to GHCR and deployed to Northflank with rollout readiness verified.
 
-Production deployment, controlled Gmail rendering, all three browser engines, manual accessibility review, final portfolio media, walkthrough, and product-owner acceptance remain release-gate work described below.
+Manual responsive, accessibility, browser, privacy, email-client, portfolio, walkthrough, and product-owner checks were completed and accepted on 2026-09-19.
 
 ## Highest-risk behavior
 

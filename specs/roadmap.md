@@ -216,6 +216,8 @@ Slice 3.3 may remain open while Slice 3.4 is implemented. Its six approved scree
 
 ### Slice 3.4 — Public launch experience
 
+**Status:** Complete — validated and accepted 2026-09-19
+
 Outcome: a prospective user or hiring evaluator can understand ClientScope before authentication, choose an appropriate entry path, and receive professional transactional email that is consistent with the public product experience.
 
 Required outcomes:
