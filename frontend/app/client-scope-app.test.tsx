@@ -2,12 +2,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { clearAuthenticatedQueryState, ClientScopeApp } from "./client-scope-app";
+import { AuthScreen, clearAuthenticatedQueryState, ClientScopeApp } from "./client-scope-app";
 
-function renderApp(body: unknown) {
+function renderApp(body: { user: { id: string; email: string; displayName: string; verified: boolean } | null }) {
   vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } })));
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={client}><ClientScopeApp /></QueryClientProvider>);
+  render(<QueryClientProvider client={client}>{body.user ? <ClientScopeApp /> : <AuthScreen />}</QueryClientProvider>);
 }
 
 afterEach(() => vi.unstubAllGlobals());

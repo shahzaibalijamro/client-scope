@@ -1,0 +1,16 @@
+# Root context is used only for the frontend image and approved media manifest.
+**
+!frontend/
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/.npmrc
+!frontend/app/
+!frontend/app/**
+!frontend/test/
+!frontend/test/**
+!frontend/next.config.ts
+!frontend/next-env.d.ts
+!frontend/postcss.config.mjs
+!frontend/tsconfig.json
+!portfolio/
+!portfolio/media-manifest.json

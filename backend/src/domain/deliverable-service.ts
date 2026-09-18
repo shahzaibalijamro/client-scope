@@ -14,6 +14,7 @@ import {
   DeliverableVersion, PrivateAsset, UploadReservation,
 } from "./deliverable-models.js";
 import type { EmailService } from "./email.js";
+import type { EmailContent } from "./email-contracts.js";
 import { sendEmailSafely } from "./email.js";
 import { Activity, ClientMembership, ProjectAssignment, User, Workspace, WorkspaceMembership } from "./models.js";
 import type { PrivateAssetStorage } from "./private-asset-storage.js";
@@ -315,7 +316,7 @@ async function providerRecipients(project: ProjectRecord) {
   return User.find({ _id: { $in: ids } }).select("email").lean();
 }
 
-async function notify(service: EmailService, recipients: Array<{ email: string }>, command: Omit<Parameters<EmailService["send"]>[0], "to">): Promise<string | undefined> {
+async function notify(service: EmailService, recipients: Array<{ email: string }>, command: EmailContent): Promise<string | undefined> {
   const results = await Promise.all([...new Set(recipients.map((item) => item.email))].map((to) => sendEmailSafely(service, { ...command, to })));
   return results.some((result) => !result.delivered) ? "The change was saved, but one or more email notifications could not be delivered." : undefined;
 }
@@ -347,7 +348,7 @@ export async function submitDeliverable(projectId: string, deliverableId: string
     await deliverable.save({ session }); await projectActivity({ project, actor, role, action: "deliverable.submitted", now, context: { deliverableId: String(deliverable._id), deliverableNumber: number, versionId: String(version._id), versionNumber: nextVersion, scopeVersionId: String(scope._id), scopeVersionNumber: scope.number } }, session);
     return { project, deliverable, version };
   });
-  const warning = await notify(email, await clientRecipients(result.project._id), { category: "deliverable-review", subject: `Deliverable ${result.deliverable.number} is ready for review`, text: `${result.project.name}: Deliverable ${result.deliverable.number}, “${result.deliverable.title}”, version ${result.version.number} is ready for review. Open ClientScope to review it.` });
+  const warning = await notify(email, await clientRecipients(result.project._id), { category: "deliverable-review", projectId: String(result.project._id), projectName: result.project.name, number: result.deliverable.number!, title: result.deliverable.title, version: result.version.number });
   return { version: versionView(result.version), ...(warning ? { warning } : {}) };
 }
 
@@ -390,7 +391,7 @@ export async function decideDeliverable(projectId: string, deliverableId: string
     await projectActivity({ project, actor, role, action: input.outcome === "approved" ? "deliverable.approved" : "deliverable.revision-requested", now, context: { deliverableId, deliverableNumber: deliverable.number, versionId, versionNumber: version.number, outcome: input.outcome } }, session);
     return { project, deliverable, version };
   });
-  const warning = await notify(email, await providerRecipients(result.project), { category: "deliverable-result", subject: `Deliverable ${result.deliverable.number} review updated`, text: `${result.project.name}: Deliverable ${result.deliverable.number}, “${result.deliverable.title}”, version ${result.version.number} was ${input.outcome === "approved" ? "approved" : "returned for revision"}. Open ClientScope for the current record.` });
+  const warning = await notify(email, await providerRecipients(result.project), { category: "deliverable-result", projectId: String(result.project._id), projectName: result.project.name, number: result.deliverable.number!, title: result.deliverable.title, version: result.version.number, outcome: input.outcome });
   return { outcome: input.outcome, version: versionView(result.version), ...(warning ? { warning } : {}) };
 }
 

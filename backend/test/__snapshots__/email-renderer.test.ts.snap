@@ -1,0 +1,482 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`transactional email presentation > renders deterministic multipart access-removal with equivalent content and destinations 1`] = `
+{
+  "category": "access-removal",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Access ended — ClientScope</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Your access has ended — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">Your access has ended</h1>
+<p style="margin:0 0 24px;font-size:16px;">Your access to Northstar website has ended.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/work" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Open My Work</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/work" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/work</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Access ended — ClientScope",
+  "text": "ClientScope
+
+Your access has ended
+
+Your access to Northstar website has ended.
+
+Open My Work:
+https://clientscope.example/work
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart assignment with equivalent content and destinations 1`] = `
+{
+  "category": "assignment",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Project access assigned — ClientScope</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">You have a project assignment — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">You have a project assignment</h1>
+<p style="margin:0 0 24px;font-size:16px;">You now have access to Northstar website in ClientScope.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/work" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Open My Work</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/work" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/work</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Project access assigned — ClientScope",
+  "text": "ClientScope
+
+You have a project assignment
+
+You now have access to Northstar website in ClientScope.
+
+Open My Work:
+https://clientscope.example/work
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart completion-result with equivalent content and destinations 1`] = `
+{
+  "category": "completion-result",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Project completion decision — ClientScope</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">A final review decision was recorded — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">A final review decision was recorded</h1>
+<p style="margin:0 0 24px;font-size:16px;">Northstar website: Completion round 1 was approved.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/projects/64b000000000000000000333/overview" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">View project overview</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/projects/64b000000000000000000333/overview" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/projects/64b000000000000000000333/overview</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Project completion decision — ClientScope",
+  "text": "ClientScope
+
+A final review decision was recorded
+
+Northstar website: Completion round 1 was approved.
+
+View project overview:
+https://clientscope.example/projects/64b000000000000000000333/overview
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart completion-review with equivalent content and destinations 1`] = `
+{
+  "category": "completion-review",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Project completion review — ClientScope</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">The project is ready for final review — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">The project is ready for final review</h1>
+<p style="margin:0 0 24px;font-size:16px;">Northstar website: Completion round 1 is ready for your decision.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/projects/64b000000000000000000333/overview" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Open project overview</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/projects/64b000000000000000000333/overview" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/projects/64b000000000000000000333/overview</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Project completion review — ClientScope",
+  "text": "ClientScope
+
+The project is ready for final review
+
+Northstar website: Completion round 1 is ready for your decision.
+
+Open project overview:
+https://clientscope.example/projects/64b000000000000000000333/overview
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart deliverable-result with equivalent content and destinations 1`] = `
+{
+  "category": "deliverable-result",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Deliverable 1 review updated</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">A delivery decision was recorded — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">A delivery decision was recorded</h1>
+<p style="margin:0 0 24px;font-size:16px;">Northstar website: Deliverable 1, “Homepage design”, version 2 was returned for revision.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/projects/64b000000000000000000333/deliverables" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">View delivery decision</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/projects/64b000000000000000000333/deliverables" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/projects/64b000000000000000000333/deliverables</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Deliverable 1 review updated",
+  "text": "ClientScope
+
+A delivery decision was recorded
+
+Northstar website: Deliverable 1, “Homepage design”, version 2 was returned for revision.
+
+View delivery decision:
+https://clientscope.example/projects/64b000000000000000000333/deliverables
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart deliverable-review with equivalent content and destinations 1`] = `
+{
+  "category": "deliverable-review",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Deliverable 1 is ready for review</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Work is ready for your review — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">Work is ready for your review</h1>
+<p style="margin:0 0 24px;font-size:16px;">Northstar website: Deliverable 1, “Homepage design”, version 2 is ready for review.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/projects/64b000000000000000000333/deliverables" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Review deliverable</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/projects/64b000000000000000000333/deliverables" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/projects/64b000000000000000000333/deliverables</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Deliverable 1 is ready for review",
+  "text": "ClientScope
+
+Work is ready for your review
+
+Northstar website: Deliverable 1, “Homepage design”, version 2 is ready for review.
+
+Review deliverable:
+https://clientscope.example/projects/64b000000000000000000333/deliverables
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart duplicate-signup with equivalent content and destinations 1`] = `
+{
+  "category": "duplicate-signup",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your ClientScope account</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Your account is already available — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">Your account is already available</h1>
+<p style="margin:0 0 24px;font-size:16px;">An account already exists for this email address. Sign in, or use Forgot password on the sign-in page to request a reset.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/sign-in" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Sign in</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/sign-in" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/sign-in</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">If you did not try to create an account, you can ignore this email. Your existing account has not been changed.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Your ClientScope account",
+  "text": "ClientScope
+
+Your account is already available
+
+An account already exists for this email address. Sign in, or use Forgot password on the sign-in page to request a reset.
+
+Sign in:
+https://clientscope.example/sign-in
+
+If you did not try to create an account, you can ignore this email. Your existing account has not been changed.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart invitation with equivalent content and destinations 1`] = `
+{
+  "category": "invitation",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>You’re invited to ClientScope</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">An invitation is waiting — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">An invitation is waiting</h1>
+<p style="margin:0 0 24px;font-size:16px;">You have been invited to Northstar Studio in ClientScope. Sign in with the invited, verified email address to review the invitation and explicitly accept it.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/invite/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Review invitation</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/invite/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/invite/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">This invitation expires three days after it was issued and can be replaced or revoked earlier. Signing in or verifying your email does not accept it. If you were not expecting it, you can ignore this email. Current authorization is checked in ClientScope.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "You’re invited to ClientScope",
+  "text": "ClientScope
+
+An invitation is waiting
+
+You have been invited to Northstar Studio in ClientScope. Sign in with the invited, verified email address to review the invitation and explicitly accept it.
+
+Review invitation:
+https://clientscope.example/invite/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+This invitation expires three days after it was issued and can be replaced or revoked earlier. Signing in or verifying your email does not accept it. If you were not expecting it, you can ignore this email. Current authorization is checked in ClientScope.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart password-reset with equivalent content and destinations 1`] = `
+{
+  "category": "password-reset",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Reset your ClientScope password</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Choose a new password — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">Choose a new password</h1>
+<p style="margin:0 0 24px;font-size:16px;">A password reset was requested for your ClientScope account. Completing the reset signs out all existing sessions; you will need to sign in again.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Reset password</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">This link expires one hour after it was issued. A replacement link invalidates the previous link. If you did not request a reset, ignore this email; your password will stay unchanged.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Reset your ClientScope password",
+  "text": "ClientScope
+
+Choose a new password
+
+A password reset was requested for your ClientScope account. Completing the reset signs out all existing sessions; you will need to sign in again.
+
+Reset password:
+https://clientscope.example/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+This link expires one hour after it was issued. A replacement link invalidates the previous link. If you did not request a reset, ignore this email; your password will stay unchanged.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart role-change with equivalent content and destinations 1`] = `
+{
+  "category": "role-change",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Project role updated — ClientScope</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Your project role has changed — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">Your project role has changed</h1>
+<p style="margin:0 0 24px;font-size:16px;">Northstar website: your role is now Client Approver.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/work" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Open My Work</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/work" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/work</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Project role updated — ClientScope",
+  "text": "ClientScope
+
+Your project role has changed
+
+Northstar website: your role is now Client Approver.
+
+Open My Work:
+https://clientscope.example/work
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart scope-result with equivalent content and destinations 1`] = `
+{
+  "category": "scope-result",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>A scope decision was recorded — ClientScope</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">A decision is in the record — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">A decision is in the record</h1>
+<p style="margin:0 0 24px;font-size:16px;">Northstar website: Scope version 2 was approved.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/projects/64b000000000000000000333/scope" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">View project decision</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/projects/64b000000000000000000333/scope" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/projects/64b000000000000000000333/scope</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "A scope decision was recorded — ClientScope",
+  "text": "ClientScope
+
+A decision is in the record
+
+Northstar website: Scope version 2 was approved.
+
+View project decision:
+https://clientscope.example/projects/64b000000000000000000333/scope
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart scope-review with equivalent content and destinations 1`] = `
+{
+  "category": "scope-review",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>ClientScope scope review</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">A review is ready — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">A review is ready</h1>
+<p style="margin:0 0 24px;font-size:16px;">Northstar website: Scope version 2 is ready for review.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/projects/64b000000000000000000333/scope" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Open project review</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/projects/64b000000000000000000333/scope" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/projects/64b000000000000000000333/scope</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "ClientScope scope review",
+  "text": "ClientScope
+
+A review is ready
+
+Northstar website: Scope version 2 is ready for review.
+
+Open project review:
+https://clientscope.example/projects/64b000000000000000000333/scope
+
+Sign in to ClientScope to see the current record. Access and decision authority are checked against your current membership; this email does not grant access or approval rights.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;
+
+exports[`transactional email presentation > renders deterministic multipart verification with equivalent content and destinations 1`] = `
+{
+  "category": "verification",
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Verify your ClientScope account</title></head>
+<body style="margin:0;padding:0;background-color:#f8fafc;color:#0f172a;font-family:Arial,Helvetica,sans-serif;line-height:1.6;">
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Confirm your email address — ClientScope</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;background-color:#f8fafc;"><tr><td style="padding:24px 12px;">
+<table role="presentation" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse;background-color:#ffffff;border:1px solid #e2e8f0;"><tr><td style="padding:28px;overflow-wrap:anywhere;word-break:break-word;">
+<p style="margin:0 0 26px;font-size:22px;font-weight:bold;color:#4338ca;">ClientScope</p>
+<h1 style="margin:0 0 18px;font-size:25px;line-height:1.3;color:#0f172a;">Confirm your email address</h1>
+<p style="margin:0 0 24px;font-size:16px;">Verify your email address to continue using ClientScope. This action does not accept an invitation or create a sign-in session.</p>
+<p style="margin:0 0 24px;"><a href="https://clientscope.example/verify?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" style="display:inline-block;background-color:#4338ca;border:1px solid #4338ca;border-radius:6px;padding:13px 20px;color:#ffffff;font-weight:bold;text-decoration:none;">Verify email</a></p>
+<p style="font-size:13px;color:#475569;margin:0 0 6px;">If the button is unavailable, open this link:</p>
+<p style="font-size:13px;margin:0 0 24px;word-break:break-all;"><a href="https://clientscope.example/verify?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" style="color:#3730a3;text-decoration:underline;">https://clientscope.example/verify?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</a></p>
+<p style="margin:0;font-size:14px;color:#475569;">This link expires 24 hours after it was issued. A replacement link invalidates the previous link. If you did not request this account, you can ignore this email.</p>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px;">
+<p style="margin:0;font-size:12px;color:#475569;">ClientScope — Clear work. Clear decisions.<br>This is a transactional account or project notification.</p>
+</td></tr></table></td></tr></table></body></html>",
+  "subject": "Verify your ClientScope account",
+  "text": "ClientScope
+
+Confirm your email address
+
+Verify your email address to continue using ClientScope. This action does not accept an invitation or create a sign-in session.
+
+Verify email:
+https://clientscope.example/verify?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+This link expires 24 hours after it was issued. A replacement link invalidates the previous link. If you did not request this account, you can ignore this email.
+
+ClientScope — Clear work. Clear decisions.
+This is a transactional account or project notification.",
+  "to": "recipient@example.com",
+}
+`;

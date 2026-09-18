@@ -45,11 +45,16 @@ services:
       retries: 6
   frontend:
     build:
-      context: ./frontend
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         BACKEND_API_ORIGIN: http://backend:4000
+        FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?Set FRONTEND_ORIGIN in compose.env}
+        PUBLIC_ORIGIN_MODE: local
     environment:
       BACKEND_API_ORIGIN: http://backend:4000
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?Set FRONTEND_ORIGIN in compose.env}
+      PUBLIC_ORIGIN_MODE: local
     depends_on:
       backend:
         condition: service_started

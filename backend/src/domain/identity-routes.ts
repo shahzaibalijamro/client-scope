@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ApiError } from "../errors.js";
 import { validateRequest } from "../validation.js";
 import { asyncRoute, requireUser, requireVerified, type AuthRequest } from "./auth.js";
+import type { EmailTemplate } from "./email-contracts.js";
 import { developmentEmail, sendEmailSafely, type EmailService } from "./email.js";
 import { AccountToken, Session, Throttle, User } from "./models.js";
 import {
@@ -115,7 +116,7 @@ function publicUser(user: { _id: unknown; email: string; displayName: string; ve
 
 export function createIdentityRouter(emailService: EmailService = developmentEmail): Router {
   const router = Router();
-  const sendEmail = (command: Parameters<EmailService["send"]>[0]) => sendEmailSafely(emailService, command);
+  const sendEmail = (command: EmailTemplate) => sendEmailSafely(emailService, command);
   router.get("/csrf", (request, response) => response.json({ csrfToken: currentCsrf(request, response) }));
 
   router.post(
@@ -130,8 +131,7 @@ export function createIdentityRouter(emailService: EmailService = developmentEma
       const existing = await User.findOne({ normalizedEmail });
       if (existing) {
         const delivery = await sendEmail({
-          category: "duplicate-signup", to: existing.email, subject: "Your ClientScope account",
-          text: "An account already exists. Sign in or request a password reset.",
+          category: "duplicate-signup", to: existing.email,
         });
         response.status(202).json({
           message: "Check your email for the next step.", csrfToken: rotateCsrf(response),
@@ -155,8 +155,7 @@ export function createIdentityRouter(emailService: EmailService = developmentEma
         const racedAccount = await User.findOne({ normalizedEmail });
         if (!racedAccount) throw error;
         const delivery = await sendEmail({
-          category: "duplicate-signup", to: racedAccount.email, subject: "Your ClientScope account",
-          text: "An account already exists. Sign in or request a password reset.",
+          category: "duplicate-signup", to: racedAccount.email,
         });
         response.status(202).json({
           message: "Check your email for the next step.", csrfToken: rotateCsrf(response),
@@ -165,8 +164,7 @@ export function createIdentityRouter(emailService: EmailService = developmentEma
         return;
       }
       const delivery = await sendEmail({
-        category: "verification", to: created.user.email, subject: "Verify your ClientScope account",
-        text: `${process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"}/verify?token=${created.verificationToken}`,
+        category: "verification", to: created.user.email, token: created.verificationToken,
       });
       setSessionCookie(response, created.browserSession.token, created.browserSession.expiresAt);
       response.status(202).json({
@@ -216,8 +214,7 @@ export function createIdentityRouter(emailService: EmailService = developmentEma
     await throttleAttempt("verification", user.normalizedEmail, request.ip ?? "unknown");
     const token = await issueAccountToken(user._id, "verification");
     const result = await sendEmail({
-      category: "verification", to: user.email, subject: "Verify your ClientScope account",
-      text: `${process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"}/verify?token=${token}`,
+      category: "verification", to: user.email, token: token,
     });
     response.json({
       message: "A replacement verification link was requested.",
@@ -257,8 +254,7 @@ export function createIdentityRouter(emailService: EmailService = developmentEma
       if (user) {
         const token = await issueAccountToken(user._id, "password-reset");
         await sendEmail({
-          category: "password-reset", to: user.email, subject: "Reset your ClientScope password",
-          text: `${process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"}/reset-password?token=${token}`,
+          category: "password-reset", to: user.email, token: token,
         });
       }
       response.status(202).json({ message: "If the account can receive email, a reset link is on its way." });

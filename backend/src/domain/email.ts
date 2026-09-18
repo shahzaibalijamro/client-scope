@@ -1,11 +1,8 @@
 import nodemailer, { type Transporter } from "nodemailer";
+import type { EmailTemplate, RenderedEmail } from "./email-contracts.js";
+import { emailText, renderEmail } from "./email-renderer.js";
 
-export type EmailCommand = Readonly<{
-  category: "verification" | "password-reset" | "duplicate-signup" | "invitation" | "assignment" | "role-change" | "access-removal" | "scope-review" | "scope-result" | "deliverable-review" | "deliverable-result" | "completion-review" | "completion-result";
-  to: string;
-  subject: string;
-  text: string;
-}>;
+export type EmailCommand = RenderedEmail;
 
 export interface EmailService {
   send(command: EmailCommand): Promise<{ delivered: boolean }>;
@@ -13,10 +10,10 @@ export interface EmailService {
 
 export async function sendEmailSafely(
   service: EmailService,
-  command: EmailCommand,
+  command: EmailTemplate,
 ): Promise<{ delivered: boolean }> {
   try {
-    return await service.send(command);
+    return await service.send(renderEmail(command, process.env.FRONTEND_ORIGIN ?? "", process.env.NODE_ENV));
   } catch {
     return { delivered: false };
   }
@@ -35,14 +32,14 @@ export const developmentEmail = new SafeDevelopmentEmailService();
 
 export class GmailSmtpEmailService implements EmailService {
   private readonly transporter: Transporter;
-  private readonly from: string;
+  private readonly from: { name: string; address: string };
 
   constructor(user: string, appPassword: string, fromName = "ClientScope") {
     this.transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { user, pass: appPassword },
     });
-    this.from = `${fromName} <${user}>`;
+    this.from = { name: emailText(fromName), address: user };
   }
 
   async send(command: EmailCommand): Promise<{ delivered: boolean }> {
@@ -52,6 +49,7 @@ export class GmailSmtpEmailService implements EmailService {
         to: command.to,
         subject: command.subject,
         text: command.text,
+        html: command.html,
       });
       return { delivered: true };
     } catch {

@@ -4,7 +4,8 @@ import { randomBytes } from "node:crypto";
 import mongoose, { type ClientSession } from "mongoose";
 
 import { ApiError } from "../errors.js";
-import type { EmailService } from "./email.js";
+import { sendEmailSafely, type EmailService } from "./email.js";
+import type { EmailContent } from "./email-contracts.js";
 import { Activity, EffectiveProjectAccess, Project, ProjectAssignment, User, Workspace, WorkspaceMembership } from "./models.js";
 import type { DecisionInput, DraftContentInput } from "./scope-contracts.js";
 import { draftContentInput } from "./scope-contracts.js";
@@ -313,9 +314,9 @@ export async function notificationRecipients(project: ProjectRecord, kind: "appr
   return [...new Set(users.map((user) => user.email))];
 }
 
-export async function notify(emailService: EmailService, recipients: string[], category: "scope-review" | "scope-result", subject: string, text: string) {
+export async function notify(emailService: EmailService, recipients: string[], command: EmailContent) {
   const results = await Promise.all(recipients.map(async (to) => {
-    try { return await emailService.send({ category, to, subject, text }); } catch { return { delivered: false }; }
+    return sendEmailSafely(emailService, { ...command, to });
   }));
   return results.some((result) => !result.delivered) ? "The action was saved, but some notification email could not be sent." : undefined;
 }
@@ -351,7 +352,7 @@ export async function submitDraft(projectId: string, actor: Actor, input: { revi
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "approvers");
-  const warning = await notify(emailService, recipients, "scope-review", `${result.project.name}: scope v${result.version.number} is ready`, `Scope version ${result.version.number} is ready for review in ClientScope.`);
+  const warning = await notify(emailService, recipients, { category: "scope-review", projectId: String(result.project._id), projectName: result.project.name, version: result.version.number, action: "requested" });
   return { version: versionView(result.version), warning };
 }
 
@@ -410,7 +411,7 @@ export async function decideScope(projectId: string, versionId: string, actor: A
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "providers");
-  const warning = await notify(emailService, recipients, "scope-result", `${result.project.name}: scope v${result.version.number} ${input.outcome}`, `Scope version ${result.version.number} was ${input.outcome} in ClientScope.`);
+  const warning = await notify(emailService, recipients, { category: "scope-result", projectId: String(result.project._id), projectName: result.project.name, version: result.version.number, outcome: input.outcome });
   return { version: versionView(result.version), warning };
 }
 
@@ -429,6 +430,6 @@ export async function withdrawScope(projectId: string, versionId: string, actor:
     return { project, version };
   });
   const recipients = await notificationRecipients(result.project, "approvers");
-  const warning = await notify(emailService, recipients, "scope-review", `${result.project.name}: scope v${result.version.number} withdrawn`, `Scope version ${result.version.number} is no longer awaiting review in ClientScope.`);
+  const warning = await notify(emailService, recipients, { category: "scope-review", projectId: String(result.project._id), projectName: result.project.name, version: result.version.number, action: "withdrawn" });
   return { version: versionView(result.version), warning };
 }

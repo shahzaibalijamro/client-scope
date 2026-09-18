@@ -38,8 +38,9 @@ describe("email provider configuration", () => {
   });
 
   it("converts unexpected provider exceptions into a safe delivery outcome", async () => {
+    process.env.FRONTEND_ORIGIN = "http://localhost:3000";
     const outcome = await sendEmailSafely({ send: async () => { throw new Error("provider detail"); } }, {
-      category: "assignment", to: "recipient@example.com", subject: "Assigned", text: "Open ClientScope.",
+      category: "assignment", to: "recipient@example.com", projectName: "Assigned project",
     });
     expect(outcome).toEqual({ delivered: false });
   });

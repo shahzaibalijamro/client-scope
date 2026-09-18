@@ -106,6 +106,7 @@ The slice excludes:
 6. Long, empty, hostile, Unicode, and markup-like user values remain escaped, bounded by the existing domain limits, and readable in HTML and text without header injection or layout-breaking output.
 7. HTML/plain-text equivalence means both variants identify ClientScope, state the same event and safe minimum context, provide the same actionable destination where applicable, and include equivalent expiry/ignore guidance. Exact visual parity is not required.
 8. Link destinations that require authentication may lead through sign-in, but authentication must return only to a validated, allow-listed application path and must still enforce current authorization.
+   - Approved clarification (2026-09-18): successful authentication resumes a previously visited, validated invitation or project destination. Direct authenticated visits to the public homepage or auth-entry routes go to `/work`. Pending context is captured from the visited application path, never from a return-URL query parameter; it survives signup and verification and grants no authority.
 9. Remote screenshot failure, demo-provider degradation, email-client CSS stripping, or SMTP failure must not weaken application state, privacy, or access control.
 10. Accessibility review covers semantic landmarks/headings, skip navigation, focus order and visibility, link purpose, form labels/errors, status announcements, contrast, zoom, reduced motion, and keyboard-only use.
 
@@ -124,4 +125,3 @@ The slice excludes:
 11. Production builds, lint, type checks, automated tests, container verification, and critical Chromium/Firefox/WebKit journeys pass; controlled Gmail checks confirm representative desktop, mobile, dark-mode, image-blocked, and plain-text rendering.
 12. The accepted deployment is manually reviewed for responsive, keyboard, screen-reader, contrast, reduced-motion, link, privacy, and cross-browser behavior with no unresolved release blocker.
 13. The final walkthrough and affected portfolio evidence match the accepted Slice 3.4 source revision, contain no sensitive data, load publicly, and satisfy the deferred Slice 3.3 completion gate.
-

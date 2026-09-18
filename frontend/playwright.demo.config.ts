@@ -23,7 +23,7 @@ export default defineConfig({
     {
       command: "npm run dev -- --hostname 127.0.0.1 --port 4201",
       url: "http://127.0.0.1:4201/health",
-      env: { BACKEND_API_ORIGIN: "http://127.0.0.1:4102" },
+      env: { BACKEND_API_ORIGIN: "http://127.0.0.1:4102", FRONTEND_ORIGIN: "http://127.0.0.1:4201" },
       timeout: 180_000,
     },
   ],

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validatePublicOrigin } from "./public-origin.js";
 
 const positiveInteger = z.string().regex(/^\d+$/u).transform(Number).pipe(z.number().int().positive());
 const demoPassword = z.string().min(12).max(128).refine(
@@ -149,5 +150,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv): AppConfig {
     throw new ConfigurationError(["GEMINI_API_KEY: GEMINI_API_KEY is required when AI_ENABLED is true."]);
   }
 
+  try { validatePublicOrigin(result.data.FRONTEND_ORIGIN, result.data.NODE_ENV); }
+  catch { throw new ConfigurationError(["FRONTEND_ORIGIN: HTTPS is required outside development/test."]); }
   return Object.freeze(result.data);
 }

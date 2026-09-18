@@ -11,7 +11,7 @@ async function mutate<T>(page: Page, method: "POST", path: string, data: unknown
 }
 
 async function signup(page: Page, email: string) {
-  await page.goto("/"); await page.getByRole("button", { name: "Create account" }).click();
+  await page.goto("/sign-up");
   await page.getByLabel("Display name").fill("Navigation Owner"); await page.getByLabel("Email address").fill(email); await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
   let link = "";

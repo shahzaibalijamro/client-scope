@@ -28,7 +28,7 @@ export default defineConfig({
     {
       command: "npm run dev -- --hostname 127.0.0.1 --port 4200",
       url: "http://127.0.0.1:4200/health",
-      env: { BACKEND_API_ORIGIN: "http://127.0.0.1:4101" },
+      env: { BACKEND_API_ORIGIN: "http://127.0.0.1:4101", FRONTEND_ORIGIN: "http://127.0.0.1:4200" },
       timeout: 120_000,
       reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === "1",
     },

@@ -5,7 +5,7 @@ const origin = "http://127.0.0.1:4200";
 
 async function account(browser: Browser, email: string, displayName: string, mobile = false) {
   const context = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 } } : undefined);
-  const page = await context.newPage(); await page.goto("/"); await page.getByRole("button", { name: "Create account" }).click();
+  const page = await context.newPage(); await page.goto("/sign-up");
   await page.getByLabel("Display name").fill(displayName); await page.getByLabel("Email address").fill(email); await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
   let text = "";

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { ApiError } from "../errors.js";
 import { validateRequest } from "../validation.js";
 import { asyncRoute, requireVerified, type AuthRequest } from "./auth.js";
+import type { EmailTemplate } from "./email-contracts.js";
 import { developmentEmail, sendEmailSafely, type EmailService } from "./email.js";
 import {
   Activity, Client, ClientMembership, EffectiveProjectAccess, Invitation, Project, ProjectAssignment, User,
@@ -135,7 +136,7 @@ function projectView(project: any, client: any, role: Role, scope?: Awaited<Retu
 
 export function createWorkspaceRouter(emailService: EmailService = developmentEmail, demoService?: DemoService): Router {
   const router = Router();
-  const sendEmail = (command: Parameters<EmailService["send"]>[0]) => sendEmailSafely(emailService, command);
+  const sendEmail = (command: EmailTemplate) => sendEmailSafely(emailService, command);
 
   router.get("/work", asyncRoute(async (request, response) => {
     const { user } = requireVerified(request);
@@ -418,8 +419,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       });
       const workspace = await Workspace.findById(workspaceId).lean();
       const delivery = await sendEmail({
-        category: "invitation", to: invitation.displayEmail, subject: `Invitation to ${workspace!.name}`,
-        text: `${process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"}/invite/${rawToken}`,
+        category: "invitation", to: invitation.displayEmail, workspaceName: workspace!.name, token: rawToken,
       });
       invitation.deliveryStatus = delivery.delivered ? "sent" : "failed";
       await transaction(async (session) => {
@@ -559,7 +559,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
         duplicateAccess(error);
       }
     })();
-    const delivery = await sendEmail({ category: "assignment", to: target!.email, subject: `Assigned to ${project.name}`, text: "You now have access to this project in ClientScope." });
+    const delivery = await sendEmail({ category: "assignment", to: target!.email, projectName: project.name });
     response.status(201).json({ assignment: { id: String(assignment._id) }, warning: delivery.delivered ? undefined : "Access was granted, but notification email failed." });
   }));
 
@@ -576,7 +576,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       return updated;
     });
     const target = await User.findById(assignment.userId).lean();
-    const delivery = await sendEmail({ category: "access-removal", to: target!.email, subject: `Access removed from ${project.name}`, text: "Your project assignment has ended." });
+    const delivery = await sendEmail({ category: "access-removal", to: target!.email, projectName: project.name, scope: "project" });
     response.json({ message: "Project access removed.", warning: delivery.delivered ? undefined : "Access was removed, but notification email failed." });
   }));
 
@@ -607,7 +607,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       await event({ workspaceId, actorId: actor._id, actorName: actor.displayName, action: `workspace-member.${reason}`, audience: "owner", context: { membershipId: String(membership._id), memberName: target.displayName } }, session);
       await Promise.all(assignments.map((assignment) => event({ workspaceId, projectId: assignment.projectId, actorId: actor._id, actorName: actor.displayName, action: "service-member.workspace-access-ended", audience: "project", context: { assignmentId: String(assignment._id), memberName: target.displayName, reason, actorRole: voluntary ? "service-team-member" : "workspace-owner" } }, session)));
     });
-    const delivery = await sendEmail({ category: "access-removal", to: target!.email, subject: `Workspace access ${reason}`, text: "Your workspace and assigned-project access has ended." });
+    const delivery = await sendEmail({ category: "access-removal", to: target!.email, scope: "workspace" });
     response.json({ message: voluntary ? "You left the workspace." : "Member removed from the workspace.", warning: delivery.delivered ? undefined : "Access changed, but notification email failed." });
   }
   router.post("/workspaces/:workspaceId/leave", validateRequest("params", idParams), validateRequest("body", z.object({ confirmed: z.literal(true) })), asyncRoute((request, response) => endWorkspaceMembership(request, response, true)));
@@ -644,7 +644,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       await event({ workspaceId: project.workspaceId, projectId: project._id, actorId: user._id, actorName: user.displayName, action: "client-member.role-changed", audience: "project", context: { membershipId: String(replacement._id), memberName: target.displayName, previousRole, role: nextRole, actorRole: "workspace-owner" } }, session);
       return { replacement, target };
     });
-    const delivery = await sendEmail({ category: "role-change", to: result.target.email, subject: `Role changed for ${project.name}`, text: `Your role is now ${result.replacement.role}.` });
+    const delivery = await sendEmail({ category: "role-change", to: result.target.email, projectName: project.name, role: result.replacement.role });
     response.json({ message: "Role changed.", role: result.replacement.role, warning: delivery.delivered ? undefined : "The role changed, but notification email failed." });
   }));
 
@@ -664,7 +664,7 @@ export function createWorkspaceRouter(emailService: EmailService = developmentEm
       return updated;
     });
     const target = await User.findById(membership.userId).lean();
-    const delivery = await sendEmail({ category: "access-removal", to: target!.email, subject: `Access ended for ${project.name}`, text: "Your access to this project has ended." });
+    const delivery = await sendEmail({ category: "access-removal", to: target!.email, projectName: project.name, scope: "project" });
     response.json({ message: voluntary ? "You left the project." : "Client member removed.", warning: delivery.delivered ? undefined : "Access changed, but notification email failed." });
   }
   router.post("/projects/:projectId/leave", validateRequest("params", projectParams), validateRequest("body", z.object({ confirmed: z.literal(true) })), asyncRoute((request, response) => endClientMembership(request, response, true)));

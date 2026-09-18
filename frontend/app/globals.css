@@ -287,6 +287,26 @@ a {
   background: var(--brand-dark);
 }
 
+.primary:disabled,
+.secondary:disabled,
+.danger:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
+.button-spinner {
+  width: .9rem;
+  height: .9rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: button-spin .7s linear infinite;
+}
+
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
+}
+
 .secondary {
   background: #edf2ee;
   color: var(--brand-dark);
@@ -371,7 +391,7 @@ a {
   box-shadow: 0 20px 70px rgba(29, 53, 40, .1);
 }
 
-.auth-card h2 {
+.auth-card h1 {
   font-family: Georgia, serif;
   font-size: 2rem;
 }
@@ -2861,7 +2881,7 @@ label {
   color: #c7d2fe;
 }
 
-.brand-message h1 {
+.brand-message h2 {
   max-width: 36rem;
   margin-bottom: 1.25rem;
   font-family: inherit;
@@ -2927,7 +2947,7 @@ label {
   box-shadow: 0 24px 70px rgba(30, 41, 59, .1);
 }
 
-.auth-card h2 {
+.auth-card h1 {
   margin: .3rem 0 1.6rem;
   font-family: inherit;
   font-size: clamp(1.75rem, 3vw, 2.15rem);
@@ -3075,7 +3095,7 @@ label {
     border-radius: .85rem;
   }
 
-  .auth-card h2 {
+  .auth-card h1 {
     margin-bottom: 1.25rem;
     font-size: 1.65rem;
   }

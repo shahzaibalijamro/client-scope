@@ -14,8 +14,7 @@ test("provider reviews and explicitly appends an AI-structured requirement", asy
   test.slow();
   const key = Date.now();
   const email = `ai-e2e-${key}@example.com`;
-  await page.goto("/");
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.goto("/sign-up");
   await page.getByLabel("Display name").fill("AI Owner");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);

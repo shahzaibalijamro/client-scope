@@ -2,7 +2,7 @@ import { expect, type Browser, type Page, test } from "@playwright/test";
 
 const password = "correct horse battery staple"; const origin = "http://127.0.0.1:4200";
 async function account(browser: Browser, email: string, displayName: string) {
-  const context = await browser.newContext({ acceptDownloads: true }); const page = await context.newPage(); await page.goto("/"); await page.getByRole("button", { name: "Create account" }).click();
+  const context = await browser.newContext({ acceptDownloads: true }); const page = await context.newPage(); await page.goto("/sign-up");
   await page.getByLabel("Display name").fill(displayName); await page.getByLabel("Email address").fill(email); await page.getByLabel("Password").fill(password); await page.getByRole("button", { name: "Create account" }).click();
   let text = ""; await expect.poll(async () => { const response = await page.request.get(`/api/v1/test/emails?to=${encodeURIComponent(email)}&category=verification`); if (response.ok()) text = ((await response.json()) as { text: string }).text; return response.status(); }).toBe(200);
   const link = text.match(/https?:\/\/\S+/u)?.[0]; if (!link) throw new Error("Verification link missing"); await page.goto(link); await page.getByRole("button", { name: "Verify email" }).click(); await page.getByRole("link", { name: "Continue to ClientScope" }).click(); return { context, page };

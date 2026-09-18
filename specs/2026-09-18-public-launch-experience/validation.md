@@ -1,6 +1,19 @@
 # Public Launch Experience Validation
 
-**Status:** Planned
+**Status:** Implementation validation in progress — automated implementation checks recorded 2026-09-18
+
+## Implementation evidence
+
+The public entry, durable authentication routes, trusted-origin policy, approved media projection, social card, pending invitation destination handling, and multipart transactional email renderer are implemented. The existing workflow and notification timing remain unchanged.
+
+Automated checks completed locally:
+
+- Backend type check, lint, build, and full test suite: passed (26 files, 199 tests).
+- Frontend type check, lint, production build, and full unit suite: passed (16 files, 94 tests).
+- Focused email-renderer suite: passed (62 tests, including all 13 categories, escaping, unsafe URL rejection, private-content rejection, origin validation, Gmail HTML/text dispatch, and failure handling).
+- Focused public browser navigation checks: responsive homepage metadata/media behavior, auth-entry history, and safe not-found recovery passed in Chromium. Firefox/WebKit coverage and the complete cross-browser suite remain release-gate work.
+
+Production deployment, controlled Gmail rendering, all three browser engines, manual accessibility review, final portfolio media, walkthrough, and product-owner acceptance remain release-gate work described below.
 
 ## Highest-risk behavior
 
@@ -111,4 +124,3 @@ Slice 3.4 is safe to merge and mark complete only when:
 7. The accepted frontend and exact immutable backend image are deployed and traceable to the validated source revision.
 8. Affected documentation and media are accurate, the final walkthrough is public and privacy-reviewed, and the manifest records its duration and source revision.
 9. The deferred Slice 3.3 acceptance gate is re-run against the matching release; roadmap status changes occur only after product-owner acceptance is recorded.
-

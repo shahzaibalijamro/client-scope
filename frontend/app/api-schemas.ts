@@ -19,7 +19,7 @@ export const demoResponseSchema = z.discriminatedUnion("enabled", [
     }).strict()).length(2),
     reset: z.object({ cadenceHours: z.literal(6), nextScheduledAt: z.iso.datetime() }).strict(),
   }).strict(),
-]);
+]).refine((value) => !value.enabled || (new Set(value.identities.map((identity) => identity.label)).size === 2 && new Set(value.identities.map((identity) => identity.email.toLowerCase())).size === 2), "Demo identities must be distinct.");
 export type DemoResponse = z.infer<typeof demoResponseSchema>;
 
 const lifecyclePermissionsSchema = z.object({

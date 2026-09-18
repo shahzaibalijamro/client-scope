@@ -14,8 +14,7 @@ test("provider reviews, curates, and atomically applies requirement quality sugg
   test.slow();
   const key = Date.now();
   const email = `quality-e2e-${key}@example.com`;
-  await page.goto("/");
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.goto("/sign-up");
   await page.getByLabel("Display name").fill("Quality Owner");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);
