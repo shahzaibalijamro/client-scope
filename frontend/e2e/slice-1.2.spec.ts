@@ -22,7 +22,7 @@ async function account(browser: Browser, email: string, displayName: string, mob
   const page = await context.newPage();
   await page.goto("/sign-up");
   await page.getByLabel("Display name").fill(displayName); await page.getByLabel("Email address").fill(email);
-  await page.getByLabel("Password").fill(password); await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByLabel("Password").fill(password); await page.getByRole("button", { name: "Create account" }).click(); await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
   await page.goto(await emailLink(page, email, "verification")); await page.getByRole("button", { name: "Verify email" }).click();
   await page.getByRole("link", { name: "Continue to ClientScope" }).click();
   const session = await (await page.request.get("/api/v1/auth/session")).json() as { user: { id: string } };

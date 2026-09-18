@@ -19,6 +19,7 @@ test("provider reviews and explicitly appends an AI-structured requirement", asy
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
   let verificationText = "";
   await expect.poll(async () => {
     const response = await page.request.get(`/api/v1/test/emails?to=${encodeURIComponent(email)}&category=verification`);
