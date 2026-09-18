@@ -14,6 +14,7 @@ async function signup(page: Page, email: string) {
   await page.goto("/sign-up");
   await page.getByLabel("Display name").fill("Navigation Owner"); await page.getByLabel("Email address").fill(email); await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
   let link = "";
   await expect.poll(async () => {
     const response = await page.request.get(`/api/v1/test/emails?to=${encodeURIComponent(email)}&category=verification`);

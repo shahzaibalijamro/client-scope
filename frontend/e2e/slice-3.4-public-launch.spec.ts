@@ -63,7 +63,7 @@ test("critical navigation: public metadata and assets are available without Java
   expect(bytes.readUInt32BE(20)).toBe(630);
   const response = await request.get("/", { headers: { "X-Forwarded-Host": "evil.example", Forwarded: "host=evil.example;proto=http" } });
   const html = await response.text();
-  expect(html).toContain('href="http://127.0.0.1:4200/"');
+  expect(html).toMatch(/href="http:\/\/127\.0\.0\.1:4200\/?"/u);
   expect(html).not.toMatch(/evil\.example|owner-unique-demo-secret|approver-unique-demo-secret|token=/u);
   expect((await request.get("/icon.svg")).ok()).toBe(true);
   await page.goto("http://127.0.0.1:4200/verify?token=secret-not-for-metadata");
