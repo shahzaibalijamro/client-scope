@@ -9,12 +9,12 @@ async function emailLink(page: Page, email: string, category: "verification" | "
   }).toBe(200);
   const result = await page.request.get(`/api/v1/test/emails?to=${encodeURIComponent(email)}&category=${category}`);
   const body = await result.json() as { text: string };
-  return body.text;
+  const link = body.text.match(/https?:\/\/\S+/u)?.[0]; if (!link) throw new Error("Email action missing"); return link;
 }
 
-async function signupAndVerify(page: Page, email: string, displayName: string, startUrl = "/") {
+async function signupAndVerify(page: Page, email: string, displayName: string, startUrl = "/sign-in") {
   await page.goto(startUrl);
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByRole("link", { name: "Create account" }).click();
   await page.getByLabel("Display name").fill(displayName);
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password").fill(password);

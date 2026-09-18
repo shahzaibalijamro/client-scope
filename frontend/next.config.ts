@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 import { z } from "zod";
+import { validatePublicOrigin } from "./app/public-origin";
+import { resolve } from "node:path";
 
 const serverEnvironmentSchema = z.object({
   BACKEND_API_ORIGIN: z
@@ -28,8 +30,11 @@ function readBackendOrigin(): string {
 
 const nextConfig: NextConfig = {
   agentRules: false,
+  outputFileTracingRoot: resolve(process.cwd(), ".."),
+  turbopack: { root: resolve(process.cwd(), "..") },
   ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
   async rewrites() {
+    validatePublicOrigin(process.env.FRONTEND_ORIGIN, process.env.NODE_ENV, process.env.PUBLIC_ORIGIN_MODE === "local" || !process.env.VERCEL);
     const backendOrigin = readBackendOrigin();
 
     return [

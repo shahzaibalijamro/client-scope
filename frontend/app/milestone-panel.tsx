@@ -116,7 +116,7 @@ export function MilestonePanel({ projectId }: Readonly<{ projectId: string }>) {
         <label>Title<input required maxLength={120} value={editing.title} onChange={(event) => setEditing({ ...editing, title: event.target.value })} /></label>
         <label>Description (optional)<textarea rows={3} maxLength={2_000} value={editing.description ?? ""} onChange={(event) => setEditing({ ...editing, description: event.target.value || undefined })} /></label>
         <label>Target date (optional)<input type="date" value={editing.targetDate ?? ""} onChange={(event) => setEditing({ ...editing, targetDate: event.target.value || undefined })} /></label>
-        <div className="row-actions"><button type="button" className="secondary compact" onClick={() => setEditing(undefined)}>Cancel</button><button className="primary compact" disabled={!editing.title.trim() || edit.isPending}>Save details</button></div>
+        <div className="row-actions"><button type="button" className="secondary compact" onClick={() => setEditing(undefined)}>Cancel</button><button className="primary compact" disabled={!editing.title.trim() || edit.isPending} aria-busy={edit.isPending}>{edit.isPending ? "Saving details…" : "Save details"}</button></div>
       </form> : <>
         <div className="milestone-heading"><div><p className="eyebrow">Milestone {index + 1}</p><h3>{milestone.title}</h3></div></div>
         <MilestoneFacts milestone={milestone} />

@@ -3,13 +3,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ClientScopeApp } from "./client-scope-app";
+import { AuthScreen, ClientScopeApp } from "./client-scope-app";
 
 afterEach(() => vi.restoreAllMocks());
 
-function renderApp() {
+function renderApp(authenticated = false) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  render(<QueryClientProvider client={client}><ClientScopeApp /></QueryClientProvider>);
+  render(<QueryClientProvider client={client}>{authenticated ? <ClientScopeApp /> : <AuthScreen />}</QueryClientProvider>);
 }
 
 describe("public demo entry", () => {
@@ -31,8 +31,8 @@ describe("public demo entry", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Use Client Approver" }, { timeout: 5_000 }));
     expect(screen.getByLabelText("Email address")).toHaveValue("approver@demo.invalid");
     expect(screen.getByLabelText("Password")).toHaveValue("approver-unique-demo-secret");
-    expect(screen.getByRole("button", { name: "Create account" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Forgot password?" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Create account" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toBeVisible();
     expect(screen.getByText(/changes are temporary/i)).toBeInTheDocument();
   });
 
@@ -44,7 +44,7 @@ describe("public demo entry", () => {
       throw new Error(`Unexpected request: ${url}`);
     });
     renderApp();
-    expect(await screen.findByRole("button", { name: "Create account" })).toBeVisible();
+    expect(await screen.findByRole("link", { name: "Create account" })).toBeVisible();
     expect(screen.queryByText("Explore the shared demo")).not.toBeInTheDocument();
   });
 
@@ -65,7 +65,7 @@ describe("public demo entry", () => {
       }), { status: 200 });
       throw new Error(`Unexpected request: ${url}`);
     });
-    renderApp();
+    renderApp(true);
     expect(await screen.findByRole("heading", { name: /Good to see you, Personal/u })).toBeVisible();
     expect(screen.queryByText(/Shared portfolio demo/u)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Edit profile" })).toBeVisible();

@@ -6,7 +6,8 @@ import mongoose, { type ClientSession } from "mongoose";
 import { ApiError } from "../errors.js";
 import { ChangeRequest } from "./change-control-models.js";
 import { Deliverable, DeliverableVersion } from "./deliverable-models.js";
-import type { EmailService } from "./email.js";
+import { sendEmailSafely, type EmailService } from "./email.js";
+import type { EmailContent } from "./email-contracts.js";
 import { CompletionReview, ArchiveLifecycle } from "./lifecycle-models.js";
 import { Milestone } from "./milestone-models.js";
 import {
@@ -204,9 +205,9 @@ async function recipients(project: any, kind: "approvers" | "providers") {
   return [...unique.values()];
 }
 
-async function notify(email: EmailService, to: string[], category: "completion-review" | "completion-result", subject: string, text: string) {
+async function notify(email: EmailService, to: string[], command: EmailContent) {
   const results = await Promise.all(to.map(async (recipient) => {
-    try { return await email.send({ category, to: recipient, subject, text }); } catch { return { delivered: false }; }
+    return sendEmailSafely(email, { ...command, to: recipient });
   }));
   return results.some((item) => !item.delivered) ? "The action was saved, but some notification email could not be sent." : undefined;
 }
@@ -242,7 +243,7 @@ export async function requestCompletion(projectId: string, actor: Actor, input: 
     await lifecycleEvent(project, actor, role, "project.completion-requested", round.number, now, session, String(round._id));
     return { project, role, round };
   });
-  const warning = await notify(email, await recipients(result.project, "approvers"), "completion-review", `${result.project.name}: final review requested`, `Completion round ${result.round.number} is ready for your decision in ClientScope.`);
+  const warning = await notify(email, await recipients(result.project, "approvers"), { category: "completion-review", projectId: String(result.project._id), projectName: result.project.name, round: result.round.number, action: "requested" });
   return { lifecycle: await projection(result.project, result.role), warning };
 }
 
@@ -271,7 +272,7 @@ async function endRound(projectId: string, roundId: string, actor: Actor, lifecy
     return { project, role, round };
   });
   const kind = outcome === "withdrawn" ? "approvers" : "providers";
-  const warning = await notify(email, await recipients(result.project, kind), outcome === "withdrawn" ? "completion-review" : "completion-result", `${result.project.name}: completion ${outcome}`, `Completion round ${result.round.number} was ${outcome} in ClientScope.`);
+  const warning = await notify(email, await recipients(result.project, kind), outcome === "withdrawn" ? { category: "completion-review", projectId: String(result.project._id), projectName: result.project.name, round: result.round.number, action: "withdrawn" } : { category: "completion-result", projectId: String(result.project._id), projectName: result.project.name, round: result.round.number, outcome });
   return { lifecycle: await projection(result.project, result.role), warning };
 }
 

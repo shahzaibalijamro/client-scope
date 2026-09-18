@@ -11,7 +11,7 @@ const viewports = [
 test("authentication surfaces use the responsive indigo visual system", async ({ page }) => {
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
-    await page.goto("/");
+    await page.goto("/sign-in");
     await expect(page.getByRole("heading", { name: "Sign in to your work" })).toBeVisible();
     await expect(page.locator(".brand-panel")).toBeVisible({ visible: viewport.width > 820 });
     await expect(page.locator(".auth-mobile-brand")).toBeVisible({ visible: viewport.width <= 820 });
@@ -19,11 +19,11 @@ test("authentication surfaces use the responsive indigo visual system", async ({
   }
 
   await page.setViewportSize({ width: 320, height: 720 });
-  await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByRole("link", { name: "Create account" }).click();
   await expect(page.getByRole("heading", { name: "Start with a verified account" })).toBeVisible();
   await expect(page.getByLabel("Display name")).toBeVisible();
-  await page.getByRole("button", { name: "Back to sign in" }).click();
-  await page.getByRole("button", { name: "Forgot password?" }).click();
+  await page.getByRole("link", { name: "Back to sign in" }).click();
+  await page.getByRole("link", { name: "Forgot password?" }).click();
   await expect(page.getByRole("heading", { name: "Request a reset link" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
 

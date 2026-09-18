@@ -281,7 +281,7 @@ export async function submitChangeProposal(projectId: string, requestId: string,
     await projectEvent({ project, actor, role, action: "change-request.proposal-submitted", context: { requestId, requestNumber, proposalId: String(proposal._id), proposalNumber, baseScopeVersionNumber: request.baseScopeVersionNumber } }, session);
     return { project, requestNumber, proposalNumber, proposalId: String(proposal._id) };
   });
-  const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), "scope-review", `${result.project.name}: change request ${result.requestNumber} is ready`, `Change request ${result.requestNumber}, proposal ${result.proposalNumber}, is ready for review in ClientScope.`);
+  const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), { category: "scope-review", projectId: String(result.project._id), projectName: result.project.name, changeNumber: result.requestNumber, version: result.proposalNumber, action: "requested" });
   return { ...result, warning };
 }
 
@@ -369,7 +369,7 @@ export async function decideChangeProposal(projectId: string, requestId: string,
     } }, session);
     return { project, requestNumber: request.number!, proposalNumber: proposal.number, outcome: input.outcome, successorScopeVersionNumber: successor?.number };
   });
-  const warning = await notify(emailService, await notificationRecipients(result.project, "providers"), "scope-result", `${result.project.name}: change request ${result.requestNumber} ${result.outcome}`, `Change request ${result.requestNumber}, proposal ${result.proposalNumber}, was ${result.outcome} in ClientScope.`);
+  const warning = await notify(emailService, await notificationRecipients(result.project, "providers"), { category: "scope-result", projectId: String(result.project._id), projectName: result.project.name, changeNumber: result.requestNumber, version: result.proposalNumber, outcome: result.outcome });
   return { ...result, warning };
 }
 
@@ -387,7 +387,7 @@ export async function withdrawChangeProposal(projectId: string, requestId: strin
     await projectEvent({ project, actor, role, action: "change-request.proposal-withdrawn", context: { requestId, requestNumber: request.number, proposalId, proposalNumber: proposal.number } }, session);
     return { project, requestNumber: request.number!, proposalNumber: proposal.number, outcome: "withdrawn" as const };
   });
-  const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), "scope-review", `${result.project.name}: change request ${result.requestNumber} withdrawn`, `Change request ${result.requestNumber}, proposal ${result.proposalNumber}, is no longer awaiting review in ClientScope.`);
+  const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), { category: "scope-review", projectId: String(result.project._id), projectName: result.project.name, changeNumber: result.requestNumber, version: result.proposalNumber, action: "withdrawn" });
   return { ...result, warning };
 }
 
@@ -404,6 +404,6 @@ export async function cancelChangeRequest(projectId: string, requestId: string, 
     await projectEvent({ project, actor, role, action: "change-request.canceled", context: { requestId, requestNumber: request.number } }, session);
     return { project, requestNumber: request.number! };
   });
-  const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), "scope-review", `${result.project.name}: change request ${result.requestNumber} canceled`, `Change request ${result.requestNumber} was canceled in ClientScope.`);
+  const warning = await notify(emailService, await notificationRecipients(result.project, "approvers"), { category: "scope-review", projectId: String(result.project._id), projectName: result.project.name, changeNumber: result.requestNumber, action: "canceled" });
   return { requestNumber: result.requestNumber, warning };
 }

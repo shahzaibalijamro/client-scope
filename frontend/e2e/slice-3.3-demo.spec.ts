@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 test("canonical demo entry exposes both roles and all three project stories", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/sign-in?intent=demo");
   await expect(page.getByRole("heading", { name: "Sign in to your work" })).toBeVisible();
   await expect(page.getByText("Explore the shared demo")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Create account" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Forgot password?" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Create account" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Forgot password?" })).toBeVisible();
 
   await page.getByRole("button", { name: "Use Workspace Owner" }).click();
   await page.getByRole("button", { name: "Sign in" }).click();

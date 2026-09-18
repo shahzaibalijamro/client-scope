@@ -18,6 +18,7 @@ jobs:
         working-directory: frontend
     env:
       BACKEND_API_ORIGIN: http://127.0.0.1:4000
+      FRONTEND_ORIGIN: https://clientscope.example
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -132,8 +133,9 @@ jobs:
         run: >-
           docker build
           --build-arg BACKEND_API_ORIGIN=http://backend:4000
+          --build-arg FRONTEND_ORIGIN=https://clientscope.example
           --tag "clientscope-frontend:ci-${GITHUB_SHA}"
-          ./frontend
+          --file frontend/Dockerfile .
 
       - name: Smoke test backend image
         shell: bash

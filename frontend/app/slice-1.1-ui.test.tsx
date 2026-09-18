@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ClientScopeApp } from "./client-scope-app";
+import { AuthScreen, ClientScopeApp } from "./client-scope-app";
 import { ConfirmDialog } from "./confirm-dialog";
 import { OwnerWorkspace } from "./owner-workspace";
 import { ProjectView } from "./project-view";
@@ -37,9 +37,7 @@ describe("Slice 1.1 UI workflows", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<ClientScopeApp />, { wrapper });
-
-    await user.click(await screen.findByRole("button", { name: "Create account" }));
+    render(<AuthScreen mode="signup" />, { wrapper });
     await user.type(screen.getByLabelText("Display name"), "Existing Person");
     await user.type(screen.getByLabelText("Email address"), "existing@example.com");
     await user.type(screen.getByLabelText("Password"), "correct horse battery staple");
@@ -150,6 +148,37 @@ describe("Slice 1.1 UI workflows", () => {
     expect(screen.getByText(/pending · delivery failed/u)).toBeVisible();
     expect(screen.getByRole("button", { name: "Revoke" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Replace" })).toBeVisible();
+  });
+
+  it("shows invitation progress and blocks duplicate submissions while issuing", async () => {
+    let resolveInvite!: (value: Response) => void;
+    const inviteRequest = new Promise<Response>((resolve) => { resolveInvite = resolve; });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path.endsWith("/workspaces/workspace/clients")) return response({ clients: [] });
+      if (path.endsWith("/workspaces/workspace/access")) return response({ workspaceMemberships: [], assignments: [], clientMemberships: [], invitations: [] });
+      if (path.endsWith("/demo")) return response({ enabled: false, identities: [] });
+      if (path.endsWith("/workspaces/workspace/invitations") && init?.method === "POST") return inviteRequest;
+      throw new Error(`Unexpected request: ${path}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    const workspace = { id: "workspace", name: "Studio", relationship: "owner", projects: [], completedProjects: [], archivedProjects: [] } as WorkspaceGroup;
+    render(<OwnerWorkspace workspace={workspace} section="invitations" onBack={() => undefined} refreshWork={() => undefined} />, { wrapper });
+
+    await user.click(await screen.findByRole("button", { name: "Invite someone" }));
+    const dialog = screen.getByRole("dialog", { name: "Invite someone" });
+    await user.type(within(dialog).getByLabelText("Email"), "new-member@example.com");
+    await user.click(within(dialog).getByRole("button", { name: "Issue invitation" }));
+
+    const pendingButton = await screen.findByRole("button", { name: "Issuing invitation…" });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute("aria-busy", "true");
+    expect(pendingButton.querySelector(".button-spinner")).not.toBeNull();
+    expect(fetchMock.mock.calls.filter(([, request]) => (request as RequestInit | undefined)?.method === "POST")).toHaveLength(1);
+
+    resolveInvite(response({ message: "Invitation issued" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Invite someone" })).not.toBeInTheDocument());
   });
 
   it("moves focus into confirmation and returns it to the invoking control", async () => {

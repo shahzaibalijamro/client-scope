@@ -14,15 +14,15 @@ async function emailLink(page: Page, email: string, category: "verification") {
       return 0;
     }
   }).toBe(200);
-  return text;
+  const link = text.match(/https?:\/\/\S+/u)?.[0]; if (!link) throw new Error("Email action missing"); return link;
 }
 
 async function account(browser: Browser, email: string, displayName: string, mobile = false) {
   const context = await browser.newContext(mobile ? { viewport: { width: 390, height: 844 } } : undefined);
   const page = await context.newPage();
-  await page.goto("/"); await page.getByRole("button", { name: "Create account" }).click();
+  await page.goto("/sign-up");
   await page.getByLabel("Display name").fill(displayName); await page.getByLabel("Email address").fill(email);
-  await page.getByLabel("Password").fill(password); await page.getByRole("button", { name: "Create account" }).click();
+  await page.getByLabel("Password").fill(password); await page.getByRole("button", { name: "Create account" }).click(); await expect(page.getByRole("heading", { name: "Verify your email" })).toBeVisible();
   await page.goto(await emailLink(page, email, "verification")); await page.getByRole("button", { name: "Verify email" }).click();
   await page.getByRole("link", { name: "Continue to ClientScope" }).click();
   const session = await (await page.request.get("/api/v1/auth/session")).json() as { user: { id: string } };

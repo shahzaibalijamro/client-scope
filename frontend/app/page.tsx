@@ -1,5 +1,9 @@
-import { ClientScopeApp } from "./client-scope-app";
+import { PublicHome } from "./public-home";
+import { PublicEntry } from "./public-entry";
+import { publicMetadata } from "./public-metadata";
+
+export const generateMetadata = () => publicMetadata("/");
 
 export default function Home() {
-  return <ClientScopeApp />;
+  return <PublicEntry homepage><PublicHome /></PublicEntry>;
 }
