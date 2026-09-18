@@ -47,6 +47,7 @@ test("critical navigation preserves URL state, sections, switcher focus, admin r
 
   await page.getByRole("button", { name: new RegExp(`Navigation Studio ${key}`) }).click();
   for (const section of ["Projects", "People & Access", "Invitations", "Clients"] as const) await page.getByRole("button", { name: section, exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Clients", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Add client" }).click(); await page.getByLabel("Client name").fill("Unsaved client");
   await page.getByRole("button", { name: "Close Add a client" }).click();
   const warning = page.getByRole("dialog", { name: "Discard unsaved changes?" }); await expect(warning).toBeVisible(); await warning.getByRole("button", { name: "Cancel" }).click();
