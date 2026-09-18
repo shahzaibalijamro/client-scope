@@ -1,6 +1,6 @@
 # Portfolio Release and Presentation Validation
 
-**Status:** Planned
+**Status:** Implemented and live; final walkthrough and product-owner completion acceptance deferred pending Slice 3.4
 
 ## Highest-risk behavior
 
@@ -108,12 +108,8 @@
 
 ### Required release evidence still pending
 
-- Controlled acceptance deployment and immutable source/image revision matching.
-- Real Gmail invitation, all three Gemini workflows, and private Cloudinary upload/access plus quota/provider-failure exercises.
-- Scheduled and manual reset evidence, cleanup retry, session continuity, tenant isolation, Vercel promotion, and exact GHCR-to-Northflank traceability.
-- Complete Chromium/Firefox/WebKit CI result and the manual responsive, accessibility, browser, link, and privacy reviews.
-- Six public screenshots and the three-to-five-minute public walkthrough in the separate Cloudinary portfolio folder; manifest URLs, dimensions/duration, and capture commit remain intentionally null.
-- Product-owner acceptance against that same live revision. Slice 3.3 and the roadmap therefore remain incomplete.
+- A three-to-five-minute public walkthrough recorded against the accepted Slice 3.4 deployment, uploaded to the separate public Cloudinary portfolio folder, privacy-reviewed, and entered in the media manifest with duration and source revision.
+- Final link review and product-owner completion acceptance against the post-Slice-3.4 live revision. Slice 3.3 and the overall portfolio roadmap therefore remain incomplete.
 
 ### Hybrid-entry amendment evidence — 2026-09-16
 
@@ -121,6 +117,15 @@
 - Focused backend integration passed with 5 tests, including ordinary signup and private workspace creation while demo mode is enabled, private workspace/user survival across canonical reset, and continued canonical profile/workspace protection.
 - Focused frontend demo-entry tests passed with 2 tests; backend and frontend type checks and lint passed.
 - The amended canonical journey passed locally in Chromium and WebKit. Local Firefox failed to launch a test worker and stalled during Windows runner cleanup without executing the test body; the amended three-browser CI result remains required before release acceptance.
+
+### Controlled acceptance and public screenshots — 2026-09-17 to 2026-09-18
+
+- Product-owner manual checks passed for the live canonical Owner and Approver journeys, ordinary-account isolation, scheduled and manual reset, generation refresh, session continuity, responsive and keyboard behavior, browser privacy, quota feedback, and safe provider-failure recovery.
+- Controlled live-provider checks passed for Gmail invitation delivery and acceptance, all three Gemini workflows, and private Cloudinary upload and authorized access. No recipient, prompt, credential, signed URL, or provider diagnostic is recorded here.
+- Main CI for source revision `96ac68fc7dac2567697324d761c9a0421a7da3ba` passed frontend, backend, Chromium/Firefox/WebKit, container, immutable GHCR publication, exact-image Northflank rollout, Vercel production deployment, and the post-deployment canonical reset.
+- A seeded-activity defect was corrected before capture: canonical scope and change approvals now use the public Activity contract's stable event names. The focused Slice 3.3 integration suite passed 5 tests, and the deployed reset exposes scope approval, change approval, and deliverable submission in Harbor history.
+- Six privacy-reviewed screenshots cover My Work, Overview, Scope, Changes, Deliverables, and Activity across desktop and mobile layouts. They were uploaded as public assets under `clientscope-portfolio/v1`; all six stable versioned HTTPS URLs returned unauthenticated HTTP 200. Exact URLs, alt text, dimensions, and capture revision are recorded in `portfolio/media-manifest.json`.
+- Product-owner approval on 2026-09-18 added Slice 3.4 to the roadmap for a public product homepage and branded multipart transactional email. No Slice 3.4 feature specification or implementation is authorized by that roadmap entry. The final walkthrough is intentionally deferred until Slice 3.4 is specified, implemented, validated, and deployed.
 
 Record for the controlled acceptance release:
 
