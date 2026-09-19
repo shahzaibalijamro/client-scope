@@ -3,6 +3,7 @@ node_modules/
 
 # Environment files (examples remain tracked)
 .env
+images/
 .env.*
 !.env.example
 /frontend/.env
