@@ -9,7 +9,7 @@ export function PublicBrand() {
 }
 function SourceLink() { return <a href={sourceUrl} target="_blank" rel="noopener noreferrer">View source <ArrowUpRight size={15} aria-hidden="true" /><span className="sr-only"> (opens in a new tab)</span></a>; }
 function EntryActions() {
-  return <div className="public-actions"><a className="primary button-link" href="/sign-in?intent=demo">Explore demo <ArrowRight size={17} aria-hidden="true" /></a><a className="public-secondary" href="/sign-up">Create account <ArrowUpRight size={15} aria-hidden="true" /></a></div>;
+  return <div className="public-actions"><a className="primary" href="/sign-in?intent=demo">Explore demo <ArrowRight size={17} aria-hidden="true" /></a><a className="public-secondary" href="/sign-up">Create account <ArrowUpRight size={15} aria-hidden="true" /></a></div>;
 }
 const stories = [
   { label: "01 / AGREE", title: "A clear starting point. A record that stays.", text: "Turn requirements into an explicit agreement. Review the details together, capture the decision, and keep the approved version visible.", icon: FileCheck2 },
